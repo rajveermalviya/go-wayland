@@ -269,15 +269,12 @@ func writeInterface(w io.Writer, v Interface) {
 func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 	requestName := toCamel(r.Name)
 
-	newIfacesLower := []string{}
-
 	params := []string{}
 	reqParams := []string{}
 	returnTypes := []string{}
 	for _, arg := range r.Args {
 		argNameLower := toLowerCamel(arg.Name)
 		argIface := toCamel(arg.Interface)
-		argIfaceLower := toLowerCamel(arg.Interface)
 
 		if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
 			argIface = "client." + argIface
@@ -289,8 +286,7 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 		switch arg.Type {
 		case "new_id":
 			if arg.Interface != "" {
-				newIfacesLower = append(newIfacesLower, argIfaceLower)
-				reqParams = append(reqParams, argIfaceLower)
+				reqParams = append(reqParams, argNameLower)
 				returnTypes = append(returnTypes, "*"+argIface)
 			} else {
 				// Special for wl_registry.bind
@@ -317,20 +313,30 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 	for _, arg := range r.Args {
 		argNameLower := toLowerCamel(arg.Name)
 
-		if arg.Summary != "" {
+		if arg.Summary != "" && arg.Type != "new_id" {
 			fmt.Fprintf(w, "// %s: %s\n", argNameLower, doc.Synopsis(arg.Summary))
 		}
 	}
 	fmt.Fprintf(w, "func (i *%s) %s(%s) (%s) {\n", ifaceName, requestName, strings.Join(params, ","), strings.Join(returnTypes, ","))
-	for _, ifaceLower := range newIfacesLower {
-		if protocol.Name != "wayland" && strings.HasPrefix(ifaceLower, "wl") {
-			fmt.Fprintf(w, "%s := client.New%s(i.Context())\n", ifaceLower, toCamel(ifaceLower))
-		} else {
-			fmt.Fprintf(w, "%s := New%s(i.Context())\n", ifaceLower, toCamel(ifaceLower))
+	newObjects := []string{}
+	for _, arg := range r.Args {
+		if arg.Type == "new_id" && arg.Interface != "" {
+			argNameLower := toLowerCamel(arg.Name)
+			argIface := toCamel(arg.Interface)
+
+			if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
+				fmt.Fprintf(w, "%s := client.New%s(i.Context())\n", argNameLower, argIface)
+			} else if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
+				fmt.Fprintf(w, "%s := xdg_shell.New%s(i.Context())\n", argNameLower, argIface)
+			} else {
+				fmt.Fprintf(w, "%s := New%s(i.Context())\n", argNameLower, argIface)
+			}
+
+			newObjects = append(newObjects, argNameLower)
 		}
 	}
 	fmt.Fprintf(w, "err := i.Context().SendRequest(i, %d, %s)\n", order, strings.Join(reqParams, ","))
-	fmt.Fprintf(w, "return %s\n", strings.Join(append(newIfacesLower, "err"), ","))
+	fmt.Fprintf(w, "return %s\n", strings.Join(append(newObjects, "err"), ","))
 	fmt.Fprintf(w, "}\n")
 }
 

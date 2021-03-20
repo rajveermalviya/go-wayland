@@ -68,11 +68,10 @@ func NewWlDisplay(ctx *Context) *WlDisplay {
 //
 // The callback_data passed in the callback is the event serial.
 //
-// callback: callback object for the sync request
 func (i *WlDisplay) Sync() (*WlCallback, error) {
-	wlCallback := NewWlCallback(i.Context())
-	err := i.Context().SendRequest(i, 0, wlCallback)
-	return wlCallback, err
+	callback := NewWlCallback(i.Context())
+	err := i.Context().SendRequest(i, 0, callback)
+	return callback, err
 }
 
 // GetRegistry : get global registry object
@@ -87,11 +86,10 @@ func (i *WlDisplay) Sync() (*WlCallback, error) {
 // Therefore, clients should invoke get_registry as infrequently as
 // possible to avoid wasting memory.
 //
-// registry: global registry object
 func (i *WlDisplay) GetRegistry() (*WlRegistry, error) {
-	wlRegistry := NewWlRegistry(i.Context())
-	err := i.Context().SendRequest(i, 1, wlRegistry)
-	return wlRegistry, err
+	registry := NewWlRegistry(i.Context())
+	err := i.Context().SendRequest(i, 1, registry)
+	return registry, err
 }
 
 // WlDisplayError : global error values
@@ -315,7 +313,6 @@ func NewWlRegistry(ctx *Context) *WlRegistry {
 // specified name as the identifier.
 //
 // name: unique numeric name of the object
-// id: bounded object
 func (i *WlRegistry) Bind(name uint32, iface string, version uint32, id Proxy) error {
 	err := i.Context().SendRequest(i, 0, name, iface, version, id)
 	return err
@@ -577,22 +574,20 @@ func NewWlCompositor(ctx *Context) *WlCompositor {
 //
 // Ask the compositor to create a new surface.
 //
-// id: the new surface
 func (i *WlCompositor) CreateSurface() (*WlSurface, error) {
-	wlSurface := NewWlSurface(i.Context())
-	err := i.Context().SendRequest(i, 0, wlSurface)
-	return wlSurface, err
+	id := NewWlSurface(i.Context())
+	err := i.Context().SendRequest(i, 0, id)
+	return id, err
 }
 
 // CreateRegion : create new region
 //
 // Ask the compositor to create a new region.
 //
-// id: the new region
 func (i *WlCompositor) CreateRegion() (*WlRegion, error) {
-	wlRegion := NewWlRegion(i.Context())
-	err := i.Context().SendRequest(i, 1, wlRegion)
-	return wlRegion, err
+	id := NewWlRegion(i.Context())
+	err := i.Context().SendRequest(i, 1, id)
+	return id, err
 }
 
 // WlShmPool : a shared memory pool
@@ -638,16 +633,15 @@ func NewWlShmPool(ctx *Context) *WlShmPool {
 // so it is valid to destroy the pool immediately after creating
 // a buffer from it.
 //
-// id: buffer to create
 // offset: buffer byte offset within the pool
 // width: buffer width, in pixels
 // height: buffer height, in pixels
 // stride: number of bytes from the beginning of one row to the beginning of the next row
 // format: buffer pixel format
 func (i *WlShmPool) CreateBuffer(offset, width, height, stride int32, format uint32) (*WlBuffer, error) {
-	wlBuffer := NewWlBuffer(i.Context())
-	err := i.Context().SendRequest(i, 0, wlBuffer, offset, width, height, stride, format)
-	return wlBuffer, err
+	id := NewWlBuffer(i.Context())
+	err := i.Context().SendRequest(i, 0, id, offset, width, height, stride, format)
+	return id, err
 }
 
 // Destroy : destroy the pool
@@ -718,13 +712,12 @@ func NewWlShm(ctx *Context) *WlShm {
 // objects.  The server will mmap size bytes of the passed file
 // descriptor, to use as backing memory for the pool.
 //
-// id: pool to create
 // fd: file descriptor for the pool
 // size: pool size, in bytes
 func (i *WlShm) CreatePool(fd uintptr, size int32) (*WlShmPool, error) {
-	wlShmPool := NewWlShmPool(i.Context())
-	err := i.Context().SendRequest(i, 0, wlShmPool, fd, size)
-	return wlShmPool, err
+	id := NewWlShmPool(i.Context())
+	err := i.Context().SendRequest(i, 0, id, fd, size)
+	return id, err
 }
 
 // WlShmError : wl_shm error values
@@ -2641,23 +2634,21 @@ func NewWlDataDeviceManager(ctx *Context) *WlDataDeviceManager {
 //
 // Create a new data source.
 //
-// id: data source to create
 func (i *WlDataDeviceManager) CreateDataSource() (*WlDataSource, error) {
-	wlDataSource := NewWlDataSource(i.Context())
-	err := i.Context().SendRequest(i, 0, wlDataSource)
-	return wlDataSource, err
+	id := NewWlDataSource(i.Context())
+	err := i.Context().SendRequest(i, 0, id)
+	return id, err
 }
 
 // GetDataDevice : create a new data device
 //
 // Create a new data device for a given seat.
 //
-// id: data device to create
 // seat: seat associated with the data device
 func (i *WlDataDeviceManager) GetDataDevice(seat *WlSeat) (*WlDataDevice, error) {
-	wlDataDevice := NewWlDataDevice(i.Context())
-	err := i.Context().SendRequest(i, 1, wlDataDevice, seat)
-	return wlDataDevice, err
+	id := NewWlDataDevice(i.Context())
+	err := i.Context().SendRequest(i, 1, id, seat)
+	return id, err
 }
 
 // WlDataDeviceManagerDndAction : drag and drop actions
@@ -2735,12 +2726,11 @@ func NewWlShell(ctx *Context) *WlShell {
 //
 // Only one shell surface can be associated with a given surface.
 //
-// id: shell surface to create
 // surface: surface to be given the shell surface role
 func (i *WlShell) GetShellSurface(surface *WlSurface) (*WlShellSurface, error) {
-	wlShellSurface := NewWlShellSurface(i.Context())
-	err := i.Context().SendRequest(i, 0, wlShellSurface, surface)
-	return wlShellSurface, err
+	id := NewWlShellSurface(i.Context())
+	err := i.Context().SendRequest(i, 0, id, surface)
+	return id, err
 }
 
 // WlShellError :
@@ -3494,11 +3484,10 @@ func (i *WlSurface) Damage(x, y, width, height int32) error {
 // The callback_data passed in the callback is the current time, in
 // milliseconds, with an undefined base.
 //
-// callback: callback object for the frame request
 func (i *WlSurface) Frame() (*WlCallback, error) {
-	wlCallback := NewWlCallback(i.Context())
-	err := i.Context().SendRequest(i, 3, wlCallback)
-	return wlCallback, err
+	callback := NewWlCallback(i.Context())
+	err := i.Context().SendRequest(i, 3, callback)
+	return callback, err
 }
 
 // SetOpaqueRegion : set opaque region
@@ -3895,11 +3884,10 @@ func NewWlSeat(ctx *Context) *WlSeat {
 // never had the pointer capability. The missing_capability error will
 // be sent in this case.
 //
-// id: seat pointer
 func (i *WlSeat) GetPointer() (*WlPointer, error) {
-	wlPointer := NewWlPointer(i.Context())
-	err := i.Context().SendRequest(i, 0, wlPointer)
-	return wlPointer, err
+	id := NewWlPointer(i.Context())
+	err := i.Context().SendRequest(i, 0, id)
+	return id, err
 }
 
 // GetKeyboard : return keyboard object
@@ -3913,11 +3901,10 @@ func (i *WlSeat) GetPointer() (*WlPointer, error) {
 // never had the keyboard capability. The missing_capability error will
 // be sent in this case.
 //
-// id: seat keyboard
 func (i *WlSeat) GetKeyboard() (*WlKeyboard, error) {
-	wlKeyboard := NewWlKeyboard(i.Context())
-	err := i.Context().SendRequest(i, 1, wlKeyboard)
-	return wlKeyboard, err
+	id := NewWlKeyboard(i.Context())
+	err := i.Context().SendRequest(i, 1, id)
+	return id, err
 }
 
 // GetTouch : return touch object
@@ -3931,11 +3918,10 @@ func (i *WlSeat) GetKeyboard() (*WlKeyboard, error) {
 // never had the touch capability. The missing_capability error will
 // be sent in this case.
 //
-// id: seat touch interface
 func (i *WlSeat) GetTouch() (*WlTouch, error) {
-	wlTouch := NewWlTouch(i.Context())
-	err := i.Context().SendRequest(i, 2, wlTouch)
-	return wlTouch, err
+	id := NewWlTouch(i.Context())
+	err := i.Context().SendRequest(i, 2, id)
+	return id, err
 }
 
 // Release : release the seat object
@@ -6799,13 +6785,12 @@ func (i *WlSubcompositor) Destroy() error {
 // This request modifies the behaviour of wl_surface.commit request on
 // the sub-surface, see the documentation on wl_subsurface interface.
 //
-// id: the new sub-surface object ID
 // surface: the surface to be turned into a sub-surface
 // parent: the parent surface
 func (i *WlSubcompositor) GetSubsurface(surface, parent *WlSurface) (*WlSubsurface, error) {
-	wlSubsurface := NewWlSubsurface(i.Context())
-	err := i.Context().SendRequest(i, 1, wlSubsurface, surface, parent)
-	return wlSubsurface, err
+	id := NewWlSubsurface(i.Context())
+	err := i.Context().SendRequest(i, 1, id, surface, parent)
+	return id, err
 }
 
 // WlSubcompositorError :

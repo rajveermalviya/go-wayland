@@ -116,11 +116,10 @@ func (i *WpPresentation) Destroy() error {
 // presentation_feedback interface.
 //
 // surface: target surface
-// callback: new feedback object
 func (i *WpPresentation) Feedback(surface *client.WlSurface) (*WpPresentationFeedback, error) {
-	wpPresentationFeedback := NewWpPresentationFeedback(i.Context())
-	err := i.Context().SendRequest(i, 1, surface, wpPresentationFeedback)
-	return wpPresentationFeedback, err
+	callback := NewWpPresentationFeedback(i.Context())
+	err := i.Context().SendRequest(i, 1, surface, callback)
+	return callback, err
 }
 
 // WpPresentationError : fatal presentation errors

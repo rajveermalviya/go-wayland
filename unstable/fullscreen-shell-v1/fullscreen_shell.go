@@ -196,9 +196,9 @@ func (i *ZwpFullscreenShellV1) PresentSurface(surface *client.WlSurface, method 
 // output.
 //
 func (i *ZwpFullscreenShellV1) PresentSurfaceForMode(surface *client.WlSurface, output *client.WlOutput, framerate int32) (*ZwpFullscreenShellModeFeedbackV1, error) {
-	zwpFullscreenShellModeFeedbackV1 := NewZwpFullscreenShellModeFeedbackV1(i.Context())
-	err := i.Context().SendRequest(i, 2, surface, output, framerate, zwpFullscreenShellModeFeedbackV1)
-	return zwpFullscreenShellModeFeedbackV1, err
+	feedback := NewZwpFullscreenShellModeFeedbackV1(i.Context())
+	err := i.Context().SendRequest(i, 2, surface, output, framerate, feedback)
+	return feedback, err
 }
 
 // ZwpFullscreenShellV1Capability : capabilities advertised by the compositor

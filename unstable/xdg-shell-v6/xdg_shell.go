@@ -80,9 +80,9 @@ func (i *ZxdgShellV6) Destroy() error {
 // and xdg_surface.get_popup for details.
 //
 func (i *ZxdgShellV6) CreatePositioner() (*ZxdgPositionerV6, error) {
-	zxdgPositionerV6 := NewZxdgPositionerV6(i.Context())
-	err := i.Context().SendRequest(i, 1, zxdgPositionerV6)
-	return zxdgPositionerV6, err
+	id := NewZxdgPositionerV6(i.Context())
+	err := i.Context().SendRequest(i, 1, id)
+	return id, err
 }
 
 // GetXdgSurface : create a shell surface from a surface
@@ -100,9 +100,9 @@ func (i *ZxdgShellV6) CreatePositioner() (*ZxdgPositionerV6, error) {
 // xdg_surface is and how it is used.
 //
 func (i *ZxdgShellV6) GetXdgSurface(surface *client.WlSurface) (*ZxdgSurfaceV6, error) {
-	zxdgSurfaceV6 := NewZxdgSurfaceV6(i.Context())
-	err := i.Context().SendRequest(i, 2, zxdgSurfaceV6, surface)
-	return zxdgSurfaceV6, err
+	id := NewZxdgSurfaceV6(i.Context())
+	err := i.Context().SendRequest(i, 2, id, surface)
+	return id, err
 }
 
 // Pong : respond to a ping event
@@ -545,9 +545,9 @@ func (i *ZxdgSurfaceV6) Destroy() error {
 // xdg_toplevel is and how it is used.
 //
 func (i *ZxdgSurfaceV6) GetToplevel() (*ZxdgToplevelV6, error) {
-	zxdgToplevelV6 := NewZxdgToplevelV6(i.Context())
-	err := i.Context().SendRequest(i, 1, zxdgToplevelV6)
-	return zxdgToplevelV6, err
+	id := NewZxdgToplevelV6(i.Context())
+	err := i.Context().SendRequest(i, 1, id)
+	return id, err
 }
 
 // GetPopup : assign the xdg_popup surface role
@@ -559,9 +559,9 @@ func (i *ZxdgSurfaceV6) GetToplevel() (*ZxdgToplevelV6, error) {
 // xdg_popup is and how it is used.
 //
 func (i *ZxdgSurfaceV6) GetPopup(parent *ZxdgSurfaceV6, positioner *ZxdgPositionerV6) (*ZxdgPopupV6, error) {
-	zxdgPopupV6 := NewZxdgPopupV6(i.Context())
-	err := i.Context().SendRequest(i, 2, zxdgPopupV6, parent, positioner)
-	return zxdgPopupV6, err
+	id := NewZxdgPopupV6(i.Context())
+	err := i.Context().SendRequest(i, 2, id, parent, positioner)
+	return id, err
 }
 
 // SetWindowGeometry : set the new window geometry

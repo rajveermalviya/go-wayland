@@ -183,11 +183,10 @@ func (i *ZwpLinuxDmabufV1) Destroy() error {
 // should be destroyed after a 'created' or 'failed' event has been
 // received.
 //
-// paramsID: the new temporary
 func (i *ZwpLinuxDmabufV1) CreateParams() (*ZwpLinuxBufferParamsV1, error) {
-	zwpLinuxBufferParamsV1 := NewZwpLinuxBufferParamsV1(i.Context())
-	err := i.Context().SendRequest(i, 1, zwpLinuxBufferParamsV1)
-	return zwpLinuxBufferParamsV1, err
+	paramsID := NewZwpLinuxBufferParamsV1(i.Context())
+	err := i.Context().SendRequest(i, 1, paramsID)
+	return paramsID, err
 }
 
 // ZwpLinuxDmabufV1FormatEvent : supported buffer format
@@ -549,15 +548,14 @@ func (i *ZwpLinuxBufferParamsV1) Create(width, height int32, format, flags uint3
 // This takes the same arguments as a 'create' request, and obeys the
 // same restrictions.
 //
-// bufferID: id for the newly created wl_buffer
 // width: base plane width in pixels
 // height: base plane height in pixels
 // format: DRM_FORMAT code
 // flags: see enum flags
 func (i *ZwpLinuxBufferParamsV1) CreateImmed(width, height int32, format, flags uint32) (*client.WlBuffer, error) {
-	wlBuffer := client.NewWlBuffer(i.Context())
-	err := i.Context().SendRequest(i, 3, wlBuffer, width, height, format, flags)
-	return wlBuffer, err
+	bufferID := client.NewWlBuffer(i.Context())
+	err := i.Context().SendRequest(i, 3, bufferID, width, height, format, flags)
+	return bufferID, err
 }
 
 // ZwpLinuxBufferParamsV1Error :

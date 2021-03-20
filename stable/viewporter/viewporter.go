@@ -78,12 +78,11 @@ func (i *WpViewporter) Destroy() error {
 // a wp_viewport object associated, the viewport_exists
 // protocol error is raised.
 //
-// id: the new viewport interface id
 // surface: the surface
 func (i *WpViewporter) GetViewport(surface *client.WlSurface) (*WpViewport, error) {
-	wpViewport := NewWpViewport(i.Context())
-	err := i.Context().SendRequest(i, 1, wpViewport, surface)
-	return wpViewport, err
+	id := NewWpViewport(i.Context())
+	err := i.Context().SendRequest(i, 1, id, surface)
+	return id, err
 }
 
 // WpViewporterError :

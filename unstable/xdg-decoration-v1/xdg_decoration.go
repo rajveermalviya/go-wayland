@@ -114,9 +114,9 @@ func (i *ZxdgDecorationManagerV1) Destroy() error {
 // errors.
 //
 func (i *ZxdgDecorationManagerV1) GetToplevelDecoration(toplevel *xdg_shell.XdgToplevel) (*ZxdgToplevelDecorationV1, error) {
-	zxdgToplevelDecorationV1 := NewZxdgToplevelDecorationV1(i.Context())
-	err := i.Context().SendRequest(i, 1, zxdgToplevelDecorationV1, toplevel)
-	return zxdgToplevelDecorationV1, err
+	id := NewZxdgToplevelDecorationV1(i.Context())
+	err := i.Context().SendRequest(i, 1, id, toplevel)
+	return id, err
 }
 
 // ZxdgToplevelDecorationV1 : decoration object for a toplevel surface
