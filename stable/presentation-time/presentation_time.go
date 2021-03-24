@@ -115,7 +115,7 @@ func (i *WpPresentation) Destroy() error {
 // For details on what information is returned, see the
 // presentation_feedback interface.
 //
-// surface: target surface
+//  surface: target surface
 func (i *WpPresentation) Feedback(surface *client.WlSurface) (*WpPresentationFeedback, error) {
 	callback := NewWpPresentationFeedback(i.Context())
 	err := i.Context().SendRequest(i, 1, surface, callback)
@@ -172,37 +172,7 @@ type WpPresentationClockIDHandler interface {
 	HandleWpPresentationClockID(WpPresentationClockIDEvent)
 }
 
-// AddClockIDHandler : clock ID for timestamps
-//
-// This event tells the client in which clock domain the
-// compositor interprets the timestamps used by the presentation
-// extension. This clock is called the presentation clock.
-//
-// The compositor sends this event when the client binds to the
-// presentation interface. The presentation clock does not change
-// during the lifetime of the client connection.
-//
-// The clock identifier is platform dependent. On Linux/glibc,
-// the identifier value is one of the clockid_t values accepted
-// by clock_gettime(). clock_gettime() is defined by
-// POSIX.1-2001.
-//
-// Timestamps in this clock domain are expressed as tv_sec_hi,
-// tv_sec_lo, tv_nsec triples, each component being an unsigned
-// 32-bit value. Whole seconds are in tv_sec which is a 64-bit
-// value combined from tv_sec_hi and tv_sec_lo, and the
-// additional fractional part in tv_nsec as nanoseconds. Hence,
-// for valid timestamps tv_nsec must be in [0, 999999999].
-//
-// Note that clock_id applies only to the presentation clock,
-// and implies nothing about e.g. the timestamps used in the
-// Wayland core protocol input events.
-//
-// Compositors should prefer a clock which does not jump and is
-// not slewed e.g. by NTP. The absolute value of the clock is
-// irrelevant. Precision of one millisecond or better is
-// recommended. Clients must be able to query the current clock
-// value directly, not by asking the compositor.
+// AddClockIDHandler : adds handler for WpPresentationClockIDEvent
 func (i *WpPresentation) AddClockIDHandler(h WpPresentationClockIDHandler) {
 	if h == nil {
 		return
@@ -354,16 +324,7 @@ type WpPresentationFeedbackSyncOutputHandler interface {
 	HandleWpPresentationFeedbackSyncOutput(WpPresentationFeedbackSyncOutputEvent)
 }
 
-// AddSyncOutputHandler : presentation synchronized to this output
-//
-// As presentation can be synchronized to only one output at a
-// time, this event tells which output it was. This event is only
-// sent prior to the presented event.
-//
-// As clients may bind to the same global wl_output multiple
-// times, this event is sent for each bound instance that matches
-// the synchronized output. If a client has not bound to the
-// right wl_output global at all, this event is not sent.
+// AddSyncOutputHandler : adds handler for WpPresentationFeedbackSyncOutputEvent
 func (i *WpPresentationFeedback) AddSyncOutputHandler(h WpPresentationFeedbackSyncOutputHandler) {
 	if h == nil {
 		return
@@ -443,49 +404,7 @@ type WpPresentationFeedbackPresentedHandler interface {
 	HandleWpPresentationFeedbackPresented(WpPresentationFeedbackPresentedEvent)
 }
 
-// AddPresentedHandler : the content update was displayed
-//
-// The associated content update was displayed to the user at the
-// indicated time (tv_sec_hi/lo, tv_nsec). For the interpretation of
-// the timestamp, see presentation.clock_id event.
-//
-// The timestamp corresponds to the time when the content update
-// turned into light the first time on the surface's main output.
-// Compositors may approximate this from the framebuffer flip
-// completion events from the system, and the latency of the
-// physical display path if known.
-//
-// This event is preceded by all related sync_output events
-// telling which output's refresh cycle the feedback corresponds
-// to, i.e. the main output for the surface. Compositors are
-// recommended to choose the output containing the largest part
-// of the wl_surface, or keeping the output they previously
-// chose. Having a stable presentation output association helps
-// clients predict future output refreshes (vblank).
-//
-// The 'refresh' argument gives the compositor's prediction of how
-// many nanoseconds after tv_sec, tv_nsec the very next output
-// refresh may occur. This is to further aid clients in
-// predicting future refreshes, i.e., estimating the timestamps
-// targeting the next few vblanks. If such prediction cannot
-// usefully be done, the argument is zero.
-//
-// If the output does not have a constant refresh rate, explicit
-// video mode switches excluded, then the refresh argument must
-// be zero.
-//
-// The 64-bit value combined from seq_hi and seq_lo is the value
-// of the output's vertical retrace counter when the content
-// update was first scanned out to the display. This value must
-// be compatible with the definition of MSC in
-// GLX_OML_sync_control specification. Note, that if the display
-// path has a non-zero latency, the time instant specified by
-// this counter may differ from the timestamp's.
-//
-// If the output does not have a concept of vertical retrace or a
-// refresh cycle, or the output device is self-refreshing without
-// a way to query the refresh count, then the arguments seq_hi
-// and seq_lo must be zero.
+// AddPresentedHandler : adds handler for WpPresentationFeedbackPresentedEvent
 func (i *WpPresentationFeedback) AddPresentedHandler(h WpPresentationFeedbackPresentedHandler) {
 	if h == nil {
 		return
@@ -516,9 +435,7 @@ type WpPresentationFeedbackDiscardedHandler interface {
 	HandleWpPresentationFeedbackDiscarded(WpPresentationFeedbackDiscardedEvent)
 }
 
-// AddDiscardedHandler : the content update was not displayed
-//
-// The content update was never displayed to the user.
+// AddDiscardedHandler : adds handler for WpPresentationFeedbackDiscardedEvent
 func (i *WpPresentationFeedback) AddDiscardedHandler(h WpPresentationFeedbackDiscardedHandler) {
 	if h == nil {
 		return

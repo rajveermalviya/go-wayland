@@ -73,7 +73,7 @@ func (i *WpViewporter) Destroy() error {
 // a wp_viewport object associated, the viewport_exists
 // protocol error is raised.
 //
-// surface: the surface
+//  surface: the surface
 func (i *WpViewporter) GetViewport(surface *client.WlSurface) (*WpViewport, error) {
 	id := NewWpViewport(i.Context())
 	err := i.Context().SendRequest(i, 1, id, surface)
@@ -246,10 +246,10 @@ func (i *WpViewport) Destroy() error {
 // The crop and scale state is double-buffered state, and will be
 // applied on the next wl_surface.commit.
 //
-// x: source rectangle x
-// y: source rectangle y
-// width: source rectangle width
-// height: source rectangle height
+//  x: source rectangle x
+//  y: source rectangle y
+//  width: source rectangle width
+//  height: source rectangle height
 func (i *WpViewport) SetSource(x, y, width, height float32) error {
 	err := i.Context().SendRequest(i, 1, x, y, width, height)
 	return err
@@ -269,8 +269,8 @@ func (i *WpViewport) SetSource(x, y, width, height float32) error {
 // The crop and scale state is double-buffered state, and will be
 // applied on the next wl_surface.commit.
 //
-// width: surface width
-// height: surface height
+//  width: surface width
+//  height: surface height
 func (i *WpViewport) SetDestination(width, height int32) error {
 	err := i.Context().SendRequest(i, 2, width, height)
 	return err

@@ -126,15 +126,7 @@ type WlDisplayErrorHandler interface {
 	HandleWlDisplayError(WlDisplayErrorEvent)
 }
 
-// AddErrorHandler : fatal error event
-//
-// The error event is sent out when a fatal (non-recoverable)
-// error has occurred.  The object_id argument is the object
-// where the error occurred, most often in response to a request
-// to that object.  The code identifies the error and is defined
-// by the object interface.  As such, each interface defines its
-// own set of error codes.  The message is a brief description
-// of the error, for (debugging) convenience.
+// AddErrorHandler : adds handler for WlDisplayErrorEvent
 func (i *WlDisplay) AddErrorHandler(h WlDisplayErrorHandler) {
 	if h == nil {
 		return
@@ -172,13 +164,7 @@ type WlDisplayDeleteIDHandler interface {
 	HandleWlDisplayDeleteID(WlDisplayDeleteIDEvent)
 }
 
-// AddDeleteIDHandler : acknowledge object ID deletion
-//
-// This event is used internally by the object ID management
-// logic. When a client deletes an object that it had created,
-// the server will send this event to acknowledge that it has
-// seen the delete request. When the client receives this event,
-// it will know that it can safely reuse the object ID.
+// AddDeleteIDHandler : adds handler for WlDisplayDeleteIDEvent
 func (i *WlDisplay) AddDeleteIDHandler(h WlDisplayDeleteIDHandler) {
 	if h == nil {
 		return
@@ -312,7 +298,7 @@ func NewWlRegistry(ctx *Context) *WlRegistry {
 // Binds a new, client-created object to the server using the
 // specified name as the identifier.
 //
-// name: unique numeric name of the object
+//  name: unique numeric name of the object
 func (i *WlRegistry) Bind(name uint32, iface string, version uint32, id Proxy) error {
 	err := i.Context().SendRequest(i, 0, name, iface, version, id)
 	return err
@@ -335,13 +321,7 @@ type WlRegistryGlobalHandler interface {
 	HandleWlRegistryGlobal(WlRegistryGlobalEvent)
 }
 
-// AddGlobalHandler : announce global object
-//
-// Notify the client of global objects.
-//
-// The event notifies the client that a global object with
-// the given name is now available, and it implements the
-// given version of the given interface.
+// AddGlobalHandler : adds handler for WlRegistryGlobalEvent
 func (i *WlRegistry) AddGlobalHandler(h WlRegistryGlobalHandler) {
 	if h == nil {
 		return
@@ -384,18 +364,7 @@ type WlRegistryGlobalRemoveHandler interface {
 	HandleWlRegistryGlobalRemove(WlRegistryGlobalRemoveEvent)
 }
 
-// AddGlobalRemoveHandler : announce removal of global object
-//
-// Notify the client of removed global objects.
-//
-// This event notifies the client that the global identified
-// by name is no longer available.  If the client bound to
-// the global using the bind request, the client should now
-// destroy that object.
-//
-// The object remains valid and requests to the object will be
-// ignored until the client destroys it, to avoid races between
-// the global going away and a client sending a request to it.
+// AddGlobalRemoveHandler : adds handler for WlRegistryGlobalRemoveEvent
 func (i *WlRegistry) AddGlobalRemoveHandler(h WlRegistryGlobalRemoveHandler) {
 	if h == nil {
 		return
@@ -498,9 +467,7 @@ type WlCallbackDoneHandler interface {
 	HandleWlCallbackDone(WlCallbackDoneEvent)
 }
 
-// AddDoneHandler : done event
-//
-// Notify the client when the related request is done.
+// AddDoneHandler : adds handler for WlCallbackDoneEvent
 func (i *WlCallback) AddDoneHandler(h WlCallbackDoneHandler) {
 	if h == nil {
 		return
@@ -631,11 +598,11 @@ func NewWlShmPool(ctx *Context) *WlShmPool {
 // so it is valid to destroy the pool immediately after creating
 // a buffer from it.
 //
-// offset: buffer byte offset within the pool
-// width: buffer width, in pixels
-// height: buffer height, in pixels
-// stride: number of bytes from the beginning of one row to the beginning of the next row
-// format: buffer pixel format
+//  offset: buffer byte offset within the pool
+//  width: buffer width, in pixels
+//  height: buffer height, in pixels
+//  stride: number of bytes from the beginning of one row to the beginning of the next row
+//  format: buffer pixel format
 func (i *WlShmPool) CreateBuffer(offset, width, height, stride int32, format uint32) (*WlBuffer, error) {
 	id := NewWlBuffer(i.Context())
 	err := i.Context().SendRequest(i, 0, id, offset, width, height, stride, format)
@@ -662,7 +629,7 @@ func (i *WlShmPool) Destroy() error {
 // created, but using the new size.  This request can only be
 // used to make the pool bigger.
 //
-// size: new size of the pool, in bytes
+//  size: new size of the pool, in bytes
 func (i *WlShmPool) Resize(size int32) error {
 	err := i.Context().SendRequest(i, 2, size)
 	return err
@@ -710,8 +677,8 @@ func NewWlShm(ctx *Context) *WlShm {
 // objects.  The server will mmap size bytes of the passed file
 // descriptor, to use as backing memory for the pool.
 //
-// fd: file descriptor for the pool
-// size: pool size, in bytes
+//  fd: file descriptor for the pool
+//  size: pool size, in bytes
 func (i *WlShm) CreatePool(fd uintptr, size int32) (*WlShmPool, error) {
 	id := NewWlShmPool(i.Context())
 	err := i.Context().SendRequest(i, 0, id, fd, size)
@@ -953,11 +920,7 @@ type WlShmFormatHandler interface {
 	HandleWlShmFormat(WlShmFormatEvent)
 }
 
-// AddFormatHandler : pixel format description
-//
-// Informs the client about a valid pixel format that
-// can be used for buffers. Known formats include
-// argb8888 and xrgb8888.
+// AddFormatHandler : adds handler for WlShmFormatEvent
 func (i *WlShm) AddFormatHandler(h WlShmFormatHandler) {
 	if h == nil {
 		return
@@ -1063,20 +1026,7 @@ type WlBufferReleaseHandler interface {
 	HandleWlBufferRelease(WlBufferReleaseEvent)
 }
 
-// AddReleaseHandler : compositor releases buffer
-//
-// Sent when this wl_buffer is no longer used by the compositor.
-// The client is now free to reuse or destroy this buffer and its
-// backing storage.
-//
-// If a client receives a release event before the frame callback
-// requested in the same wl_surface.commit that attaches this
-// wl_buffer to a surface, then the client is immediately free to
-// reuse the buffer and its backing storage, and does not need a
-// second buffer for the next surface content update. Typically
-// this is possible, when the compositor maintains a copy of the
-// wl_surface contents, e.g. as a GL texture. This is an important
-// optimization for GL(ES) compositors with wl_shm clients.
+// AddReleaseHandler : adds handler for WlBufferReleaseEvent
 func (i *WlBuffer) AddReleaseHandler(h WlBufferReleaseHandler) {
 	if h == nil {
 		return
@@ -1170,8 +1120,8 @@ func NewWlDataOffer(ctx *Context) *WlDataOffer {
 // wl_data_source.cancelled. Clients may still use this event in
 // conjunction with wl_data_source.action for feedback.
 //
-// serial: serial number of the accept request
-// mimeType: mime type accepted by the client
+//  serial: serial number of the accept request
+//  mimeType: mime type accepted by the client
 func (i *WlDataOffer) Accept(serial uint32, mimeType string) error {
 	err := i.Context().SendRequest(i, 0, serial, mimeType)
 	return err
@@ -1195,8 +1145,8 @@ func (i *WlDataOffer) Accept(serial uint32, mimeType string) error {
 // clients may preemptively fetch data or examine it more closely to
 // determine acceptance.
 //
-// mimeType: mime type desired by receiver
-// fd: file descriptor for data transfer
+//  mimeType: mime type desired by receiver
+//  fd: file descriptor for data transfer
 func (i *WlDataOffer) Receive(mimeType string, fd uintptr) error {
 	err := i.Context().SendRequest(i, 1, mimeType, fd)
 	return err
@@ -1267,8 +1217,8 @@ func (i *WlDataOffer) Finish() error {
 // This request can only be made on drag-and-drop offers, a protocol error
 // will be raised otherwise.
 //
-// dndActions: actions supported by the destination client
-// preferredAction: action preferred by the destination client
+//  dndActions: actions supported by the destination client
+//  preferredAction: action preferred by the destination client
 func (i *WlDataOffer) SetActions(dndActions, preferredAction uint32) error {
 	err := i.Context().SendRequest(i, 4, dndActions, preferredAction)
 	return err
@@ -1298,10 +1248,7 @@ type WlDataOfferOfferHandler interface {
 	HandleWlDataOfferOffer(WlDataOfferOfferEvent)
 }
 
-// AddOfferHandler : advertise offered mime type
-//
-// Sent immediately after creating the wl_data_offer object.  One
-// event per offered mime type.
+// AddOfferHandler : adds handler for WlDataOfferOfferEvent
 func (i *WlDataOffer) AddOfferHandler(h WlDataOfferOfferHandler) {
 	if h == nil {
 		return
@@ -1337,11 +1284,7 @@ type WlDataOfferSourceActionsHandler interface {
 	HandleWlDataOfferSourceActions(WlDataOfferSourceActionsEvent)
 }
 
-// AddSourceActionsHandler : notify the source-side available actions
-//
-// This event indicates the actions offered by the data source. It
-// will be sent right after wl_data_device.enter, or anytime the source
-// side changes its offered actions through wl_data_source.set_actions.
+// AddSourceActionsHandler : adds handler for WlDataOfferSourceActionsEvent
 func (i *WlDataOffer) AddSourceActionsHandler(h WlDataOfferSourceActionsHandler) {
 	if h == nil {
 		return
@@ -1409,43 +1352,7 @@ type WlDataOfferActionHandler interface {
 	HandleWlDataOfferAction(WlDataOfferActionEvent)
 }
 
-// AddActionHandler : notify the selected action
-//
-// This event indicates the action selected by the compositor after
-// matching the source/destination side actions. Only one action (or
-// none) will be offered here.
-//
-// This event can be emitted multiple times during the drag-and-drop
-// operation in response to destination side action changes through
-// wl_data_offer.set_actions.
-//
-// This event will no longer be emitted after wl_data_device.drop
-// happened on the drag-and-drop destination, the client must
-// honor the last action received, or the last preferred one set
-// through wl_data_offer.set_actions when handling an "ask" action.
-//
-// Compositors may also change the selected action on the fly, mainly
-// in response to keyboard modifier changes during the drag-and-drop
-// operation.
-//
-// The most recent action received is always the valid one. Prior to
-// receiving wl_data_device.drop, the chosen action may change (e.g.
-// due to keyboard modifiers being pressed). At the time of receiving
-// wl_data_device.drop the drag-and-drop destination must honor the
-// last action received.
-//
-// Action changes may still happen after wl_data_device.drop,
-// especially on "ask" actions, where the drag-and-drop destination
-// may choose another action afterwards. Action changes happening
-// at this stage are always the result of inter-client negotiation, the
-// compositor shall no longer be able to induce a different action.
-//
-// Upon "ask" actions, it is expected that the drag-and-drop destination
-// may potentially choose a different action and/or mime type,
-// based on wl_data_offer.source_actions and finally chosen by the
-// user (e.g. popping up a menu with the available options). The
-// final wl_data_offer.set_actions and wl_data_offer.accept requests
-// must happen before the call to wl_data_offer.finish.
+// AddActionHandler : adds handler for WlDataOfferActionEvent
 func (i *WlDataOffer) AddActionHandler(h WlDataOfferActionHandler) {
 	if h == nil {
 		return
@@ -1571,7 +1478,7 @@ func NewWlDataSource(ctx *Context) *WlDataSource {
 // advertised to targets.  Can be called several times to offer
 // multiple types.
 //
-// mimeType: mime type offered by the data source
+//  mimeType: mime type offered by the data source
 func (i *WlDataSource) Offer(mimeType string) error {
 	err := i.Context().SendRequest(i, 0, mimeType)
 	return err
@@ -1602,7 +1509,7 @@ func (i *WlDataSource) Destroy() error {
 // wl_data_device.start_drag. Attempting to use the source other than
 // for drag-and-drop will raise a protocol error.
 //
-// dndActions: actions supported by the data source
+//  dndActions: actions supported by the data source
 func (i *WlDataSource) SetActions(dndActions uint32) error {
 	err := i.Context().SendRequest(i, 2, dndActions)
 	return err
@@ -1630,12 +1537,7 @@ type WlDataSourceTargetHandler interface {
 	HandleWlDataSourceTarget(WlDataSourceTargetEvent)
 }
 
-// AddTargetHandler : a target accepts an offered mime type
-//
-// Sent when a target accepts pointer_focus or motion events.  If
-// a target does not accept any of the offered types, type is NULL.
-//
-// Used for feedback during drag-and-drop.
+// AddTargetHandler : adds handler for WlDataSourceTargetEvent
 func (i *WlDataSource) AddTargetHandler(h WlDataSourceTargetHandler) {
 	if h == nil {
 		return
@@ -1672,11 +1574,7 @@ type WlDataSourceSendHandler interface {
 	HandleWlDataSourceSend(WlDataSourceSendEvent)
 }
 
-// AddSendHandler : send the data
-//
-// Request for data from the client.  Send the data as the
-// specified mime type over the passed file descriptor, then
-// close it.
+// AddSendHandler : adds handler for WlDataSourceSendEvent
 func (i *WlDataSource) AddSendHandler(h WlDataSourceSendHandler) {
 	if h == nil {
 		return
@@ -1726,28 +1624,7 @@ type WlDataSourceCancelledHandler interface {
 	HandleWlDataSourceCancelled(WlDataSourceCancelledEvent)
 }
 
-// AddCancelledHandler : selection was cancelled
-//
-// This data source is no longer valid. There are several reasons why
-// this could happen:
-//
-// - The data source has been replaced by another data source.
-// - The drag-and-drop operation was performed, but the drop destination
-// did not accept any of the mime types offered through
-// wl_data_source.target.
-// - The drag-and-drop operation was performed, but the drop destination
-// did not select any of the actions present in the mask offered through
-// wl_data_source.action.
-// - The drag-and-drop operation was performed but didn't happen over a
-// surface.
-// - The compositor cancelled the drag-and-drop operation (e.g. compositor
-// dependent timeouts to avoid stale drag-and-drop transfers).
-//
-// The client should clean up and destroy this data source.
-//
-// For objects of version 2 or older, wl_data_source.cancelled will
-// only be emitted if the data source was replaced by another data
-// source.
+// AddCancelledHandler : adds handler for WlDataSourceCancelledEvent
 func (i *WlDataSource) AddCancelledHandler(h WlDataSourceCancelledHandler) {
 	if h == nil {
 		return
@@ -1786,17 +1663,7 @@ type WlDataSourceDndDropPerformedHandler interface {
 	HandleWlDataSourceDndDropPerformed(WlDataSourceDndDropPerformedEvent)
 }
 
-// AddDndDropPerformedHandler : the drag-and-drop operation physically finished
-//
-// The user performed the drop action. This event does not indicate
-// acceptance, wl_data_source.cancelled may still be emitted afterwards
-// if the drop destination does not accept any mime type.
-//
-// However, this event might however not be received if the compositor
-// cancelled the drag-and-drop operation before this event could happen.
-//
-// Note that the data_source may still be used in the future and should
-// not be destroyed here.
+// AddDndDropPerformedHandler : adds handler for WlDataSourceDndDropPerformedEvent
 func (i *WlDataSource) AddDndDropPerformedHandler(h WlDataSourceDndDropPerformedHandler) {
 	if h == nil {
 		return
@@ -1832,14 +1699,7 @@ type WlDataSourceDndFinishedHandler interface {
 	HandleWlDataSourceDndFinished(WlDataSourceDndFinishedEvent)
 }
 
-// AddDndFinishedHandler : the drag-and-drop operation concluded
-//
-// The drop destination finished interoperating with this data
-// source, so the client is now free to destroy this data source and
-// free all associated data.
-//
-// If the action used to perform the operation was "move", the
-// source can now delete the transferred data.
+// AddDndFinishedHandler : adds handler for WlDataSourceDndFinishedEvent
 func (i *WlDataSource) AddDndFinishedHandler(h WlDataSourceDndFinishedHandler) {
 	if h == nil {
 		return
@@ -1897,33 +1757,7 @@ type WlDataSourceActionHandler interface {
 	HandleWlDataSourceAction(WlDataSourceActionEvent)
 }
 
-// AddActionHandler : notify the selected action
-//
-// This event indicates the action selected by the compositor after
-// matching the source/destination side actions. Only one action (or
-// none) will be offered here.
-//
-// This event can be emitted multiple times during the drag-and-drop
-// operation, mainly in response to destination side changes through
-// wl_data_offer.set_actions, and as the data device enters/leaves
-// surfaces.
-//
-// It is only possible to receive this event after
-// wl_data_source.dnd_drop_performed if the drag-and-drop operation
-// ended in an "ask" action, in which case the final wl_data_source.action
-// event will happen immediately before wl_data_source.dnd_finished.
-//
-// Compositors may also change the selected action on the fly, mainly
-// in response to keyboard modifier changes during the drag-and-drop
-// operation.
-//
-// The most recent action received is always the valid one. The chosen
-// action may change alongside negotiation (e.g. an "ask" action can turn
-// into a "move" operation), so the effects of the final action must
-// always be applied in wl_data_offer.dnd_finished.
-//
-// Clients can trigger cursor surface changes from this point, so
-// they reflect the current action.
+// AddActionHandler : adds handler for WlDataSourceActionEvent
 func (i *WlDataSource) AddActionHandler(h WlDataSourceActionHandler) {
 	if h == nil {
 		return
@@ -2134,10 +1968,10 @@ func NewWlDataDevice(ctx *Context) *WlDataDevice {
 // as an icon ends, the current and pending input regions become
 // undefined, and the wl_surface is unmapped.
 //
-// source: data source for the eventual transfer
-// origin: surface where the drag originates
-// icon: drag-and-drop icon surface
-// serial: serial number of the implicit grab on the origin
+//  source: data source for the eventual transfer
+//  origin: surface where the drag originates
+//  icon: drag-and-drop icon surface
+//  serial: serial number of the implicit grab on the origin
 func (i *WlDataDevice) StartDrag(source *WlDataSource, origin, icon *WlSurface, serial uint32) error {
 	err := i.Context().SendRequest(i, 0, source, origin, icon, serial)
 	return err
@@ -2150,8 +1984,8 @@ func (i *WlDataDevice) StartDrag(source *WlDataSource, origin, icon *WlSurface, 
 //
 // To unset the selection, set the source to NULL.
 //
-// source: data source for the selection
-// serial: serial number of the event that triggered this request
+//  source: data source for the selection
+//  serial: serial number of the event that triggered this request
 func (i *WlDataDevice) SetSelection(source *WlDataSource, serial uint32) error {
 	err := i.Context().SendRequest(i, 1, source, serial)
 	return err
@@ -2189,15 +2023,7 @@ type WlDataDeviceDataOfferHandler interface {
 	HandleWlDataDeviceDataOffer(WlDataDeviceDataOfferEvent)
 }
 
-// AddDataOfferHandler : introduce a new wl_data_offer
-//
-// The data_offer event introduces a new wl_data_offer object,
-// which will subsequently be used in either the
-// data_device.enter event (for drag-and-drop) or the
-// data_device.selection event (for selections).  Immediately
-// following the data_device_data_offer event, the new data_offer
-// object will send out data_offer.offer events to describe the
-// mime types it offers.
+// AddDataOfferHandler : adds handler for WlDataDeviceDataOfferEvent
 func (i *WlDataDevice) AddDataOfferHandler(h WlDataDeviceDataOfferHandler) {
 	if h == nil {
 		return
@@ -2238,12 +2064,7 @@ type WlDataDeviceEnterHandler interface {
 	HandleWlDataDeviceEnter(WlDataDeviceEnterEvent)
 }
 
-// AddEnterHandler : initiate drag-and-drop session
-//
-// This event is sent when an active drag-and-drop pointer enters
-// a surface owned by the client.  The position of the pointer at
-// enter time is provided by the x and y arguments, in surface-local
-// coordinates.
+// AddEnterHandler : adds handler for WlDataDeviceEnterEvent
 func (i *WlDataDevice) AddEnterHandler(h WlDataDeviceEnterHandler) {
 	if h == nil {
 		return
@@ -2276,11 +2097,7 @@ type WlDataDeviceLeaveHandler interface {
 	HandleWlDataDeviceLeave(WlDataDeviceLeaveEvent)
 }
 
-// AddLeaveHandler : end drag-and-drop session
-//
-// This event is sent when the drag-and-drop pointer leaves the
-// surface and the session ends.  The client must destroy the
-// wl_data_offer introduced at enter time at this point.
+// AddLeaveHandler : adds handler for WlDataDeviceLeaveEvent
 func (i *WlDataDevice) AddLeaveHandler(h WlDataDeviceLeaveHandler) {
 	if h == nil {
 		return
@@ -2319,12 +2136,7 @@ type WlDataDeviceMotionHandler interface {
 	HandleWlDataDeviceMotion(WlDataDeviceMotionEvent)
 }
 
-// AddMotionHandler : drag-and-drop session motion
-//
-// This event is sent when the drag-and-drop pointer moves within
-// the currently focused surface. The new position of the pointer
-// is provided by the x and y arguments, in surface-local
-// coordinates.
+// AddMotionHandler : adds handler for WlDataDeviceMotionEvent
 func (i *WlDataDevice) AddMotionHandler(h WlDataDeviceMotionHandler) {
 	if h == nil {
 		return
@@ -2367,21 +2179,7 @@ type WlDataDeviceDropHandler interface {
 	HandleWlDataDeviceDrop(WlDataDeviceDropEvent)
 }
 
-// AddDropHandler : end drag-and-drop session successfully
-//
-// The event is sent when a drag-and-drop operation is ended
-// because the implicit grab is removed.
-//
-// The drag-and-drop destination is expected to honor the last action
-// received through wl_data_offer.action, if the resulting action is
-// "copy" or "move", the destination can still perform
-// wl_data_offer.receive requests, and is expected to end all
-// transfers with a wl_data_offer.finish request.
-//
-// If the resulting action is "ask", the action will not be considered
-// final. The drag-and-drop destination is expected to perform one last
-// wl_data_offer.set_actions request, or wl_data_offer.destroy in order
-// to cancel the operation.
+// AddDropHandler : adds handler for WlDataDeviceDropEvent
 func (i *WlDataDevice) AddDropHandler(h WlDataDeviceDropHandler) {
 	if h == nil {
 		return
@@ -2425,19 +2223,7 @@ type WlDataDeviceSelectionHandler interface {
 	HandleWlDataDeviceSelection(WlDataDeviceSelectionEvent)
 }
 
-// AddSelectionHandler : advertise new selection
-//
-// The selection event is sent out to notify the client of a new
-// wl_data_offer for the selection for this device.  The
-// data_device.data_offer and the data_offer.offer events are
-// sent out immediately before this event to introduce the data
-// offer object.  The selection event is sent to a client
-// immediately before receiving keyboard focus and when a new
-// selection is set while the client has keyboard focus.  The
-// data_offer is valid until a new data_offer or NULL is received
-// or until the client loses keyboard focus.  The client must
-// destroy the previous selection data_offer, if any, upon receiving
-// this event.
+// AddSelectionHandler : adds handler for WlDataDeviceSelectionEvent
 func (i *WlDataDevice) AddSelectionHandler(h WlDataDeviceSelectionHandler) {
 	if h == nil {
 		return
@@ -2641,7 +2427,7 @@ func (i *WlDataDeviceManager) CreateDataSource() (*WlDataSource, error) {
 //
 // Create a new data device for a given seat.
 //
-// seat: seat associated with the data device
+//  seat: seat associated with the data device
 func (i *WlDataDeviceManager) GetDataDevice(seat *WlSeat) (*WlDataDevice, error) {
 	id := NewWlDataDevice(i.Context())
 	err := i.Context().SendRequest(i, 1, id, seat)
@@ -2722,7 +2508,7 @@ func NewWlShell(ctx *Context) *WlShell {
 //
 // Only one shell surface can be associated with a given surface.
 //
-// surface: surface to be given the shell surface role
+//  surface: surface to be given the shell surface role
 func (i *WlShell) GetShellSurface(surface *WlSurface) (*WlShellSurface, error) {
 	id := NewWlShellSurface(i.Context())
 	err := i.Context().SendRequest(i, 0, id, surface)
@@ -2780,7 +2566,7 @@ func NewWlShellSurface(ctx *Context) *WlShellSurface {
 // A client must respond to a ping event with a pong request or
 // the client may be deemed unresponsive.
 //
-// serial: serial number of the ping event
+//  serial: serial number of the ping event
 func (i *WlShellSurface) Pong(serial uint32) error {
 	err := i.Context().SendRequest(i, 0, serial)
 	return err
@@ -2794,8 +2580,8 @@ func (i *WlShellSurface) Pong(serial uint32) error {
 // The server may ignore move requests depending on the state of
 // the surface (e.g. fullscreen or maximized).
 //
-// seat: seat whose pointer is used
-// serial: serial number of the implicit grab on the pointer
+//  seat: seat whose pointer is used
+//  serial: serial number of the implicit grab on the pointer
 func (i *WlShellSurface) Move(seat *WlSeat, serial uint32) error {
 	err := i.Context().SendRequest(i, 1, seat, serial)
 	return err
@@ -2809,9 +2595,9 @@ func (i *WlShellSurface) Move(seat *WlSeat, serial uint32) error {
 // The server may ignore resize requests depending on the state of
 // the surface (e.g. fullscreen or maximized).
 //
-// seat: seat whose pointer is used
-// serial: serial number of the implicit grab on the pointer
-// edges: which edge or corner is being dragged
+//  seat: seat whose pointer is used
+//  serial: serial number of the implicit grab on the pointer
+//  edges: which edge or corner is being dragged
 func (i *WlShellSurface) Resize(seat *WlSeat, serial, edges uint32) error {
 	err := i.Context().SendRequest(i, 2, seat, serial, edges)
 	return err
@@ -2838,10 +2624,10 @@ func (i *WlShellSurface) SetToplevel() error {
 //
 // The flags argument controls details of the transient behaviour.
 //
-// parent: parent surface
-// x: surface-local x coordinate
-// y: surface-local y coordinate
-// flags: transient surface behavior
+//  parent: parent surface
+//  x: surface-local x coordinate
+//  y: surface-local y coordinate
+//  flags: transient surface behavior
 func (i *WlShellSurface) SetTransient(parent *WlSurface, x, y int32, flags uint32) error {
 	err := i.Context().SendRequest(i, 4, parent, x, y, flags)
 	return err
@@ -2883,9 +2669,9 @@ func (i *WlShellSurface) SetTransient(parent *WlSurface, x, y int32, flags uint3
 // with the dimensions for the output on which the surface will
 // be made fullscreen.
 //
-// method: method for resolving size conflict
-// framerate: framerate in mHz
-// output: output on which the surface is to be fullscreen
+//  method: method for resolving size conflict
+//  framerate: framerate in mHz
+//  output: output on which the surface is to be fullscreen
 func (i *WlShellSurface) SetFullscreen(method, framerate uint32, output *WlOutput) error {
 	err := i.Context().SendRequest(i, 5, method, framerate, output)
 	return err
@@ -2913,12 +2699,12 @@ func (i *WlShellSurface) SetFullscreen(method, framerate uint32, output *WlOutpu
 // corner of the surface relative to the upper left corner of the
 // parent surface, in surface-local coordinates.
 //
-// seat: seat whose pointer is used
-// serial: serial number of the implicit grab on the pointer
-// parent: parent surface
-// x: surface-local x coordinate
-// y: surface-local y coordinate
-// flags: transient surface behavior
+//  seat: seat whose pointer is used
+//  serial: serial number of the implicit grab on the pointer
+//  parent: parent surface
+//  x: surface-local x coordinate
+//  y: surface-local y coordinate
+//  flags: transient surface behavior
 func (i *WlShellSurface) SetPopup(seat *WlSeat, serial uint32, parent *WlSurface, x, y int32, flags uint32) error {
 	err := i.Context().SendRequest(i, 6, seat, serial, parent, x, y, flags)
 	return err
@@ -2945,7 +2731,7 @@ func (i *WlShellSurface) SetPopup(seat *WlSeat, serial uint32, parent *WlSurface
 //
 // The details depend on the compositor implementation.
 //
-// output: output on which the surface is to be maximized
+//  output: output on which the surface is to be maximized
 func (i *WlShellSurface) SetMaximized(output *WlOutput) error {
 	err := i.Context().SendRequest(i, 7, output)
 	return err
@@ -2961,7 +2747,7 @@ func (i *WlShellSurface) SetMaximized(output *WlOutput) error {
 //
 // The string must be encoded in UTF-8.
 //
-// title: surface title
+//  title: surface title
 func (i *WlShellSurface) SetTitle(title string) error {
 	err := i.Context().SendRequest(i, 8, title)
 	return err
@@ -2976,7 +2762,7 @@ func (i *WlShellSurface) SetTitle(title string) error {
 // file name (or the full path if it is a non-standard location) of
 // the application's .desktop file as the class.
 //
-// class: surface class
+//  class: surface class
 func (i *WlShellSurface) SetClass(class string) error {
 	err := i.Context().SendRequest(i, 9, class)
 	return err
@@ -3046,10 +2832,7 @@ type WlShellSurfacePingHandler interface {
 	HandleWlShellSurfacePing(WlShellSurfacePingEvent)
 }
 
-// AddPingHandler : ping client
-//
-// Ping a client to check if it is receiving events and sending
-// requests. A client is expected to reply with a pong request.
+// AddPingHandler : adds handler for WlShellSurfacePingEvent
 func (i *WlShellSurface) AddPingHandler(h WlShellSurfacePingHandler) {
 	if h == nil {
 		return
@@ -3101,25 +2884,7 @@ type WlShellSurfaceConfigureHandler interface {
 	HandleWlShellSurfaceConfigure(WlShellSurfaceConfigureEvent)
 }
 
-// AddConfigureHandler : suggest resize
-//
-// The configure event asks the client to resize its surface.
-//
-// The size is a hint, in the sense that the client is free to
-// ignore it if it doesn't resize, pick a smaller size (to
-// satisfy aspect ratio or resize in steps of NxM pixels).
-//
-// The edges parameter provides a hint about how the surface
-// was resized. The client may use this information to decide
-// how to adjust its content to the new size (e.g. a scrolling
-// area might adjust its content position to leave the viewable
-// content unmoved).
-//
-// The client is free to dismiss all but the last configure
-// event it received.
-//
-// The width and height arguments specify the size of the window
-// in surface-local coordinates.
+// AddConfigureHandler : adds handler for WlShellSurfaceConfigureEvent
 func (i *WlShellSurface) AddConfigureHandler(h WlShellSurfaceConfigureHandler) {
 	if h == nil {
 		return
@@ -3152,11 +2917,7 @@ type WlShellSurfacePopupDoneHandler interface {
 	HandleWlShellSurfacePopupDone(WlShellSurfacePopupDoneEvent)
 }
 
-// AddPopupDoneHandler : popup interaction is done
-//
-// The popup_done event is sent out when a popup grab is broken,
-// that is, when the user clicks a surface that doesn't belong
-// to the client owning the popup surface.
+// AddPopupDoneHandler : adds handler for WlShellSurfacePopupDoneEvent
 func (i *WlShellSurface) AddPopupDoneHandler(h WlShellSurfacePopupDoneHandler) {
 	if h == nil {
 		return
@@ -3404,9 +3165,9 @@ func (i *WlSurface) Destroy() error {
 // If wl_surface.attach is sent with a NULL wl_buffer, the
 // following wl_surface.commit will remove the surface content.
 //
-// buffer: buffer of surface contents
-// x: surface-local x coordinate
-// y: surface-local y coordinate
+//  buffer: buffer of surface contents
+//  x: surface-local x coordinate
+//  y: surface-local y coordinate
 func (i *WlSurface) Attach(buffer *WlBuffer, x, y int32) error {
 	err := i.Context().SendRequest(i, 1, buffer, x, y)
 	return err
@@ -3436,10 +3197,10 @@ func (i *WlSurface) Attach(buffer *WlBuffer, x, y int32) error {
 // posted with wl_surface.damage_buffer which uses buffer coordinates
 // instead of surface coordinates.
 //
-// x: surface-local x coordinate
-// y: surface-local y coordinate
-// width: width of damage rectangle
-// height: height of damage rectangle
+//  x: surface-local x coordinate
+//  y: surface-local y coordinate
+//  width: width of damage rectangle
+//  height: height of damage rectangle
 func (i *WlSurface) Damage(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 2, x, y, width, height)
 	return err
@@ -3513,7 +3274,7 @@ func (i *WlSurface) Frame() (*WlCallback, error) {
 // destroyed immediately. A NULL wl_region causes the pending opaque
 // region to be set to empty.
 //
-// region: opaque region of the surface
+//  region: opaque region of the surface
 func (i *WlSurface) SetOpaqueRegion(region *WlRegion) error {
 	err := i.Context().SendRequest(i, 4, region)
 	return err
@@ -3544,7 +3305,7 @@ func (i *WlSurface) SetOpaqueRegion(region *WlRegion) error {
 // immediately. A NULL wl_region causes the input region to be set
 // to infinite.
 //
-// region: input region of the surface
+//  region: input region of the surface
 func (i *WlSurface) SetInputRegion(region *WlRegion) error {
 	err := i.Context().SendRequest(i, 5, region)
 	return err
@@ -3607,7 +3368,7 @@ func (i *WlSurface) Commit() error {
 // wl_output.transform enum the invalid_transform protocol error
 // is raised.
 //
-// transform: transform for interpreting buffer contents
+//  transform: transform for interpreting buffer contents
 func (i *WlSurface) SetBufferTransform(transform int32) error {
 	err := i.Context().SendRequest(i, 7, transform)
 	return err
@@ -3639,7 +3400,7 @@ func (i *WlSurface) SetBufferTransform(transform int32) error {
 // If scale is not positive the invalid_scale protocol error is
 // raised.
 //
-// scale: positive scale for interpreting buffer contents
+//  scale: positive scale for interpreting buffer contents
 func (i *WlSurface) SetBufferScale(scale int32) error {
 	err := i.Context().SendRequest(i, 8, scale)
 	return err
@@ -3680,10 +3441,10 @@ func (i *WlSurface) SetBufferScale(scale int32) error {
 // two requests separately and only transform from one to the other
 // after receiving the wl_surface.commit.
 //
-// x: buffer-local x coordinate
-// y: buffer-local y coordinate
-// width: width of damage rectangle
-// height: height of damage rectangle
+//  x: buffer-local x coordinate
+//  y: buffer-local y coordinate
+//  width: width of damage rectangle
+//  height: height of damage rectangle
 func (i *WlSurface) DamageBuffer(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 9, x, y, width, height)
 	return err
@@ -3716,13 +3477,7 @@ type WlSurfaceEnterHandler interface {
 	HandleWlSurfaceEnter(WlSurfaceEnterEvent)
 }
 
-// AddEnterHandler : surface enters an output
-//
-// This is emitted whenever a surface's creation, movement, or resizing
-// results in some part of it being within the scanout region of an
-// output.
-//
-// Note that a surface may be overlapping with zero or more outputs.
+// AddEnterHandler : adds handler for WlSurfaceEnterEvent
 func (i *WlSurface) AddEnterHandler(h WlSurfaceEnterHandler) {
 	if h == nil {
 		return
@@ -3764,17 +3519,7 @@ type WlSurfaceLeaveHandler interface {
 	HandleWlSurfaceLeave(WlSurfaceLeaveEvent)
 }
 
-// AddLeaveHandler : surface leaves an output
-//
-// This is emitted whenever a surface's creation, movement, or resizing
-// results in it no longer having any part of it within the scanout region
-// of an output.
-//
-// Clients should not use the number of outputs the surface is on for frame
-// throttling purposes. The surface might be hidden even if no leave event
-// has been sent, and the compositor might expect new surface content
-// updates even if no enter event has been sent. The frame event should be
-// used instead.
+// AddLeaveHandler : adds handler for WlSurfaceLeaveEvent
 func (i *WlSurface) AddLeaveHandler(h WlSurfaceLeaveHandler) {
 	if h == nil {
 		return
@@ -3985,32 +3730,7 @@ type WlSeatCapabilitiesHandler interface {
 	HandleWlSeatCapabilities(WlSeatCapabilitiesEvent)
 }
 
-// AddCapabilitiesHandler : seat capabilities changed
-//
-// This is emitted whenever a seat gains or loses the pointer,
-// keyboard or touch capabilities.  The argument is a capability
-// enum containing the complete set of capabilities this seat has.
-//
-// When the pointer capability is added, a client may create a
-// wl_pointer object using the wl_seat.get_pointer request. This object
-// will receive pointer events until the capability is removed in the
-// future.
-//
-// When the pointer capability is removed, a client should destroy the
-// wl_pointer objects associated with the seat where the capability was
-// removed, using the wl_pointer.release request. No further pointer
-// events will be received on these objects.
-//
-// In some compositors, if a seat regains the pointer capability and a
-// client has a previously obtained wl_pointer object of version 4 or
-// less, that object may start sending pointer events again. This
-// behavior is considered a misinterpretation of the intended behavior
-// and must not be relied upon by the client. wl_pointer objects of
-// version 5 or later must not send events if created before the most
-// recent event notifying the client of an added pointer capability.
-//
-// The above behavior also applies to wl_keyboard and wl_touch with the
-// keyboard and touch capabilities, respectively.
+// AddCapabilitiesHandler : adds handler for WlSeatCapabilitiesEvent
 func (i *WlSeat) AddCapabilitiesHandler(h WlSeatCapabilitiesHandler) {
 	if h == nil {
 		return
@@ -4046,11 +3766,7 @@ type WlSeatNameHandler interface {
 	HandleWlSeatName(WlSeatNameEvent)
 }
 
-// AddNameHandler : unique identifier for this seat
-//
-// In a multiseat configuration this can be used by the client to help
-// identify which physical devices the seat represents. Based on
-// the seat configuration used by the compositor.
+// AddNameHandler : adds handler for WlSeatNameEvent
 func (i *WlSeat) AddNameHandler(h WlSeatNameHandler) {
 	if h == nil {
 		return
@@ -4194,10 +3910,10 @@ func NewWlPointer(ctx *Context) *WlPointer {
 // cursor ends, the current and pending input regions become
 // undefined, and the wl_surface is unmapped.
 //
-// serial: serial number of the enter event
-// surface: pointer surface
-// hotspotX: surface-local x coordinate
-// hotspotY: surface-local y coordinate
+//  serial: serial number of the enter event
+//  surface: pointer surface
+//  hotspotX: surface-local x coordinate
+//  hotspotY: surface-local y coordinate
 func (i *WlPointer) SetCursor(serial uint32, surface *WlSurface, hotspotX, hotspotY int32) error {
 	err := i.Context().SendRequest(i, 0, serial, surface, hotspotX, hotspotY)
 	return err
@@ -4291,14 +4007,7 @@ type WlPointerEnterHandler interface {
 	HandleWlPointerEnter(WlPointerEnterEvent)
 }
 
-// AddEnterHandler : enter event
-//
-// Notification that this seat's pointer is focused on a certain
-// surface.
-//
-// When a seat's focus enters a surface, the pointer image
-// is undefined and a client should respond to this event by setting
-// an appropriate pointer image with the set_cursor request.
+// AddEnterHandler : adds handler for WlPointerEnterEvent
 func (i *WlPointer) AddEnterHandler(h WlPointerEnterHandler) {
 	if h == nil {
 		return
@@ -4337,13 +4046,7 @@ type WlPointerLeaveHandler interface {
 	HandleWlPointerLeave(WlPointerLeaveEvent)
 }
 
-// AddLeaveHandler : leave event
-//
-// Notification that this seat's pointer is no longer focused on
-// a certain surface.
-//
-// The leave notification is sent before the enter notification
-// for the new focus.
+// AddLeaveHandler : adds handler for WlPointerLeaveEvent
 func (i *WlPointer) AddLeaveHandler(h WlPointerLeaveHandler) {
 	if h == nil {
 		return
@@ -4381,11 +4084,7 @@ type WlPointerMotionHandler interface {
 	HandleWlPointerMotion(WlPointerMotionEvent)
 }
 
-// AddMotionHandler : pointer motion event
-//
-// Notification of pointer location change. The arguments
-// surface_x and surface_y are the location relative to the
-// focused surface.
+// AddMotionHandler : adds handler for WlPointerMotionEvent
 func (i *WlPointer) AddMotionHandler(h WlPointerMotionHandler) {
 	if h == nil {
 		return
@@ -4435,22 +4134,7 @@ type WlPointerButtonHandler interface {
 	HandleWlPointerButton(WlPointerButtonEvent)
 }
 
-// AddButtonHandler : pointer button event
-//
-// Mouse button click and release notifications.
-//
-// The location of the click is given by the last motion or
-// enter event.
-// The time argument is a timestamp with millisecond
-// granularity, with an undefined base.
-//
-// The button is a button code as defined in the Linux kernel's
-// linux/input-event-codes.h header file, e.g. BTN_LEFT.
-//
-// Any 16-bit button code value is reserved for future additions to the
-// kernel's event code list. All other button codes above 0xFFFF are
-// currently undefined but may be used in future versions of this
-// protocol.
+// AddButtonHandler : adds handler for WlPointerButtonEvent
 func (i *WlPointer) AddButtonHandler(h WlPointerButtonHandler) {
 	if h == nil {
 		return
@@ -4501,24 +4185,7 @@ type WlPointerAxisHandler interface {
 	HandleWlPointerAxis(WlPointerAxisEvent)
 }
 
-// AddAxisHandler : axis event
-//
-// Scroll and other axis notifications.
-//
-// For scroll events (vertical and horizontal scroll axes), the
-// value parameter is the length of a vector along the specified
-// axis in a coordinate space identical to those of motion events,
-// representing a relative movement along the specified axis.
-//
-// For devices that support movements non-parallel to axes multiple
-// axis events will be emitted.
-//
-// When applicable, for example for touch pads, the server can
-// choose to emit scroll events where the motion vector is
-// equivalent to a motion event vector.
-//
-// When applicable, a client can transform its content relative to the
-// scroll distance.
+// AddAxisHandler : adds handler for WlPointerAxisEvent
 func (i *WlPointer) AddAxisHandler(h WlPointerAxisHandler) {
 	if h == nil {
 		return
@@ -4582,42 +4249,7 @@ type WlPointerFrameHandler interface {
 	HandleWlPointerFrame(WlPointerFrameEvent)
 }
 
-// AddFrameHandler : end of a pointer event sequence
-//
-// Indicates the end of a set of events that logically belong together.
-// A client is expected to accumulate the data in all events within the
-// frame before proceeding.
-//
-// All wl_pointer events before a wl_pointer.frame event belong
-// logically together. For example, in a diagonal scroll motion the
-// compositor will send an optional wl_pointer.axis_source event, two
-// wl_pointer.axis events (horizontal and vertical) and finally a
-// wl_pointer.frame event. The client may use this information to
-// calculate a diagonal vector for scrolling.
-//
-// When multiple wl_pointer.axis events occur within the same frame,
-// the motion vector is the combined motion of all events.
-// When a wl_pointer.axis and a wl_pointer.axis_stop event occur within
-// the same frame, this indicates that axis movement in one axis has
-// stopped but continues in the other axis.
-// When multiple wl_pointer.axis_stop events occur within the same
-// frame, this indicates that these axes stopped in the same instance.
-//
-// A wl_pointer.frame event is sent for every logical event group,
-// even if the group only contains a single wl_pointer event.
-// Specifically, a client may get a sequence: motion, frame, button,
-// frame, axis, frame, axis_stop, frame.
-//
-// The wl_pointer.enter and wl_pointer.leave events are logical events
-// generated by the compositor and not the hardware. These events are
-// also grouped by a wl_pointer.frame. When a pointer moves from one
-// surface to another, a compositor should group the
-// wl_pointer.leave event within the same wl_pointer.frame.
-// However, a client must not rely on wl_pointer.leave and
-// wl_pointer.enter being in the same wl_pointer.frame.
-// Compositor-specific policies may require the wl_pointer.leave and
-// wl_pointer.enter event being split across multiple wl_pointer.frame
-// groups.
+// AddFrameHandler : adds handler for WlPointerFrameEvent
 func (i *WlPointer) AddFrameHandler(h WlPointerFrameHandler) {
 	if h == nil {
 		return
@@ -4675,33 +4307,7 @@ type WlPointerAxisSourceHandler interface {
 	HandleWlPointerAxisSource(WlPointerAxisSourceEvent)
 }
 
-// AddAxisSourceHandler : axis source event
-//
-// Source information for scroll and other axes.
-//
-// This event does not occur on its own. It is sent before a
-// wl_pointer.frame event and carries the source information for
-// all events within that frame.
-//
-// The source specifies how this event was generated. If the source is
-// wl_pointer.axis_source.finger, a wl_pointer.axis_stop event will be
-// sent when the user lifts the finger off the device.
-//
-// If the source is wl_pointer.axis_source.wheel,
-// wl_pointer.axis_source.wheel_tilt or
-// wl_pointer.axis_source.continuous, a wl_pointer.axis_stop event may
-// or may not be sent. Whether a compositor sends an axis_stop event
-// for these sources is hardware-specific and implementation-dependent;
-// clients must not rely on receiving an axis_stop event for these
-// scroll sources and should treat scroll sequences from these scroll
-// sources as unterminated by default.
-//
-// This event is optional. If the source is unknown for a particular
-// axis event sequence, no event is sent.
-// Only one wl_pointer.axis_source event is permitted per frame.
-//
-// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
-// not guaranteed.
+// AddAxisSourceHandler : adds handler for WlPointerAxisSourceEvent
 func (i *WlPointer) AddAxisSourceHandler(h WlPointerAxisSourceHandler) {
 	if h == nil {
 		return
@@ -4749,22 +4355,7 @@ type WlPointerAxisStopHandler interface {
 	HandleWlPointerAxisStop(WlPointerAxisStopEvent)
 }
 
-// AddAxisStopHandler : axis stop event
-//
-// Stop notification for scroll and other axes.
-//
-// For some wl_pointer.axis_source types, a wl_pointer.axis_stop event
-// is sent to notify a client that the axis sequence has terminated.
-// This enables the client to implement kinetic scrolling.
-// See the wl_pointer.axis_source documentation for information on when
-// this event may be generated.
-//
-// Any wl_pointer.axis events with the same axis_source after this
-// event should be considered as the start of a new axis motion.
-//
-// The timestamp is to be interpreted identical to the timestamp in the
-// wl_pointer.axis event. The timestamp value may be the same as a
-// preceding wl_pointer.axis event.
+// AddAxisStopHandler : adds handler for WlPointerAxisStopEvent
 func (i *WlPointer) AddAxisStopHandler(h WlPointerAxisStopHandler) {
 	if h == nil {
 		return
@@ -4824,34 +4415,7 @@ type WlPointerAxisDiscreteHandler interface {
 	HandleWlPointerAxisDiscrete(WlPointerAxisDiscreteEvent)
 }
 
-// AddAxisDiscreteHandler : axis click event
-//
-// Discrete step information for scroll and other axes.
-//
-// This event carries the axis value of the wl_pointer.axis event in
-// discrete steps (e.g. mouse wheel clicks).
-//
-// This event does not occur on its own, it is coupled with a
-// wl_pointer.axis event that represents this axis value on a
-// continuous scale. The protocol guarantees that each axis_discrete
-// event is always followed by exactly one axis event with the same
-// axis number within the same wl_pointer.frame. Note that the protocol
-// allows for other events to occur between the axis_discrete and
-// its coupled axis event, including other axis_discrete or axis
-// events.
-//
-// This event is optional; continuous scrolling devices
-// like two-finger scrolling on touchpads do not have discrete
-// steps and do not generate this event.
-//
-// The discrete value carries the directional information. e.g. a value
-// of -2 is two steps towards the negative direction of this axis.
-//
-// The axis number is identical to the axis number in the associated
-// axis event.
-//
-// The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
-// not guaranteed.
+// AddAxisDiscreteHandler : adds handler for WlPointerAxisDiscreteEvent
 func (i *WlPointer) AddAxisDiscreteHandler(h WlPointerAxisDiscreteHandler) {
 	if h == nil {
 		return
@@ -5149,13 +4713,7 @@ type WlKeyboardKeymapHandler interface {
 	HandleWlKeyboardKeymap(WlKeyboardKeymapEvent)
 }
 
-// AddKeymapHandler : keyboard mapping
-//
-// This event provides a file descriptor to the client which can be
-// memory-mapped to provide a keyboard mapping description.
-//
-// From version 7 onwards, the fd must be mapped with MAP_PRIVATE by
-// the recipient, as MAP_SHARED may fail.
+// AddKeymapHandler : adds handler for WlKeyboardKeymapEvent
 func (i *WlKeyboard) AddKeymapHandler(h WlKeyboardKeymapHandler) {
 	if h == nil {
 		return
@@ -5195,13 +4753,7 @@ type WlKeyboardEnterHandler interface {
 	HandleWlKeyboardEnter(WlKeyboardEnterEvent)
 }
 
-// AddEnterHandler : enter event
-//
-// Notification that this seat's keyboard focus is on a certain
-// surface.
-//
-// The compositor must send the wl_keyboard.modifiers event after this
-// event.
+// AddEnterHandler : adds handler for WlKeyboardEnterEvent
 func (i *WlKeyboard) AddEnterHandler(h WlKeyboardEnterHandler) {
 	if h == nil {
 		return
@@ -5243,16 +4795,7 @@ type WlKeyboardLeaveHandler interface {
 	HandleWlKeyboardLeave(WlKeyboardLeaveEvent)
 }
 
-// AddLeaveHandler : leave event
-//
-// Notification that this seat's keyboard focus is no longer on
-// a certain surface.
-//
-// The leave notification is sent before the enter notification
-// for the new focus.
-//
-// After this event client must assume that all keys, including modifiers,
-// are lifted and also it must stop key repeating if there's some going on.
+// AddLeaveHandler : adds handler for WlKeyboardLeaveEvent
 func (i *WlKeyboard) AddLeaveHandler(h WlKeyboardLeaveHandler) {
 	if h == nil {
 		return
@@ -5297,17 +4840,7 @@ type WlKeyboardKeyHandler interface {
 	HandleWlKeyboardKey(WlKeyboardKeyEvent)
 }
 
-// AddKeyHandler : key event
-//
-// A key was pressed or released.
-// The time argument is a timestamp with millisecond
-// granularity, with an undefined base.
-//
-// The key is a platform-specific key code that can be interpreted
-// by feeding it to the keyboard mapping (see the keymap event).
-//
-// If this event produces a change in modifiers, then the resulting
-// wl_keyboard.modifiers event must be sent after this event.
+// AddKeyHandler : adds handler for WlKeyboardKeyEvent
 func (i *WlKeyboard) AddKeyHandler(h WlKeyboardKeyHandler) {
 	if h == nil {
 		return
@@ -5346,10 +4879,7 @@ type WlKeyboardModifiersHandler interface {
 	HandleWlKeyboardModifiers(WlKeyboardModifiersEvent)
 }
 
-// AddModifiersHandler : modifier and group state
-//
-// Notifies clients that the modifier and/or group state has
-// changed, and it should update its local state.
+// AddModifiersHandler : adds handler for WlKeyboardModifiersEvent
 func (i *WlKeyboard) AddModifiersHandler(h WlKeyboardModifiersHandler) {
 	if h == nil {
 		return
@@ -5395,20 +4925,7 @@ type WlKeyboardRepeatInfoHandler interface {
 	HandleWlKeyboardRepeatInfo(WlKeyboardRepeatInfoEvent)
 }
 
-// AddRepeatInfoHandler : repeat rate and delay
-//
-// Informs the client about the keyboard's repeat rate and delay.
-//
-// This event is sent as soon as the wl_keyboard object has been created,
-// and is guaranteed to be received by the client before any key press
-// event.
-//
-// Negative values for either rate or delay are illegal. A rate of zero
-// will disable any repeating (regardless of the value of delay).
-//
-// This event can be sent later on as well with a new value if necessary,
-// so clients should continue listening for the event past the creation
-// of wl_keyboard.
+// AddRepeatInfoHandler : adds handler for WlKeyboardRepeatInfoEvent
 func (i *WlKeyboard) AddRepeatInfoHandler(h WlKeyboardRepeatInfoHandler) {
 	if h == nil {
 		return
@@ -5639,12 +5156,7 @@ type WlTouchDownHandler interface {
 	HandleWlTouchDown(WlTouchDownEvent)
 }
 
-// AddDownHandler : touch down event and beginning of a touch sequence
-//
-// A new touch point has appeared on the surface. This touch point is
-// assigned a unique ID. Future events from this touch point reference
-// this ID. The ID ceases to be valid after a touch up event and may be
-// reused in the future.
+// AddDownHandler : adds handler for WlTouchDownEvent
 func (i *WlTouch) AddDownHandler(h WlTouchDownHandler) {
 	if h == nil {
 		return
@@ -5682,11 +5194,7 @@ type WlTouchUpHandler interface {
 	HandleWlTouchUp(WlTouchUpEvent)
 }
 
-// AddUpHandler : end of a touch event sequence
-//
-// The touch point has disappeared. No further events will be sent for
-// this touch point and the touch point's ID is released and may be
-// reused in a future touch down event.
+// AddUpHandler : adds handler for WlTouchUpEvent
 func (i *WlTouch) AddUpHandler(h WlTouchUpHandler) {
 	if h == nil {
 		return
@@ -5723,9 +5231,7 @@ type WlTouchMotionHandler interface {
 	HandleWlTouchMotion(WlTouchMotionEvent)
 }
 
-// AddMotionHandler : update of touch point coordinates
-//
-// A touch point has changed coordinates.
+// AddMotionHandler : adds handler for WlTouchMotionEvent
 func (i *WlTouch) AddMotionHandler(h WlTouchMotionHandler) {
 	if h == nil {
 		return
@@ -5763,16 +5269,7 @@ type WlTouchFrameHandler interface {
 	HandleWlTouchFrame(WlTouchFrameEvent)
 }
 
-// AddFrameHandler : end of touch frame event
-//
-// Indicates the end of a set of events that logically belong together.
-// A client is expected to accumulate the data in all events within the
-// frame before proceeding.
-//
-// A wl_touch.frame terminates at least one event but otherwise no
-// guarantee is provided about the set of events within a frame. A client
-// must assume that any state not updated in a frame is unchanged from the
-// previously known state.
+// AddFrameHandler : adds handler for WlTouchFrameEvent
 func (i *WlTouch) AddFrameHandler(h WlTouchFrameHandler) {
 	if h == nil {
 		return
@@ -5808,14 +5305,7 @@ type WlTouchCancelHandler interface {
 	HandleWlTouchCancel(WlTouchCancelEvent)
 }
 
-// AddCancelHandler : touch session cancelled
-//
-// Sent if the compositor decides the touch stream is a global
-// gesture. No further events are sent to the clients from that
-// particular gesture. Touch cancellation applies to all touch points
-// currently active on this client's surface. The client is
-// responsible for finalizing the touch points, future touch points on
-// this surface may reuse the touch point ID.
+// AddCancelHandler : adds handler for WlTouchCancelEvent
 func (i *WlTouch) AddCancelHandler(h WlTouchCancelHandler) {
 	if h == nil {
 		return
@@ -5875,33 +5365,7 @@ type WlTouchShapeHandler interface {
 	HandleWlTouchShape(WlTouchShapeEvent)
 }
 
-// AddShapeHandler : update shape of touch point
-//
-// Sent when a touchpoint has changed its shape.
-//
-// This event does not occur on its own. It is sent before a
-// wl_touch.frame event and carries the new shape information for
-// any previously reported, or new touch points of that frame.
-//
-// Other events describing the touch point such as wl_touch.down,
-// wl_touch.motion or wl_touch.orientation may be sent within the
-// same wl_touch.frame. A client should treat these events as a single
-// logical touch point update. The order of wl_touch.shape,
-// wl_touch.orientation and wl_touch.motion is not guaranteed.
-// A wl_touch.down event is guaranteed to occur before the first
-// wl_touch.shape event for this touch ID but both events may occur within
-// the same wl_touch.frame.
-//
-// A touchpoint shape is approximated by an ellipse through the major and
-// minor axis length. The major axis length describes the longer diameter
-// of the ellipse, while the minor axis length describes the shorter
-// diameter. Major and minor are orthogonal and both are specified in
-// surface-local coordinates. The center of the ellipse is always at the
-// touchpoint location as reported by wl_touch.down or wl_touch.move.
-//
-// This event is only sent by the compositor if the touch device supports
-// shape reports. The client has to make reasonable assumptions about the
-// shape if it did not receive this event.
+// AddShapeHandler : adds handler for WlTouchShapeEvent
 func (i *WlTouch) AddShapeHandler(h WlTouchShapeHandler) {
 	if h == nil {
 		return
@@ -5958,31 +5422,7 @@ type WlTouchOrientationHandler interface {
 	HandleWlTouchOrientation(WlTouchOrientationEvent)
 }
 
-// AddOrientationHandler : update orientation of touch point
-//
-// Sent when a touchpoint has changed its orientation.
-//
-// This event does not occur on its own. It is sent before a
-// wl_touch.frame event and carries the new shape information for
-// any previously reported, or new touch points of that frame.
-//
-// Other events describing the touch point such as wl_touch.down,
-// wl_touch.motion or wl_touch.shape may be sent within the
-// same wl_touch.frame. A client should treat these events as a single
-// logical touch point update. The order of wl_touch.shape,
-// wl_touch.orientation and wl_touch.motion is not guaranteed.
-// A wl_touch.down event is guaranteed to occur before the first
-// wl_touch.orientation event for this touch ID but both events may occur
-// within the same wl_touch.frame.
-//
-// The orientation describes the clockwise angle of a touchpoint's major
-// axis to the positive surface y-axis and is normalized to the -180 to
-// +180 degree range. The granularity of orientation depends on the touch
-// device, some devices only support binary rotation values between 0 and
-// 90 degrees.
-//
-// This event is only sent by the compositor if the touch device supports
-// orientation reports.
+// AddOrientationHandler : adds handler for WlTouchOrientationEvent
 func (i *WlTouch) AddOrientationHandler(h WlTouchOrientationHandler) {
 	if h == nil {
 		return
@@ -6299,21 +5739,7 @@ type WlOutputGeometryHandler interface {
 	HandleWlOutputGeometry(WlOutputGeometryEvent)
 }
 
-// AddGeometryHandler : properties of the output
-//
-// The geometry event describes geometric properties of the output.
-// The event is sent when binding to the output object and whenever
-// any of the properties change.
-//
-// The physical size can be set to zero if it doesn't make sense for this
-// output (e.g. for projectors or virtual outputs).
-//
-// Note: wl_output only advertises partial information about the output
-// position and identification. Some compositors, for instance those not
-// implementing a desktop-style output layout or those exposing virtual
-// outputs, might fake this information. Instead of using x and y, clients
-// should use xdg_output.logical_position. Instead of using make and model,
-// clients should use xdg_output.name and xdg_output.description.
+// AddGeometryHandler : adds handler for WlOutputGeometryEvent
 func (i *WlOutput) AddGeometryHandler(h WlOutputGeometryHandler) {
 	if h == nil {
 		return
@@ -6379,38 +5805,7 @@ type WlOutputModeHandler interface {
 	HandleWlOutputMode(WlOutputModeEvent)
 }
 
-// AddModeHandler : advertise available modes for the output
-//
-// The mode event describes an available mode for the output.
-//
-// The event is sent when binding to the output object and there
-// will always be one mode, the current mode.  The event is sent
-// again if an output changes mode, for the mode that is now
-// current.  In other words, the current mode is always the last
-// mode that was received with the current flag set.
-//
-// Non-current modes are deprecated. A compositor can decide to only
-// advertise the current mode and never send other modes. Clients
-// should not rely on non-current modes.
-//
-// The size of a mode is given in physical hardware units of
-// the output device. This is not necessarily the same as
-// the output size in the global compositor space. For instance,
-// the output may be scaled, as described in wl_output.scale,
-// or transformed, as described in wl_output.transform. Clients
-// willing to retrieve the output size in the global compositor
-// space should use xdg_output.logical_size instead.
-//
-// The vertical refresh rate can be set to zero if it doesn't make
-// sense for this output (e.g. for virtual outputs).
-//
-// Clients should not use the refresh rate to schedule frames. Instead,
-// they should use the wl_surface.frame event or the presentation-time
-// protocol.
-//
-// Note: this information is not always meaningful for all outputs. Some
-// compositors, such as those exposing virtual outputs, might fake the
-// refresh rate or the size.
+// AddModeHandler : adds handler for WlOutputModeEvent
 func (i *WlOutput) AddModeHandler(h WlOutputModeHandler) {
 	if h == nil {
 		return
@@ -6445,13 +5840,7 @@ type WlOutputDoneHandler interface {
 	HandleWlOutputDone(WlOutputDoneEvent)
 }
 
-// AddDoneHandler : sent all information about output
-//
-// This event is sent after all other properties have been
-// sent after binding to the output object and after any
-// other property changes done after that. This allows
-// changes to the output properties to be seen as
-// atomic, even if they happen via multiple events.
+// AddDoneHandler : adds handler for WlOutputDoneEvent
 func (i *WlOutput) AddDoneHandler(h WlOutputDoneHandler) {
 	if h == nil {
 		return
@@ -6502,26 +5891,7 @@ type WlOutputScaleHandler interface {
 	HandleWlOutputScale(WlOutputScaleEvent)
 }
 
-// AddScaleHandler : output scaling properties
-//
-// This event contains scaling geometry information
-// that is not in the geometry event. It may be sent after
-// binding the output object or if the output scale changes
-// later. If it is not sent, the client should assume a
-// scale of 1.
-//
-// A scale larger than 1 means that the compositor will
-// automatically scale surface buffers by this amount
-// when rendering. This is used for very high resolution
-// displays where applications rendering at the native
-// resolution would be too small to be legible.
-//
-// It is intended that scaling aware clients track the
-// current output of a surface, and if it is on a scaled
-// output it should use wl_surface.set_buffer_scale with
-// the scale of the output. That way the compositor can
-// avoid scaling the surface, and the client can supply
-// a higher detail image.
+// AddScaleHandler : adds handler for WlOutputScaleEvent
 func (i *WlOutput) AddScaleHandler(h WlOutputScaleHandler) {
 	if h == nil {
 		return
@@ -6676,10 +6046,10 @@ func (i *WlRegion) Destroy() error {
 //
 // Add the specified rectangle to the region.
 //
-// x: region-local x coordinate
-// y: region-local y coordinate
-// width: rectangle width
-// height: rectangle height
+//  x: region-local x coordinate
+//  y: region-local y coordinate
+//  width: rectangle width
+//  height: rectangle height
 func (i *WlRegion) Add(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 1, x, y, width, height)
 	return err
@@ -6689,10 +6059,10 @@ func (i *WlRegion) Add(x, y, width, height int32) error {
 //
 // Subtract the specified rectangle from the region.
 //
-// x: region-local x coordinate
-// y: region-local y coordinate
-// width: rectangle width
-// height: rectangle height
+//  x: region-local x coordinate
+//  y: region-local y coordinate
+//  width: rectangle width
+//  height: rectangle height
 func (i *WlRegion) Subtract(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 2, x, y, width, height)
 	return err
@@ -6779,8 +6149,8 @@ func (i *WlSubcompositor) Destroy() error {
 // This request modifies the behaviour of wl_surface.commit request on
 // the sub-surface, see the documentation on wl_subsurface interface.
 //
-// surface: the surface to be turned into a sub-surface
-// parent: the parent surface
+//  surface: the surface to be turned into a sub-surface
+//  parent: the parent surface
 func (i *WlSubcompositor) GetSubsurface(surface, parent *WlSurface) (*WlSubsurface, error) {
 	id := NewWlSubsurface(i.Context())
 	err := i.Context().SendRequest(i, 1, id, surface, parent)
@@ -6937,8 +6307,8 @@ func (i *WlSubsurface) Destroy() error {
 //
 // The initial position is 0, 0.
 //
-// x: x coordinate in the parent surface
-// y: y coordinate in the parent surface
+//  x: x coordinate in the parent surface
+//  y: y coordinate in the parent surface
 func (i *WlSubsurface) SetPosition(x, y int32) error {
 	err := i.Context().SendRequest(i, 1, x, y)
 	return err
@@ -6962,7 +6332,7 @@ func (i *WlSubsurface) SetPosition(x, y int32) error {
 // A new sub-surface is initially added as the top-most in the stack
 // of its siblings and parent.
 //
-// sibling: the reference surface
+//  sibling: the reference surface
 func (i *WlSubsurface) PlaceAbove(sibling *WlSurface) error {
 	err := i.Context().SendRequest(i, 2, sibling)
 	return err
@@ -6973,7 +6343,7 @@ func (i *WlSubsurface) PlaceAbove(sibling *WlSurface) error {
 // The sub-surface is placed just below the reference surface.
 // See wl_subsurface.place_above.
 //
-// sibling: the reference surface
+//  sibling: the reference surface
 func (i *WlSubsurface) PlaceBelow(sibling *WlSurface) error {
 	err := i.Context().SendRequest(i, 3, sibling)
 	return err

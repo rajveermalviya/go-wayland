@@ -316,7 +316,7 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 		argNameLower := toLowerCamel(arg.Name)
 
 		if arg.Summary != "" && arg.Type != "new_id" {
-			fmt.Fprintf(w, "// %s: %s\n", argNameLower, doc.Synopsis(arg.Summary))
+			fmt.Fprintf(w, "//  %s: %s\n", argNameLower, doc.Synopsis(arg.Summary))
 		}
 	}
 	fmt.Fprintf(w, "func (i *%s) %s(%s) (%s) {\n", ifaceName, requestName, strings.Join(params, ","), strings.Join(returnTypes, ","))
@@ -404,8 +404,7 @@ func writeEvent(w io.Writer, ifaceName string, e Event) {
 	fmt.Fprintf(w, "}\n")
 
 	// Add handler
-	fmt.Fprintf(w, "// Add%sHandler : %s\n", eventName, doc.Synopsis(e.Description.Summary))
-	fmt.Fprint(w, comment(e.Description.Text))
+	fmt.Fprintf(w, "// Add%sHandler : adds handler for %s%sEvent\n", eventName, ifaceName, eventName)
 	fmt.Fprintf(w, "func (i *%s) Add%sHandler(h %s%sHandler) {\n", ifaceName, eventName, ifaceName, eventName)
 	fmt.Fprintf(w, "if h == nil {\n")
 	fmt.Fprintf(w, "return\n")

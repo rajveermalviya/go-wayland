@@ -211,20 +211,7 @@ type ZwpLinuxDmabufV1FormatHandler interface {
 	HandleZwpLinuxDmabufV1Format(ZwpLinuxDmabufV1FormatEvent)
 }
 
-// AddFormatHandler : supported buffer format
-//
-// This event advertises one buffer format that the server supports.
-// All the supported formats are advertised once when the client
-// binds to this interface. A roundtrip after binding guarantees
-// that the client has received all supported formats.
-//
-// For the definition of the format codes, see the
-// zwp_linux_buffer_params_v1::create request.
-//
-// Warning: the 'format' event is likely to be deprecated and replaced
-// with the 'modifier' event introduced in zwp_linux_dmabuf_v1
-// version 3, described below. Please refrain from using the information
-// received from this event.
+// AddFormatHandler : adds handler for ZwpLinuxDmabufV1FormatEvent
 func (i *ZwpLinuxDmabufV1) AddFormatHandler(h ZwpLinuxDmabufV1FormatHandler) {
 	if h == nil {
 		return
@@ -275,24 +262,7 @@ type ZwpLinuxDmabufV1ModifierHandler interface {
 	HandleZwpLinuxDmabufV1Modifier(ZwpLinuxDmabufV1ModifierEvent)
 }
 
-// AddModifierHandler : supported buffer format modifier
-//
-// This event advertises the formats that the server supports, along with
-// the modifiers supported for each format. All the supported modifiers
-// for all the supported formats are advertised once when the client
-// binds to this interface. A roundtrip after binding guarantees that
-// the client has received all supported format-modifier pairs.
-//
-// For legacy support, DRM_FORMAT_MOD_INVALID (that is, modifier_hi ==
-// 0x00ffffff and modifier_lo == 0xffffffff) is allowed in this event.
-// It indicates that the server can support the format with an implicit
-// modifier. When a plane has DRM_FORMAT_MOD_INVALID as its modifier, it
-// is as if no explicit modifier is specified. The effective modifier
-// will be derived from the dmabuf.
-//
-// For the definition of the format and modifier codes, see the
-// zwp_linux_buffer_params_v1::create and zwp_linux_buffer_params_v1::add
-// requests.
+// AddModifierHandler : adds handler for ZwpLinuxDmabufV1ModifierEvent
 func (i *ZwpLinuxDmabufV1) AddModifierHandler(h ZwpLinuxDmabufV1ModifierHandler) {
 	if h == nil {
 		return
@@ -440,12 +410,12 @@ func (i *ZwpLinuxBufferParamsV1) Destroy() error {
 // The error PLANE_SET is raised if attempting to set a plane that
 // was already set.
 //
-// fd: dmabuf fd
-// planeIDx: plane index
-// offset: offset in bytes
-// stride: stride in bytes
-// modifierHi: high 32 bits of layout modifier
-// modifierLo: low 32 bits of layout modifier
+//  fd: dmabuf fd
+//  planeIDx: plane index
+//  offset: offset in bytes
+//  stride: stride in bytes
+//  modifierHi: high 32 bits of layout modifier
+//  modifierLo: low 32 bits of layout modifier
 func (i *ZwpLinuxBufferParamsV1) Add(fd uintptr, planeIDx, offset, stride, modifierHi, modifierLo uint32) error {
 	err := i.Context().SendRequest(i, 1, fd, planeIDx, offset, stride, modifierHi, modifierLo)
 	return err
@@ -513,10 +483,10 @@ func (i *ZwpLinuxBufferParamsV1) Add(fd uintptr, planeIDx, offset, stride, modif
 // It is not mandatory to issue 'create'. If a client wants to
 // cancel the buffer creation, it can just destroy this object.
 //
-// width: base plane width in pixels
-// height: base plane height in pixels
-// format: DRM_FORMAT code
-// flags: see enum flags
+//  width: base plane width in pixels
+//  height: base plane height in pixels
+//  format: DRM_FORMAT code
+//  flags: see enum flags
 func (i *ZwpLinuxBufferParamsV1) Create(width, height int32, format, flags uint32) error {
 	err := i.Context().SendRequest(i, 2, width, height, format, flags)
 	return err
@@ -548,10 +518,10 @@ func (i *ZwpLinuxBufferParamsV1) Create(width, height int32, format, flags uint3
 // This takes the same arguments as a 'create' request, and obeys the
 // same restrictions.
 //
-// width: base plane width in pixels
-// height: base plane height in pixels
-// format: DRM_FORMAT code
-// flags: see enum flags
+//  width: base plane width in pixels
+//  height: base plane height in pixels
+//  format: DRM_FORMAT code
+//  flags: see enum flags
 func (i *ZwpLinuxBufferParamsV1) CreateImmed(width, height int32, format, flags uint32) (*client.WlBuffer, error) {
 	bufferID := client.NewWlBuffer(i.Context())
 	err := i.Context().SendRequest(i, 3, bufferID, width, height, format, flags)
@@ -603,13 +573,7 @@ type ZwpLinuxBufferParamsV1CreatedHandler interface {
 	HandleZwpLinuxBufferParamsV1Created(ZwpLinuxBufferParamsV1CreatedEvent)
 }
 
-// AddCreatedHandler : buffer creation succeeded
-//
-// This event indicates that the attempted buffer creation was
-// successful. It provides the new wl_buffer referencing the dmabuf(s).
-//
-// Upon receiving this event, the client should destroy the
-// zlinux_dmabuf_params object.
+// AddCreatedHandler : adds handler for ZwpLinuxBufferParamsV1CreatedEvent
 func (i *ZwpLinuxBufferParamsV1) AddCreatedHandler(h ZwpLinuxBufferParamsV1CreatedHandler) {
 	if h == nil {
 		return
@@ -645,14 +609,7 @@ type ZwpLinuxBufferParamsV1FailedHandler interface {
 	HandleZwpLinuxBufferParamsV1Failed(ZwpLinuxBufferParamsV1FailedEvent)
 }
 
-// AddFailedHandler : buffer creation failed
-//
-// This event indicates that the attempted buffer creation has
-// failed. It usually means that one of the dmabuf constraints
-// has not been fulfilled.
-//
-// Upon receiving this event, the client should destroy the
-// zlinux_buffer_params object.
+// AddFailedHandler : adds handler for ZwpLinuxBufferParamsV1FailedEvent
 func (i *ZwpLinuxBufferParamsV1) AddFailedHandler(h ZwpLinuxBufferParamsV1FailedHandler) {
 	if h == nil {
 		return

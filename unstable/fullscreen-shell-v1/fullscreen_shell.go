@@ -275,16 +275,7 @@ type ZwpFullscreenShellV1CapabilityHandler interface {
 	HandleZwpFullscreenShellV1Capability(ZwpFullscreenShellV1CapabilityEvent)
 }
 
-// AddCapabilityHandler : advertises a capability of the compositor
-//
-// Advertises a single capability of the compositor.
-//
-// When the wl_fullscreen_shell interface is bound, this event is emitted
-// once for each capability advertised.  Valid capabilities are given by
-// the wl_fullscreen_shell.capability enum.  If clients want to take
-// advantage of any of these capabilities, they should use a
-// wl_display.sync request immediately after binding to ensure that they
-// receive all the capability events.
+// AddCapabilityHandler : adds handler for ZwpFullscreenShellV1CapabilityEvent
 func (i *ZwpFullscreenShellV1) AddCapabilityHandler(h ZwpFullscreenShellV1CapabilityHandler) {
 	if h == nil {
 		return
@@ -362,14 +353,7 @@ type ZwpFullscreenShellModeFeedbackV1ModeSuccessfulHandler interface {
 	HandleZwpFullscreenShellModeFeedbackV1ModeSuccessful(ZwpFullscreenShellModeFeedbackV1ModeSuccessfulEvent)
 }
 
-// AddModeSuccessfulHandler : mode switch succeeded
-//
-// This event indicates that the attempted mode switch operation was
-// successful.  A surface of the size requested in the mode switch
-// will fill the output without scaling.
-//
-// Upon receiving this event, the client should destroy the
-// wl_fullscreen_shell_mode_feedback object.
+// AddModeSuccessfulHandler : adds handler for ZwpFullscreenShellModeFeedbackV1ModeSuccessfulEvent
 func (i *ZwpFullscreenShellModeFeedbackV1) AddModeSuccessfulHandler(h ZwpFullscreenShellModeFeedbackV1ModeSuccessfulHandler) {
 	if h == nil {
 		return
@@ -405,14 +389,7 @@ type ZwpFullscreenShellModeFeedbackV1ModeFailedHandler interface {
 	HandleZwpFullscreenShellModeFeedbackV1ModeFailed(ZwpFullscreenShellModeFeedbackV1ModeFailedEvent)
 }
 
-// AddModeFailedHandler : mode switch failed
-//
-// This event indicates that the attempted mode switch operation
-// failed.  This may be because the requested output mode is not
-// possible or it may mean that the compositor does not want to allow it.
-//
-// Upon receiving this event, the client should destroy the
-// wl_fullscreen_shell_mode_feedback object.
+// AddModeFailedHandler : adds handler for ZwpFullscreenShellModeFeedbackV1ModeFailedEvent
 func (i *ZwpFullscreenShellModeFeedbackV1) AddModeFailedHandler(h ZwpFullscreenShellModeFeedbackV1ModeFailedHandler) {
 	if h == nil {
 		return
@@ -448,14 +425,7 @@ type ZwpFullscreenShellModeFeedbackV1PresentCancelledHandler interface {
 	HandleZwpFullscreenShellModeFeedbackV1PresentCancelled(ZwpFullscreenShellModeFeedbackV1PresentCancelledEvent)
 }
 
-// AddPresentCancelledHandler : mode switch cancelled
-//
-// This event indicates that the attempted mode switch operation was
-// cancelled.  Most likely this is because the client requested a
-// second mode switch before the first one completed.
-//
-// Upon receiving this event, the client should destroy the
-// wl_fullscreen_shell_mode_feedback object.
+// AddPresentCancelledHandler : adds handler for ZwpFullscreenShellModeFeedbackV1PresentCancelledEvent
 func (i *ZwpFullscreenShellModeFeedbackV1) AddPresentCancelledHandler(h ZwpFullscreenShellModeFeedbackV1PresentCancelledHandler) {
 	if h == nil {
 		return

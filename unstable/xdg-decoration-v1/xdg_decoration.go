@@ -177,7 +177,7 @@ func (i *ZxdgToplevelDecorationV1) Destroy() error {
 // make sure not to send multiple successive set_mode requests with the
 // same decoration mode.
 //
-// mode: the decoration mode
+//  mode: the decoration mode
 func (i *ZxdgToplevelDecorationV1) SetMode(mode uint32) error {
 	err := i.Context().SendRequest(i, 1, mode)
 	return err
@@ -232,15 +232,7 @@ type ZxdgToplevelDecorationV1ConfigureHandler interface {
 	HandleZxdgToplevelDecorationV1Configure(ZxdgToplevelDecorationV1ConfigureEvent)
 }
 
-// AddConfigureHandler : suggest a surface change
-//
-// The configure event asks the client to change its decoration mode. The
-// configured state should not be applied immediately. Clients must send an
-// ack_configure in response to this event. See xdg_surface.configure and
-// xdg_surface.ack_configure for details.
-//
-// A configure event can be sent at any time. The specified mode must be
-// obeyed by the client.
+// AddConfigureHandler : adds handler for ZxdgToplevelDecorationV1ConfigureEvent
 func (i *ZxdgToplevelDecorationV1) AddConfigureHandler(h ZxdgToplevelDecorationV1ConfigureHandler) {
 	if h == nil {
 		return

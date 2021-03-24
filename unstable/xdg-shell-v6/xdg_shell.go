@@ -110,7 +110,7 @@ func (i *ZxdgShellV6) GetXdgSurface(surface *client.WlSurface) (*ZxdgSurfaceV6, 
 // A client must respond to a ping event with a pong request or
 // the client may be deemed unresponsive. See xdg_shell.ping.
 //
-// serial: serial of the ping event
+//  serial: serial of the ping event
 func (i *ZxdgShellV6) Pong(serial uint32) error {
 	err := i.Context().SendRequest(i, 3, serial)
 	return err
@@ -153,19 +153,7 @@ type ZxdgShellV6PingHandler interface {
 	HandleZxdgShellV6Ping(ZxdgShellV6PingEvent)
 }
 
-// AddPingHandler : check if the client is alive
-//
-// The ping event asks the client if it's still alive. Pass the
-// serial specified in the event back to the compositor by sending
-// a "pong" request back with the specified serial. See xdg_shell.ping.
-//
-// Compositors can use this to determine if the client is still
-// alive. It's unspecified what will happen if the client doesn't
-// respond to the ping request, or in what timeframe. Clients should
-// try to respond in a reasonable amount of time.
-//
-// A compositor is free to ping in any way it wants, but a client must
-// always respond to any xdg_shell object it created.
+// AddPingHandler : adds handler for ZxdgShellV6PingEvent
 func (i *ZxdgShellV6) AddPingHandler(h ZxdgShellV6PingHandler) {
 	if h == nil {
 		return
@@ -283,8 +271,8 @@ func (i *ZxdgPositionerV6) Destroy() error {
 //
 // If a zero or negative size is set the invalid_input error is raised.
 //
-// width: width of positioned rectangle
-// height: height of positioned rectangle
+//  width: width of positioned rectangle
+//  height: height of positioned rectangle
 func (i *ZxdgPositionerV6) SetSize(width, height int32) error {
 	err := i.Context().SendRequest(i, 1, width, height)
 	return err
@@ -303,10 +291,10 @@ func (i *ZxdgPositionerV6) SetSize(width, height int32) error {
 //
 // If a zero or negative size is set the invalid_input error is raised.
 //
-// x: x position of anchor rectangle
-// y: y position of anchor rectangle
-// width: width of anchor rectangle
-// height: height of anchor rectangle
+//  x: x position of anchor rectangle
+//  y: y position of anchor rectangle
+//  width: width of anchor rectangle
+//  height: height of anchor rectangle
 func (i *ZxdgPositionerV6) SetAnchorRect(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 2, x, y, width, height)
 	return err
@@ -325,7 +313,7 @@ func (i *ZxdgPositionerV6) SetAnchorRect(x, y, width, height int32) error {
 // If two parallel anchor edges are specified (e.g. 'left' and 'right'),
 // the invalid_input error is raised.
 //
-// anchor: bit mask of anchor edges
+//  anchor: bit mask of anchor edges
 func (i *ZxdgPositionerV6) SetAnchor(anchor uint32) error {
 	err := i.Context().SendRequest(i, 3, anchor)
 	return err
@@ -343,7 +331,7 @@ func (i *ZxdgPositionerV6) SetAnchor(anchor uint32) error {
 // If two parallel gravities are specified (e.g. 'left' and 'right'), the
 // invalid_input error is raised.
 //
-// gravity: bit mask of gravity directions
+//  gravity: bit mask of gravity directions
 func (i *ZxdgPositionerV6) SetGravity(gravity uint32) error {
 	err := i.Context().SendRequest(i, 4, gravity)
 	return err
@@ -365,7 +353,7 @@ func (i *ZxdgPositionerV6) SetGravity(gravity uint32) error {
 //
 // The default adjustment is none.
 //
-// constraintAdjustment: bit mask of constraint adjustments
+//  constraintAdjustment: bit mask of constraint adjustments
 func (i *ZxdgPositionerV6) SetConstraintAdjustment(constraintAdjustment uint32) error {
 	err := i.Context().SendRequest(i, 5, constraintAdjustment)
 	return err
@@ -385,8 +373,8 @@ func (i *ZxdgPositionerV6) SetConstraintAdjustment(constraintAdjustment uint32) 
 // element, while aligning the user interface element of the parent surface
 // with some user interface element placed somewhere in the popup surface.
 //
-// x: surface position x offset
-// y: surface position y offset
+//  x: surface position x offset
+//  y: surface position y offset
 func (i *ZxdgPositionerV6) SetOffset(x, y int32) error {
 	err := i.Context().SendRequest(i, 6, x, y)
 	return err
@@ -617,7 +605,7 @@ func (i *ZxdgSurfaceV6) SetWindowGeometry(x, y, width, height int32) error {
 // only the last request sent before a commit indicates which configure
 // event the client really is responding to.
 //
-// serial: the serial from the configure event
+//  serial: the serial from the configure event
 func (i *ZxdgSurfaceV6) AckConfigure(serial uint32) error {
 	err := i.Context().SendRequest(i, 4, serial)
 	return err
@@ -656,24 +644,7 @@ type ZxdgSurfaceV6ConfigureHandler interface {
 	HandleZxdgSurfaceV6Configure(ZxdgSurfaceV6ConfigureEvent)
 }
 
-// AddConfigureHandler : suggest a surface change
-//
-// The configure event marks the end of a configure sequence. A configure
-// sequence is a set of one or more events configuring the state of the
-// xdg_surface, including the final xdg_surface.configure event.
-//
-// Where applicable, xdg_surface surface roles will during a configure
-// sequence extend this event as a latched state sent as events before the
-// xdg_surface.configure event. Such events should be considered to make up
-// a set of atomically applied configuration states, where the
-// xdg_surface.configure commits the accumulated state.
-//
-// Clients should arrange their surface for the new states, and then send
-// an ack_configure request with the serial sent in this configure event at
-// some point before committing the new surface.
-//
-// If the client receives multiple configure events before it can respond
-// to one, it is free to discard all but the last event it received.
+// AddConfigureHandler : adds handler for ZxdgSurfaceV6ConfigureEvent
 func (i *ZxdgSurfaceV6) AddConfigureHandler(h ZxdgSurfaceV6ConfigureHandler) {
 	if h == nil {
 		return
@@ -832,10 +803,10 @@ func (i *ZxdgToplevelV6) SetAppID(appID string) error {
 // This request must be used in response to some sort of user action
 // like a button press, key press, or touch down event.
 //
-// seat: the wl_seat of the user event
-// serial: the serial of the user event
-// x: the x position to pop up the window menu at
-// y: the y position to pop up the window menu at
+//  seat: the wl_seat of the user event
+//  serial: the serial of the user event
+//  x: the x position to pop up the window menu at
+//  y: the y position to pop up the window menu at
 func (i *ZxdgToplevelV6) ShowWindowMenu(seat *client.WlSeat, serial uint32, x, y int32) error {
 	err := i.Context().SendRequest(i, 4, seat, serial, x, y)
 	return err
@@ -860,8 +831,8 @@ func (i *ZxdgToplevelV6) ShowWindowMenu(seat *client.WlSeat, serial uint32, x, y
 // updating a pointer cursor, during the move. There is no guarantee
 // that the device focus will return when the move is completed.
 //
-// seat: the wl_seat of the user event
-// serial: the serial of the user event
+//  seat: the wl_seat of the user event
+//  serial: the serial of the user event
 func (i *ZxdgToplevelV6) Move(seat *client.WlSeat, serial uint32) error {
 	err := i.Context().SendRequest(i, 5, seat, serial)
 	return err
@@ -900,9 +871,9 @@ func (i *ZxdgToplevelV6) Move(seat *client.WlSeat, serial uint32) error {
 // use this information to adapt its behavior, e.g. choose an
 // appropriate cursor image.
 //
-// seat: the wl_seat of the user event
-// serial: the serial of the user event
-// edges: which edge or corner is being dragged
+//  seat: the wl_seat of the user event
+//  serial: the serial of the user event
+//  edges: which edge or corner is being dragged
 func (i *ZxdgToplevelV6) Resize(seat *client.WlSeat, serial, edges uint32) error {
 	err := i.Context().SendRequest(i, 6, seat, serial, edges)
 	return err
@@ -1148,27 +1119,7 @@ type ZxdgToplevelV6ConfigureHandler interface {
 	HandleZxdgToplevelV6Configure(ZxdgToplevelV6ConfigureEvent)
 }
 
-// AddConfigureHandler : suggest a surface change
-//
-// This configure event asks the client to resize its toplevel surface or
-// to change its state. The configured state should not be applied
-// immediately. See xdg_surface.configure for details.
-//
-// The width and height arguments specify a hint to the window
-// about how its surface should be resized in window geometry
-// coordinates. See set_window_geometry.
-//
-// If the width or height arguments are zero, it means the client
-// should decide its own window dimension. This may happen when the
-// compositor needs to configure the state of the surface but doesn't
-// have any information about any previous or expected dimension.
-//
-// The states listed in the event specify how the width/height
-// arguments should be interpreted, and possibly how it should be
-// drawn.
-//
-// Clients must send an ack_configure in response to this event. See
-// xdg_surface.configure and xdg_surface.ack_configure for details.
+// AddConfigureHandler : adds handler for ZxdgToplevelV6ConfigureEvent
 func (i *ZxdgToplevelV6) AddConfigureHandler(h ZxdgToplevelV6ConfigureHandler) {
 	if h == nil {
 		return
@@ -1206,16 +1157,7 @@ type ZxdgToplevelV6CloseHandler interface {
 	HandleZxdgToplevelV6Close(ZxdgToplevelV6CloseEvent)
 }
 
-// AddCloseHandler : surface wants to be closed
-//
-// The close event is sent by the compositor when the user
-// wants the surface to be closed. This should be equivalent to
-// the user clicking the close button in client-side decorations,
-// if your application has any.
-//
-// This is only a request that the user intends to close the
-// window. The client may choose to ignore this request, or show
-// a dialog to ask the user to save their data, etc.
+// AddCloseHandler : adds handler for ZxdgToplevelV6CloseEvent
 func (i *ZxdgToplevelV6) AddCloseHandler(h ZxdgToplevelV6CloseHandler) {
 	if h == nil {
 		return
@@ -1425,8 +1367,8 @@ func (i *ZxdgPopupV6) Destroy() error {
 // "owner-events" grab in X11 parlance), while the top most grabbing popup
 // will always have keyboard focus.
 //
-// seat: the wl_seat of the user event
-// serial: the serial of the user event
+//  seat: the wl_seat of the user event
+//  serial: the serial of the user event
 func (i *ZxdgPopupV6) Grab(seat *client.WlSeat, serial uint32) error {
 	err := i.Context().SendRequest(i, 1, seat, serial)
 	return err
@@ -1458,15 +1400,7 @@ type ZxdgPopupV6ConfigureHandler interface {
 	HandleZxdgPopupV6Configure(ZxdgPopupV6ConfigureEvent)
 }
 
-// AddConfigureHandler : configure the popup surface
-//
-// This event asks the popup surface to configure itself given the
-// configuration. The configured state should not be applied immediately.
-// See xdg_surface.configure for details.
-//
-// The x and y arguments represent the position the popup was placed at
-// given the xdg_positioner rule, relative to the upper left corner of the
-// window geometry of the parent surface.
+// AddConfigureHandler : adds handler for ZxdgPopupV6ConfigureEvent
 func (i *ZxdgPopupV6) AddConfigureHandler(h ZxdgPopupV6ConfigureHandler) {
 	if h == nil {
 		return
@@ -1499,11 +1433,7 @@ type ZxdgPopupV6PopupDoneHandler interface {
 	HandleZxdgPopupV6PopupDone(ZxdgPopupV6PopupDoneEvent)
 }
 
-// AddPopupDoneHandler : popup interaction is done
-//
-// The popup_done event is sent out when a popup is dismissed by the
-// compositor. The client should destroy the xdg_popup object at this
-// point.
+// AddPopupDoneHandler : adds handler for ZxdgPopupV6PopupDoneEvent
 func (i *ZxdgPopupV6) AddPopupDoneHandler(h ZxdgPopupV6PopupDoneHandler) {
 	if h == nil {
 		return
