@@ -97,7 +97,7 @@ loop:
 				break loop
 			}
 
-			ev, err := ctx.readEvent()
+			e, err := ctx.readEvent()
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					// connection closed
@@ -111,10 +111,10 @@ loop:
 				log.Printf("unable to read event: %v", err)
 			}
 
-			proxy := ctx.lookupProxy(ev.pid)
+			proxy := ctx.lookupProxy(e.pid)
 			if proxy != nil {
 				if dispatcher, ok := proxy.(Dispatcher); ok {
-					dispatcher.Dispatch(ev)
+					dispatcher.Dispatch(e)
 				} else {
 					log.Print("not dispatched")
 				}

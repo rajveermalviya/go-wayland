@@ -28,9 +28,9 @@ func (app *appState) releaseKeyboard() {
 	log.Print("keyboard interface released")
 }
 
-func (app *appState) HandleWlKeyboardKey(ev client.WlKeyboardKeyEvent) {
+func (app *appState) HandleWlKeyboardKey(e client.WlKeyboardKeyEvent) {
 	// close on "q"
-	if ev.Key == 16 {
+	if e.Key == 16 {
 		close(app.exitChan)
 	}
 }

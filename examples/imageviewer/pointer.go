@@ -77,55 +77,55 @@ func (app *appState) releasePointer() {
 	log.Print("pointer interface released")
 }
 
-func (app *appState) HandleWlPointerEnter(ev client.WlPointerEnterEvent) {
+func (app *appState) HandleWlPointerEnter(e client.WlPointerEnterEvent) {
 	app.pointerEvent.eventMask |= pointerEventEnter
-	app.pointerEvent.serial = ev.Serial
-	app.pointerEvent.surfaceX = uint32(ev.SurfaceX)
-	app.pointerEvent.surfaceY = uint32(ev.SurfaceY)
+	app.pointerEvent.serial = e.Serial
+	app.pointerEvent.surfaceX = uint32(e.SurfaceX)
+	app.pointerEvent.surfaceY = uint32(e.SurfaceY)
 }
 
-func (app *appState) HandleWlPointerLeave(ev client.WlPointerLeaveEvent) {
+func (app *appState) HandleWlPointerLeave(e client.WlPointerLeaveEvent) {
 	app.pointerEvent.eventMask |= pointerEventLeave
-	app.pointerEvent.serial = ev.Serial
+	app.pointerEvent.serial = e.Serial
 }
 
-func (app *appState) HandleWlPointerMotion(ev client.WlPointerMotionEvent) {
+func (app *appState) HandleWlPointerMotion(e client.WlPointerMotionEvent) {
 	app.pointerEvent.eventMask |= pointerEventMotion
-	app.pointerEvent.time = ev.Time
-	app.pointerEvent.surfaceX = uint32(ev.SurfaceX)
-	app.pointerEvent.surfaceY = uint32(ev.SurfaceY)
+	app.pointerEvent.time = e.Time
+	app.pointerEvent.surfaceX = uint32(e.SurfaceX)
+	app.pointerEvent.surfaceY = uint32(e.SurfaceY)
 }
 
-func (app *appState) HandleWlPointerButton(ev client.WlPointerButtonEvent) {
+func (app *appState) HandleWlPointerButton(e client.WlPointerButtonEvent) {
 	app.pointerEvent.eventMask |= pointerEventButton
-	app.pointerEvent.serial = ev.Serial
-	app.pointerEvent.time = ev.Time
-	app.pointerEvent.button = ev.Button
-	app.pointerEvent.state = ev.State
+	app.pointerEvent.serial = e.Serial
+	app.pointerEvent.time = e.Time
+	app.pointerEvent.button = e.Button
+	app.pointerEvent.state = e.State
 }
 
-func (app *appState) HandleWlPointerAxis(ev client.WlPointerAxisEvent) {
+func (app *appState) HandleWlPointerAxis(e client.WlPointerAxisEvent) {
 	app.pointerEvent.eventMask |= pointerEventAxis
-	app.pointerEvent.time = ev.Time
-	app.pointerEvent.axes[ev.Axis].valid = true
-	app.pointerEvent.axes[ev.Axis].value = int32(ev.Value)
+	app.pointerEvent.time = e.Time
+	app.pointerEvent.axes[e.Axis].valid = true
+	app.pointerEvent.axes[e.Axis].value = int32(e.Value)
 }
 
-func (app *appState) HandleWlPointerAxisSource(ev client.WlPointerAxisSourceEvent) {
+func (app *appState) HandleWlPointerAxisSource(e client.WlPointerAxisSourceEvent) {
 	app.pointerEvent.eventMask |= pointerEventAxis
-	app.pointerEvent.axisSource = ev.AxisSource
+	app.pointerEvent.axisSource = e.AxisSource
 }
 
-func (app *appState) HandleWlPointerAxisStop(ev client.WlPointerAxisStopEvent) {
+func (app *appState) HandleWlPointerAxisStop(e client.WlPointerAxisStopEvent) {
 	app.pointerEvent.eventMask |= pointerEventAxisStop
-	app.pointerEvent.time = ev.Time
-	app.pointerEvent.axes[ev.Axis].valid = true
+	app.pointerEvent.time = e.Time
+	app.pointerEvent.axes[e.Axis].valid = true
 }
 
-func (app *appState) HandleWlPointerAxisDiscrete(ev client.WlPointerAxisDiscreteEvent) {
+func (app *appState) HandleWlPointerAxisDiscrete(e client.WlPointerAxisDiscreteEvent) {
 	app.pointerEvent.eventMask |= pointerEventAxisDiscrete
-	app.pointerEvent.axes[ev.Axis].valid = true
-	app.pointerEvent.axes[ev.Axis].discrete = ev.Discrete
+	app.pointerEvent.axes[e.Axis].valid = true
+	app.pointerEvent.axes[e.Axis].discrete = e.Discrete
 }
 
 var axisName = map[int]string{
@@ -152,47 +152,47 @@ var cursorMap = map[uint32]string{
 	xdg_shell.XdgToplevelResizeEdgeNone:        cursor.LeftPtr,
 }
 
-func (app *appState) HandleWlPointerFrame(ev client.WlPointerFrameEvent) {
-	event := app.pointerEvent
+func (app *appState) HandleWlPointerFrame(_ client.WlPointerFrameEvent) {
+	e := app.pointerEvent
 
-	if (event.eventMask & pointerEventEnter) != 0 {
-		log.Printf("entered %v, %v", event.surfaceX, event.surfaceY)
+	if (e.eventMask & pointerEventEnter) != 0 {
+		log.Printf("entered %v, %v", e.surfaceX, e.surfaceY)
 
-		app.setCursor(event.serial, cursor.LeftPtr)
+		app.setCursor(e.serial, cursor.LeftPtr)
 	}
 
-	if (event.eventMask & pointerEventLeave) != 0 {
+	if (e.eventMask & pointerEventLeave) != 0 {
 		log.Print("leave")
 	}
-	if (event.eventMask & pointerEventMotion) != 0 {
-		log.Printf("motion %v, %v", event.surfaceX, event.surfaceY)
+	if (e.eventMask & pointerEventMotion) != 0 {
+		log.Printf("motion %v, %v", e.surfaceX, e.surfaceY)
 
-		edge := componentEdge(uint32(app.width), uint32(app.height), event.surfaceX, event.surfaceY, 8)
+		edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
 		cursorName, ok := cursorMap[edge]
 		if ok && cursorName != app.currentCursor {
-			app.setCursor(event.serial, cursorName)
+			app.setCursor(e.serial, cursorName)
 		}
 	}
-	if (event.eventMask & pointerEventButton) != 0 {
-		if event.state == client.WlPointerButtonStateReleased {
-			log.Printf("button %d released", event.button)
+	if (e.eventMask & pointerEventButton) != 0 {
+		if e.state == client.WlPointerButtonStateReleased {
+			log.Printf("button %d released", e.button)
 		} else {
-			log.Printf("button %d pressed", event.button)
+			log.Printf("button %d pressed", e.button)
 
-			switch event.button {
+			switch e.button {
 			case BtnLeft:
-				edge := componentEdge(uint32(app.width), uint32(app.height), event.surfaceX, event.surfaceY, 8)
+				edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
 				if edge != xdg_shell.XdgToplevelResizeEdgeNone {
-					if err := app.xdgTopLevel.Resize(app.seat, event.serial, edge); err != nil {
+					if err := app.xdgTopLevel.Resize(app.seat, e.serial, edge); err != nil {
 						log.Println("unable to start resize")
 					}
 				} else {
-					if err := app.xdgTopLevel.Move(app.seat, event.serial); err != nil {
+					if err := app.xdgTopLevel.Move(app.seat, e.serial); err != nil {
 						log.Println("unable to start move")
 					}
 				}
 			case BtnRight:
-				if err := app.xdgTopLevel.ShowWindowMenu(app.seat, event.serial, int32(event.surfaceX), int32(event.surfaceY)); err != nil {
+				if err := app.xdgTopLevel.ShowWindowMenu(app.seat, e.serial, int32(e.surfaceX), int32(e.surfaceY)); err != nil {
 					log.Println("unable to show window menu")
 				}
 			}
@@ -201,22 +201,22 @@ func (app *appState) HandleWlPointerFrame(ev client.WlPointerFrameEvent) {
 
 	const axisEvents = pointerEventAxis | pointerEventAxisSource | pointerEventAxisStop | pointerEventAxisDiscrete
 
-	if (event.eventMask & axisEvents) != 0 {
+	if (e.eventMask & axisEvents) != 0 {
 		for i := 0; i < 2; i++ {
-			if !event.axes[i].valid {
+			if !e.axes[i].valid {
 				continue
 			}
 			log.Printf("%s axis ", axisName[i])
-			if (event.eventMask & pointerEventAxis) != 0 {
-				log.Printf("value %v", event.axes[i].value)
+			if (e.eventMask & pointerEventAxis) != 0 {
+				log.Printf("value %v", e.axes[i].value)
 			}
-			if (event.eventMask & pointerEventAxisDiscrete) != 0 {
-				log.Printf("discrete %d ", event.axes[i].discrete)
+			if (e.eventMask & pointerEventAxisDiscrete) != 0 {
+				log.Printf("discrete %d ", e.axes[i].discrete)
 			}
-			if (event.eventMask & pointerEventAxisSource) != 0 {
-				log.Printf("via %s", axisSource[event.axisSource])
+			if (e.eventMask & pointerEventAxisSource) != 0 {
+				log.Printf("via %s", axisSource[e.axisSource])
 			}
-			if (event.eventMask & pointerEventAxisStop) != 0 {
+			if (e.eventMask & pointerEventAxisStop) != 0 {
 				log.Printf("(stopped)")
 			}
 		}

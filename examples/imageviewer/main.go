@@ -241,27 +241,27 @@ func (app *appState) Context() *client.Context {
 	return app.display.Context()
 }
 
-func (app *appState) HandleWlRegistryGlobal(ev client.WlRegistryGlobalEvent) {
-	log.Printf("discovered an interface: %q\n", ev.Interface)
+func (app *appState) HandleWlRegistryGlobal(e client.WlRegistryGlobalEvent) {
+	log.Printf("discovered an interface: %q\n", e.Interface)
 
-	switch ev.Interface {
+	switch e.Interface {
 	case "wl_shm":
-		shm := client.NewWlShm(app.display.Context())
-		err := app.registry.Bind(ev.Name, ev.Interface, ev.Version, shm)
+		shm := client.NewWlShm(app.Context())
+		err := app.registry.Bind(e.Name, e.Interface, e.Version, shm)
 		if err != nil {
 			log.Fatalf("unable to bind wl_shm interface: %v", err)
 		}
 		app.shm = shm
 	case "wl_compositor":
-		compositor := client.NewWlCompositor(app.display.Context())
-		err := app.registry.Bind(ev.Name, ev.Interface, ev.Version, compositor)
+		compositor := client.NewWlCompositor(app.Context())
+		err := app.registry.Bind(e.Name, e.Interface, e.Version, compositor)
 		if err != nil {
 			log.Fatalf("unable to bind wl_compositor interface: %v", err)
 		}
 		app.compositor = compositor
 	case "xdg_wm_base":
-		wmBase := xdg_shell.NewXdgWmBase(app.display.Context())
-		err := app.registry.Bind(ev.Name, ev.Interface, ev.Version, wmBase)
+		wmBase := xdg_shell.NewXdgWmBase(app.Context())
+		err := app.registry.Bind(e.Name, e.Interface, e.Version, wmBase)
 		if err != nil {
 			log.Fatalf("unable to bind xdg_wm_base interface: %v", err)
 		}
@@ -269,8 +269,8 @@ func (app *appState) HandleWlRegistryGlobal(ev client.WlRegistryGlobalEvent) {
 		// Add xdg_wmbase ping handler `app.HandleWmBasePing`
 		wmBase.AddPingHandler(app)
 	case "wl_seat":
-		seat := client.NewWlSeat(app.display.Context())
-		err := app.registry.Bind(ev.Name, ev.Interface, ev.Version, seat)
+		seat := client.NewWlSeat(app.Context())
+		err := app.registry.Bind(e.Name, e.Interface, e.Version, seat)
 		if err != nil {
 			log.Fatalf("unable to bind wl_seat interface: %v", err)
 		}
@@ -281,9 +281,9 @@ func (app *appState) HandleWlRegistryGlobal(ev client.WlRegistryGlobalEvent) {
 	}
 }
 
-func (app *appState) HandleXdgSurfaceConfigure(ev xdg_shell.XdgSurfaceConfigureEvent) {
+func (app *appState) HandleXdgSurfaceConfigure(e xdg_shell.XdgSurfaceConfigureEvent) {
 	// Send ack to xdg_surface that we have a frame.
-	if err := app.xdgSurface.AckConfigure(ev.Serial); err != nil {
+	if err := app.xdgSurface.AckConfigure(e.Serial); err != nil {
 		log.Fatal("unable to ack xdg surface configure")
 	}
 
@@ -300,9 +300,9 @@ func (app *appState) HandleXdgSurfaceConfigure(ev xdg_shell.XdgSurfaceConfigureE
 	}
 }
 
-func (app *appState) HandleXdgToplevelConfigure(ev xdg_shell.XdgToplevelConfigureEvent) {
-	width := ev.Width
-	height := ev.Height
+func (app *appState) HandleXdgToplevelConfigure(e xdg_shell.XdgToplevelConfigureEvent) {
+	width := e.Width
+	height := e.Height
 
 	if width == 0 || height == 0 {
 		// Compositor is deferring to us
@@ -432,14 +432,14 @@ type bufferReleaser struct {
 	buf *client.WlBuffer
 }
 
-func (b bufferReleaser) HandleWlBufferRelease(ev client.WlBufferReleaseEvent) {
+func (b bufferReleaser) HandleWlBufferRelease(e client.WlBufferReleaseEvent) {
 	if err := b.buf.Destroy(); err != nil {
 		log.Printf("unable to destroy buffer: %v", err)
 	}
 }
 
-func (app *appState) HandleWlSeatCapabilities(ev client.WlSeatCapabilitiesEvent) {
-	havePointer := (ev.Capabilities * client.WlSeatCapabilityPointer) != 0
+func (app *appState) HandleWlSeatCapabilities(e client.WlSeatCapabilitiesEvent) {
+	havePointer := (e.Capabilities * client.WlSeatCapabilityPointer) != 0
 
 	if havePointer && app.pointer == nil {
 		app.attachPointer()
@@ -447,7 +447,7 @@ func (app *appState) HandleWlSeatCapabilities(ev client.WlSeatCapabilitiesEvent)
 		app.releasePointer()
 	}
 
-	haveKeyboard := (ev.Capabilities * client.WlSeatCapabilityKeyboard) != 0
+	haveKeyboard := (e.Capabilities * client.WlSeatCapabilityKeyboard) != 0
 
 	if haveKeyboard && app.keyboard == nil {
 		app.attachKeyboard()
@@ -456,24 +456,24 @@ func (app *appState) HandleWlSeatCapabilities(ev client.WlSeatCapabilitiesEvent)
 	}
 }
 
-func (*appState) HandleWlSeatName(ev client.WlSeatNameEvent) {
-	log.Printf("seat name: %v", ev.Name)
+func (*appState) HandleWlSeatName(e client.WlSeatNameEvent) {
+	log.Printf("seat name: %v", e.Name)
 }
 
 // HandleDisplayError handles client.Display errors
-func (*appState) HandleWlDisplayError(ev client.WlDisplayErrorEvent) {
+func (*appState) HandleWlDisplayError(e client.WlDisplayErrorEvent) {
 	// Just log.Fatal for now
-	log.Fatalf("display error event: %v", ev)
+	log.Fatalf("display error event: %v", e)
 }
 
 // HandleWmBasePing handles xdg ping by doing a Pong request
-func (app *appState) HandleXdgWmBasePing(ev xdg_shell.XdgWmBasePingEvent) {
-	log.Printf("xdg_wmbase ping: serial=%v", ev.Serial)
-	app.wmBase.Pong(ev.Serial)
+func (app *appState) HandleXdgWmBasePing(e xdg_shell.XdgWmBasePingEvent) {
+	log.Printf("xdg_wmbase ping: serial=%v", e.Serial)
+	app.wmBase.Pong(e.Serial)
 	log.Print("xdg_wmbase pong sent")
 }
 
-func (app *appState) HandleXdgToplevelClose(ev xdg_shell.XdgToplevelCloseEvent) {
+func (app *appState) HandleXdgToplevelClose(_ xdg_shell.XdgToplevelCloseEvent) {
 	close(app.exitChan)
 }
 
@@ -481,8 +481,8 @@ type doner struct {
 	ch chan client.WlCallbackDoneEvent
 }
 
-func (d doner) HandleWlCallbackDone(ev client.WlCallbackDoneEvent) {
-	d.ch <- ev
+func (d doner) HandleWlCallbackDone(e client.WlCallbackDoneEvent) {
+	d.ch <- e
 }
 
 func (app *appState) displayRoundTrip() {
