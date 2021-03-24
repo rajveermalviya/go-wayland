@@ -241,7 +241,6 @@ func (i *XdgWmBase) Dispatch(event *client.Event) {
 // positioning a surface raises an error.
 type XdgPositioner struct {
 	client.BaseProxy
-	mu sync.RWMutex
 }
 
 // NewXdgPositioner : child surface positioner

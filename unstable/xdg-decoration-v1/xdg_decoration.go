@@ -60,7 +60,6 @@ import (
 // interface version number is reset.
 type ZxdgDecorationManagerV1 struct {
 	client.BaseProxy
-	mu sync.RWMutex
 }
 
 // NewZxdgDecorationManagerV1 : window decoration manager

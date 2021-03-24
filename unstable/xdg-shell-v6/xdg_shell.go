@@ -237,7 +237,6 @@ func (i *ZxdgShellV6) Dispatch(event *client.Event) {
 // positioning a surface raises an error.
 type ZxdgPositionerV6 struct {
 	client.BaseProxy
-	mu sync.RWMutex
 }
 
 // NewZxdgPositionerV6 : child surface positioner

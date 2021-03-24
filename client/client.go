@@ -556,7 +556,6 @@ func (i *WlCallback) Dispatch(event *Event) {
 // surfaces into one displayable output.
 type WlCompositor struct {
 	BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWlCompositor : the compositor singleton
@@ -601,7 +600,6 @@ func (i *WlCompositor) CreateRegion() (*WlRegion, error) {
 // a surface or for many small buffers.
 type WlShmPool struct {
 	BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWlShmPool : a shared memory pool
@@ -2609,7 +2607,6 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 // wl_data_offer.accept and wl_data_offer.finish for details.
 type WlDataDeviceManager struct {
 	BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWlDataDeviceManager : data transfer interface
@@ -2699,7 +2696,6 @@ const (
 // For desktop-style user interfaces, use xdg_shell.
 type WlShell struct {
 	BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWlShell : create desktop-style surfaces
@@ -6653,7 +6649,6 @@ func (i *WlOutput) Dispatch(event *Event) {
 // regions of a surface.
 type WlRegion struct {
 	BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWlRegion : region interface
@@ -6726,7 +6721,6 @@ func (i *WlRegion) Subtract(x, y, width, height int32) error {
 // processing to dedicated overlay hardware when possible.
 type WlSubcompositor struct {
 	BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWlSubcompositor : sub-surface compositing
@@ -6852,7 +6846,6 @@ const (
 // unmapped.
 type WlSubsurface struct {
 	BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWlSubsurface : sub-surface interface to a wl_surface

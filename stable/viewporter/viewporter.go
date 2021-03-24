@@ -27,11 +27,7 @@
 
 package viewporter
 
-import (
-	"sync"
-
-	"github.com/rajveermalviya/go-wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/client"
 
 // WpViewporter : surface cropping and scaling
 //
@@ -43,7 +39,6 @@ import (
 // surface size.
 type WpViewporter struct {
 	client.BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWpViewporter : surface cropping and scaling
@@ -156,7 +151,6 @@ const (
 // on the next wl_surface.commit.
 type WpViewport struct {
 	client.BaseProxy
-	mu sync.RWMutex
 }
 
 // NewWpViewport : crop and scale interface to a wl_surface

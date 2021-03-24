@@ -228,7 +228,9 @@ func writeInterface(w io.Writer, v Interface) {
 	} else {
 		fmt.Fprintf(w, "BaseProxy\n")
 	}
-	fmt.Fprintf(w, "mu sync.RWMutex\n")
+	if len(v.Events) > 0 {
+		fmt.Fprintf(w, "mu sync.RWMutex\n")
+	}
 	for _, event := range v.Events {
 		fmt.Fprintf(w, "%sHandlers []%s%sHandler\n", toLowerCamel(event.Name), ifaceName, toCamel(event.Name))
 	}

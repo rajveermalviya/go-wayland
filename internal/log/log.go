@@ -8,7 +8,7 @@ import (
 
 var (
 	debug  = false
-	logger = log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Lmicroseconds|log.Llongfile)
+	logger = log.New(os.Stderr, "", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile)
 )
 
 func init() {

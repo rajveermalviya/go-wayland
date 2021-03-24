@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"image"
 	"os"
 
@@ -15,10 +14,6 @@ import (
 	"github.com/rajveermalviya/go-wayland/internal/tempfile"
 	xdg_shell "github.com/rajveermalviya/go-wayland/stable/xdg-shell"
 )
-
-func init() {
-	flag.Parse()
-}
 
 // Global app state
 type appState struct {
@@ -50,8 +45,8 @@ type appState struct {
 }
 
 func main() {
-	if flag.NArg() == 0 {
-		log.Fatalf("usage: %s imagefile", os.Args[0])
+	if len(os.Args) != 2 {
+		log.Fatalf("usage: %s file.jpg", os.Args[0])
 	}
 
 	const (
@@ -59,7 +54,7 @@ func main() {
 		clampedHeight = 1080
 	)
 
-	fileName := flag.Arg(0)
+	fileName := os.Args[1]
 
 	// Read the image file to *image.RGBA
 	pImage, err := rgbaImageFromFile(fileName)
