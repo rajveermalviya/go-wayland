@@ -5,22 +5,22 @@ import (
 	"math"
 	"net"
 
-	syscall "golang.org/x/sys/unix"
+	"golang.org/x/sys/unix"
 
 	"github.com/rajveermalviya/go-wayland/internal/byteorder"
 )
 
 type Request struct {
-	data   []byte
-	oob    []byte
-	pid    ProxyID
-	opcode uint32
+	data    []byte
+	oob     []byte
+	proxyID uint32
+	opcode  uint32
 }
 
-func (ctx *Context) SendRequest(proxy Proxy, opcode uint32, args ...interface{}) (err error) {
+func (ctx *Context) SendRequest(p Proxy, opcode uint32, args ...interface{}) (err error) {
 	req := Request{
-		pid:    proxy.ID(),
-		opcode: opcode,
+		proxyID: p.ID(),
+		opcode:  opcode,
 	}
 
 	for _, arg := range args {
@@ -33,7 +33,7 @@ func (ctx *Context) SendRequest(proxy Proxy, opcode uint32, args ...interface{})
 func (r *Request) Write(arg interface{}) {
 	switch t := arg.(type) {
 	case Proxy:
-		r.PutProxy(t)
+		r.PutObject(t)
 	case uint32:
 		r.PutUint32(t)
 	case int32:
@@ -57,7 +57,7 @@ func (r *Request) PutUint32(u uint32) {
 	r.data = append(r.data, buf...)
 }
 
-func (r *Request) PutProxy(p Proxy) {
+func (r *Request) PutObject(p Proxy) {
 	r.PutUint32(uint32(p.ID()))
 }
 
@@ -74,7 +74,6 @@ func (r *Request) PutString(s string) {
 	tail := 4 - (len(s) & 0x3)
 	r.PutUint32(uint32(len(s) + tail))
 	r.data = append(r.data, []byte(s)...)
-	// if padding required
 	if tail > 0 {
 		padding := make([]byte, tail)
 		r.data = append(r.data, padding...)
@@ -89,7 +88,7 @@ func (r *Request) PutArray(a []int32) {
 }
 
 func (r *Request) PutFd(fd uintptr) {
-	rights := syscall.UnixRights(int(fd))
+	rights := unix.UnixRights(int(fd))
 	r.oob = append(r.oob, rights...)
 }
 
@@ -98,7 +97,7 @@ func writeRequest(conn *net.UnixConn, r Request) error {
 	// calculate message total size
 	size := uint32(len(r.data) + 8)
 	buf := make([]byte, 4)
-	byteorder.NativeEndian.PutUint32(buf, uint32(r.pid))
+	byteorder.NativeEndian.PutUint32(buf, uint32(r.proxyID))
 	header = append(header, buf...)
 	byteorder.NativeEndian.PutUint32(buf, uint32(size<<16|r.opcode&0x0000ffff))
 	header = append(header, buf...)

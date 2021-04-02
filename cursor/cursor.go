@@ -127,7 +127,7 @@ func (t *Theme) grow(size int32) error {
 }
 
 func (t *Theme) Destroy() error {
-	var err MultiError
+	err := MultiError{}
 
 	err.Add(t.Pool.Destroy())
 	err.Add(t.File.Close())
@@ -141,7 +141,7 @@ type Cursor struct {
 	TotalDuration uint32
 }
 
-func newCursor(name string, theme *Theme, images []xcursor.Image, size uint32) (*Cursor, error) {
+func newCursor(name string, theme *Theme, images []*xcursor.Image, size uint32) (*Cursor, error) {
 	totalDuration := uint32(0)
 
 	nImages := nearestImages(size, images)
@@ -167,7 +167,7 @@ func newCursor(name string, theme *Theme, images []xcursor.Image, size uint32) (
 }
 
 func (c *Cursor) Destroy() error {
-	var err MultiError
+	err := MultiError{}
 
 	if len(c.Images) > 0 {
 		for _, buf := range c.Images {
@@ -178,7 +178,7 @@ func (c *Cursor) Destroy() error {
 	return err.Err()
 }
 
-func nearestImages(size uint32, images []xcursor.Image) []xcursor.Image {
+func nearestImages(size uint32, images []*xcursor.Image) []*xcursor.Image {
 	index := 0
 	for i, image := range images {
 		if size == image.Size {
@@ -189,7 +189,7 @@ func nearestImages(size uint32, images []xcursor.Image) []xcursor.Image {
 
 	nearestImage := images[index]
 
-	nImages := []xcursor.Image{}
+	nImages := []*xcursor.Image{}
 
 	for _, image := range images {
 		if image.Width == nearestImage.Width && image.Height == nearestImage.Height {
@@ -232,7 +232,7 @@ type ImageBuffer struct {
 	Height   uint32
 }
 
-func NewImageBuffer(theme *Theme, image xcursor.Image) (*ImageBuffer, error) {
+func NewImageBuffer(theme *Theme, image *xcursor.Image) (*ImageBuffer, error) {
 	buf := image.PixBGRA
 	offset, err := theme.File.Seek(0, 2)
 	if err != nil {

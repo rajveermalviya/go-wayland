@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"image"
 	"image/draw"
 	"os"
@@ -20,8 +19,8 @@ func rgbaImageFromFile(filePath string) (*image.RGBA, error) {
 		return nil, err
 	}
 	defer f.Close()
-	br := bufio.NewReader(f)
-	img, _, err := image.Decode(br)
+
+	img, _, err := image.Decode(f)
 	if err != nil {
 		return nil, err
 	}

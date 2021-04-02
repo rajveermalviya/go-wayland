@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"math"
 
-	syscall "golang.org/x/sys/unix"
+	"golang.org/x/sys/unix"
 
 	"github.com/rajveermalviya/go-wayland/internal/byteorder"
 )
 
 type Event struct {
-	data   *bytes.Buffer
-	scms   []syscall.SocketControlMessage
-	pid    ProxyID
-	Opcode uint32
+	data    *bytes.Buffer
+	scms    []unix.SocketControlMessage
+	proxyID uint32
+	Opcode  uint32
 }
 
 func (ctx *Context) readEvent() (*Event, error) {
-	buf := make([]byte, 8)
-	control := make([]byte, 24)
+	header := make([]byte, 8)
+	oob := make([]byte, 24)
 
-	n, oobn, _, _, err := ctx.conn.ReadMsgUnix(buf[:], control)
+	n, oobn, _, _, err := ctx.conn.ReadMsgUnix(header, oob)
 	if err != nil {
 		return nil, err
 	}
@@ -30,28 +30,32 @@ func (ctx *Context) readEvent() (*Event, error) {
 	}
 	e := &Event{}
 	if oobn > 0 {
-		if oobn > len(control) {
+		if oobn > len(oob) {
 			return nil, fmt.Errorf("insufficient control msg buffer")
 		}
-		scms, err2 := syscall.ParseSocketControlMessage(control)
+		scms, err2 := unix.ParseSocketControlMessage(oob)
 		if err2 != nil {
 			return nil, fmt.Errorf("control message parse error: %w", err)
 		}
 		e.scms = scms
 	}
 
-	e.pid = ProxyID(byteorder.NativeEndian.Uint32(buf[0:4]))
-	e.Opcode = uint32(byteorder.NativeEndian.Uint16(buf[4:6]))
-	size := uint32(byteorder.NativeEndian.Uint16(buf[6:8]))
+	headerBuf := bytes.NewBuffer(header)
+
+	e.proxyID = byteorder.NativeEndian.Uint32(headerBuf.Next(4))
+	e.Opcode = uint32(byteorder.NativeEndian.Uint16(headerBuf.Next(2)))
+	size := uint32(byteorder.NativeEndian.Uint16(headerBuf.Next(2)))
 
 	// subtract 8 bytes from header
-	data := make([]byte, int(size)-8)
+	msgSize := int(size) - 8
+
+	data := make([]byte, msgSize)
 	n, err = ctx.conn.Read(data)
 	if err != nil {
 		return nil, err
 	}
-	if n != int(size)-8 {
-		return nil, fmt.Errorf("invalid message size")
+	if n != msgSize {
+		return nil, fmt.Errorf("invalid message size recieved from read")
 	}
 
 	e.data = bytes.NewBuffer(data)
@@ -60,15 +64,13 @@ func (ctx *Context) readEvent() (*Event, error) {
 }
 
 func (e *Event) FD() uintptr {
-	if e.scms == nil {
+	if len(e.scms) == 0 {
 		return 0
 	}
-	fds, err := syscall.ParseUnixRights(&e.scms[0])
+	fds, err := unix.ParseUnixRights(&e.scms[0])
 	if err != nil {
 		panic("unable to parse unix rights")
 	}
-	// TODO is this required
-	e.scms = append(e.scms, e.scms[1:]...)
 	return uintptr(fds[0])
 }
 
@@ -81,7 +83,7 @@ func (e *Event) Uint32() uint32 {
 }
 
 func (e *Event) Proxy(ctx *Context) Proxy {
-	return ctx.lookupProxy(ProxyID(e.Uint32()))
+	return ctx.lookupProxy(e.Uint32())
 }
 
 func (e *Event) String() string {

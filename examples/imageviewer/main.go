@@ -4,7 +4,7 @@ import (
 	"image"
 	"os"
 
-	syscall "golang.org/x/sys/unix"
+	"golang.org/x/sys/unix"
 
 	"github.com/nfnt/resize"
 	"github.com/rajveermalviya/go-wayland/client"
@@ -49,12 +49,12 @@ func main() {
 		log.Fatalf("usage: %s file.jpg", os.Args[0])
 	}
 
+	fileName := os.Args[1]
+
 	const (
 		clampedWidth  = 1920
 		clampedHeight = 1080
 	)
-
-	fileName := os.Args[1]
 
 	// Read the image file to *image.RGBA
 	pImage, err := rgbaImageFromFile(fileName)
@@ -385,7 +385,7 @@ func (app *appState) drawFrame() *client.WlBuffer {
 		log.Fatalf("unable to create a temporary file: %v", err)
 	}
 
-	data, err := syscall.Mmap(int(file.Fd()), 0, int(size), syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
+	data, err := unix.Mmap(int(file.Fd()), 0, int(size), unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
 	if err != nil {
 		log.Fatalf("unable to create mapping: %v", err)
 	}
@@ -414,7 +414,7 @@ func (app *appState) drawFrame() *client.WlBuffer {
 	// Copy image to buffer
 	copy(data, imgData)
 
-	if err := syscall.Munmap(data); err != nil {
+	if err := unix.Munmap(data); err != nil {
 		log.Printf("unable to delete mapping: %v", err)
 	}
 	buf.AddReleaseHandler(bufferReleaser{buf: buf})

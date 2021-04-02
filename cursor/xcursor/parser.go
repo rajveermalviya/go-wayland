@@ -46,7 +46,7 @@ func parseToc(buf *bytes.Buffer) toc {
 	}
 }
 
-func parseImg(b []byte) Image {
+func parseImg(b []byte) *Image {
 	buf := bytes.NewBuffer(b)
 	buf.Next(8) // skip header (header size, type)
 	size := binary.LittleEndian.Uint32(buf.Next(4))
@@ -65,7 +65,7 @@ func parseImg(b []byte) Image {
 	copy(pixBGRA, pixRGBA)
 	swizzle.BGRA(pixBGRA)
 
-	return Image{
+	return &Image{
 		Size:     size,
 		Width:    width,
 		Height:   height,
@@ -77,10 +77,10 @@ func parseImg(b []byte) Image {
 	}
 }
 
-func ParseXcursor(content []byte) []Image {
+func ParseXcursor(content []byte) []*Image {
 	buf := bytes.NewBuffer(content)
 	ntoc := parseHeader(buf)
-	imgs := make([]Image, ntoc)
+	imgs := make([]*Image, ntoc)
 
 	for i := uint32(0); i < ntoc; i++ {
 		toc := parseToc(buf)

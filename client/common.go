@@ -4,25 +4,23 @@ type Dispatcher interface {
 	Dispatch(*Event)
 }
 
-type ProxyID uint32
-
 type Proxy interface {
 	Context() *Context
 	SetContext(ctx *Context)
-	ID() ProxyID
-	SetID(id ProxyID)
+	ID() uint32
+	SetID(id uint32)
 }
 
 type BaseProxy struct {
 	ctx *Context
-	id  ProxyID
+	id  uint32
 }
 
-func (p *BaseProxy) ID() ProxyID {
+func (p *BaseProxy) ID() uint32 {
 	return p.id
 }
 
-func (p *BaseProxy) SetID(id ProxyID) {
+func (p *BaseProxy) SetID(id uint32) {
 	p.id = id
 }
 
