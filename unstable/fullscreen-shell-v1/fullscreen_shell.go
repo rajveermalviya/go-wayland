@@ -126,6 +126,7 @@ func NewZwpFullscreenShellV1(ctx *client.Context) *ZwpFullscreenShellV1 {
 // to free some of those bindings.
 //
 func (i *ZwpFullscreenShellV1) Release() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }

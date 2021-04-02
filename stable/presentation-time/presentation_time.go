@@ -100,6 +100,7 @@ func NewWpPresentation(ctx *client.Context) *WpPresentation {
 // are not affected.
 //
 func (i *WpPresentation) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }

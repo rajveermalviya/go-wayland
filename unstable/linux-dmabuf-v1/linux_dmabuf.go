@@ -172,6 +172,7 @@ func NewZwpLinuxDmabufV1(ctx *client.Context) *ZwpLinuxDmabufV1 {
 // remain valid.
 //
 func (i *ZwpLinuxDmabufV1) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -385,6 +386,7 @@ func NewZwpLinuxBufferParamsV1(ctx *client.Context) *ZwpLinuxBufferParamsV1 {
 // wl_buffer creation.
 //
 func (i *ZwpLinuxBufferParamsV1) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }

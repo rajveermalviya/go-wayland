@@ -618,6 +618,7 @@ func (i *WlShmPool) CreateBuffer(offset, width, height, stride int32, format uin
 // are gone.
 //
 func (i *WlShmPool) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 1)
 	return err
 }
@@ -1003,6 +1004,7 @@ func NewWlBuffer(ctx *Context) *WlBuffer {
 // For possible side-effects to a surface, see wl_surface.attach.
 //
 func (i *WlBuffer) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -1157,6 +1159,7 @@ func (i *WlDataOffer) Receive(mimeType string, fd uintptr) error {
 // Destroy the data offer.
 //
 func (i *WlDataOffer) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 2)
 	return err
 }
@@ -1489,6 +1492,7 @@ func (i *WlDataSource) Offer(mimeType string) error {
 // Destroy the data source.
 //
 func (i *WlDataSource) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 1)
 	return err
 }
@@ -1996,6 +2000,7 @@ func (i *WlDataDevice) SetSelection(source *WlDataSource, serial uint32) error {
 // This request destroys the data device.
 //
 func (i *WlDataDevice) Release() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 2)
 	return err
 }
@@ -3112,6 +3117,7 @@ func NewWlSurface(ctx *Context) *WlSurface {
 // Deletes the surface and invalidates its object ID.
 //
 func (i *WlSurface) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -3671,6 +3677,7 @@ func (i *WlSeat) GetTouch() (*WlTouch, error) {
 // use the seat object anymore.
 //
 func (i *WlSeat) Release() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 3)
 	return err
 }
@@ -3928,6 +3935,7 @@ func (i *WlPointer) SetCursor(serial uint32, surface *WlSurface, hotspotX, hotsp
 // wl_pointer_destroy() after using this request.
 //
 func (i *WlPointer) Release() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 1)
 	return err
 }
@@ -4671,6 +4679,7 @@ func NewWlKeyboard(ctx *Context) *WlKeyboard {
 // Release : release the keyboard object
 //
 func (i *WlKeyboard) Release() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -5133,6 +5142,7 @@ func NewWlTouch(ctx *Context) *WlTouch {
 // Release : release the touch object
 //
 func (i *WlTouch) Release() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -5643,6 +5653,7 @@ func NewWlOutput(ctx *Context) *WlOutput {
 // use the output object anymore.
 //
 func (i *WlOutput) Release() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -6038,6 +6049,7 @@ func NewWlRegion(ctx *Context) *WlRegion {
 // Destroy the region.  This will invalidate the object ID.
 //
 func (i *WlRegion) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -6127,6 +6139,7 @@ func NewWlSubcompositor(ctx *Context) *WlSubcompositor {
 // objects, wl_subsurface objects included.
 //
 func (i *WlSubcompositor) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -6284,6 +6297,7 @@ func NewWlSubsurface(ctx *Context) *WlSubsurface {
 // a sub-surface. The wl_surface is unmapped immediately.
 //
 func (i *WlSubsurface) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }

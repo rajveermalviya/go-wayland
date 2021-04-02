@@ -62,6 +62,7 @@ func NewWpViewporter(ctx *client.Context) *WpViewporter {
 // wp_viewport objects included.
 //
 func (i *WpViewporter) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -228,6 +229,7 @@ func NewWpViewport(ctx *client.Context) *WpViewport {
 // The change is applied on the next wl_surface.commit.
 //
 func (i *WpViewport) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }

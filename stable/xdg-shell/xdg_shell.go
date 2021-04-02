@@ -73,6 +73,7 @@ func NewXdgWmBase(ctx *client.Context) *XdgWmBase {
 // and will result in a protocol error.
 //
 func (i *XdgWmBase) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -263,6 +264,7 @@ func NewXdgPositioner(ctx *client.Context) *XdgPositioner {
 // Notify the compositor that the xdg_positioner will no longer be used.
 //
 func (i *XdgPositioner) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -586,6 +588,7 @@ func NewXdgSurface(ctx *client.Context) *XdgSurface {
 // after its role object has been destroyed.
 //
 func (i *XdgSurface) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -825,6 +828,7 @@ func NewXdgToplevel(ctx *client.Context) *XdgToplevel {
 // see "Unmapping" behavior in interface section for details.
 //
 func (i *XdgToplevel) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -1455,6 +1459,7 @@ func NewXdgPopup(ctx *client.Context) *XdgPopup {
 // will be sent.
 //
 func (i *XdgPopup) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }

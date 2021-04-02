@@ -98,6 +98,7 @@ func NewZxdgDecorationManagerV1(ctx *client.Context) *ZxdgDecorationManagerV1 {
 // with the manager.
 //
 func (i *ZxdgDecorationManagerV1) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -152,6 +153,7 @@ func NewZxdgToplevelDecorationV1(ctx *client.Context) *ZxdgToplevelDecorationV1 
 // commit.
 //
 func (i *ZxdgToplevelDecorationV1) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }

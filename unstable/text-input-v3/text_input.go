@@ -117,6 +117,7 @@ func NewZwpTextInputV3(ctx *client.Context) *ZwpTextInputV3 {
 // through this wp_text_input object.
 //
 func (i *ZwpTextInputV3) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -821,6 +822,7 @@ func NewZwpTextInputManagerV3(ctx *client.Context) *ZwpTextInputManagerV3 {
 // Destroy the wp_text_input_manager object.
 //
 func (i *ZwpTextInputManagerV3) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }

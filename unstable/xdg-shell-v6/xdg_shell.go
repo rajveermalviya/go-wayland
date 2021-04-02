@@ -69,6 +69,7 @@ func NewZxdgShellV6(ctx *client.Context) *ZxdgShellV6 {
 // and will result in a protocol error.
 //
 func (i *ZxdgShellV6) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -259,6 +260,7 @@ func NewZxdgPositionerV6(ctx *client.Context) *ZxdgPositionerV6 {
 // Notify the compositor that the xdg_positioner will no longer be used.
 //
 func (i *ZxdgPositionerV6) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -519,6 +521,7 @@ func NewZxdgSurfaceV6(ctx *client.Context) *ZxdgSurfaceV6 {
 // after its role object has been destroyed.
 //
 func (i *ZxdgSurfaceV6) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -727,6 +730,7 @@ func NewZxdgToplevelV6(ctx *client.Context) *ZxdgToplevelV6 {
 // maximization, fullscreen, and so on, will be lost.
 //
 func (i *ZxdgToplevelV6) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
@@ -1319,6 +1323,7 @@ func NewZxdgPopupV6(ctx *client.Context) *ZxdgPopupV6 {
 // will be sent.
 //
 func (i *ZxdgPopupV6) Destroy() error {
+	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
