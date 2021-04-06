@@ -1,179 +1,76 @@
+// Package xcursor is Go port of libxcursor functions required by
+// wayland/cursor
 package xcursor
 
 import (
 	"bufio"
-	"io"
+	"errors"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
-type CursorTheme struct {
-	theme       *cursorTheme
-	SearchPaths []string
-}
+const iconDir = "/usr/X11R6/lib/X11/icons"
 
-func Load(name string) *CursorTheme {
-	searchPaths := themeSearchPaths()
-	theme := load(name, searchPaths)
+const xcursorPath = "~/.icons:/usr/share/icons:/usr/share/pixmaps:~/.cursors:/usr/share/cursors/xorg-x11:" + iconDir
 
-	return &CursorTheme{
-		SearchPaths: searchPaths,
-		theme:       theme,
+var libraryPath = func() string {
+	path := os.Getenv("XCURSOR_PATH")
+	if path == "" {
+		path = xcursorPath
 	}
-}
+	return path
+}()
 
-func (c *CursorTheme) LoadIcon(iconName string) string {
-	return c.theme.loadIcon(iconName, c.SearchPaths, map[string]struct{}{})
-}
-
-type cursorTheme struct {
-	name  string
-	paths []string
-}
-
-func load(name string, searchPaths []string) *cursorTheme {
-	paths := []string{}
-
-	for _, p := range searchPaths {
-		p = path.Join(p, name)
-
-		file, err := os.Stat(p)
-		if err == nil && file.IsDir() {
-			pathDir := p
-
-			p = path.Join(p, "index.theme")
-
-			inherits := themeInherits(p)
-			if inherits == "" {
-				if name != "default" {
-					inherits = "default"
-				} else {
-					continue
-				}
-			}
-
-			paths = append(paths, path.Join(pathDir, inherits))
-		}
+func buildThemeDir(dir string, theme string) string {
+	if dir == "" || theme == "" {
+		return ""
 	}
 
-	return &cursorTheme{
-		name:  name,
-		paths: paths,
+	home := ""
+	if strings.HasPrefix(dir, "~") {
+		home = os.Getenv("HOME")
+		if home == "" {
+			return ""
+		}
+		dir = strings.TrimPrefix(dir, "~")
 	}
+
+	return filepath.Join(home, dir, theme)
 }
 
-func (c *cursorTheme) loadIcon(iconName string, searchPaths []string, walkedThemes map[string]struct{}) string {
-	for _, p := range c.paths {
-		pdir, _ := path.Split(p)
-		iconPath := path.Join(pdir, "cursors", iconName)
-
-		file, err := os.Stat(iconPath)
-		if err == nil && !file.IsDir() {
-			return iconPath
-		}
+func themeInherits(full string) string {
+	if full == "" {
+		return ""
 	}
 
-	walkedThemes[c.name] = struct{}{}
-
-	for _, p := range c.paths {
-		_, inherits := path.Split(p)
-		if inherits == "" {
-			continue
-		}
-
-		if _, ok := walkedThemes[inherits]; ok {
-			continue
-		}
-
-		inheritedTheme := load(inherits, searchPaths)
-
-		iconPath := inheritedTheme.loadIcon(iconName, searchPaths, walkedThemes)
-		if iconPath != "" {
-			return iconPath
-		}
-	}
-
-	return ""
-}
-
-func themeSearchPaths() []string {
-	xcursorPaths := []string{}
-
-	xcursorPathEnv := os.Getenv("XCURSOR_PATH")
-	if xcursorPathEnv == "" {
-		getIconDirs := func(xdgPath string) []string {
-			paths := strings.Split(xdgPath, ":")
-			for i, v := range paths {
-				paths[i] = path.Join(v, "icons")
-			}
-
-			return paths
-		}
-
-		xdgDataHomeEnv := os.Getenv("XDG_DATA_HOME")
-		if xdgDataHomeEnv == "" {
-			xdgDataHomeEnv = "~/.local/share"
-		}
-
-		xdgDataHome := getIconDirs(xdgDataHomeEnv)
-
-		xdgDataDirsEnv := os.Getenv("XDG_DATA_DIRS")
-		if xdgDataDirsEnv == "" {
-			xdgDataDirsEnv = "/usr/local/share:/usr/share"
-		}
-
-		xdgDataDirs := getIconDirs(xdgDataDirsEnv)
-
-		xcursorPaths = append(xcursorPaths, xdgDataHome...)
-		xcursorPaths = append(xcursorPaths, "~/.icons")
-		xcursorPaths = append(xcursorPaths, xdgDataDirs...)
-		xcursorPaths = append(xcursorPaths, "/usr/share/pixmaps", "~/.cursors", "/usr/share/cursors/xorg-x11")
-	} else {
-		xcursorPaths = strings.Split(xcursorPathEnv, ":")
-	}
-
-	homeDir := os.Getenv("HOME")
-	for i, v := range xcursorPaths {
-		xcursorPaths[i] = strings.Replace(v, "~", homeDir, 1)
-	}
-
-	return xcursorPaths
-}
-
-func themeInherits(filePath string) string {
-	content, err := os.Open(filePath)
+	f, err := os.Open(full)
 	if err != nil {
 		return ""
 	}
-	defer content.Close()
+	defer f.Close()
 
-	return parseTheme(content)
-}
-
-func parseTheme(content io.Reader) string {
-	const pattern = "Inherits"
-
-	sc := bufio.NewScanner(content)
+	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		line := sc.Text()
 
-		if !strings.HasPrefix(line, pattern) {
+		if !strings.HasPrefix(line, "Inherits") {
 			continue
 		}
+		chars := line[8:]
 
-		chars := strings.TrimPrefix(line, pattern)
 		chars = strings.TrimSpace(chars)
 
 		if !strings.HasPrefix(chars, "=") {
 			continue
 		}
+		chars = chars[1:]
+
+		chars = strings.TrimSpace(chars)
 
 		result := strings.NewReplacer(
-			"\t", "", "\n", "", "\v", "", "\f", "", "\r", "", " ", "", "\u0085", "", "\u00A0", "",
-			";", "",
-			",", "",
-			"=", "",
+			" ", "", "\t", "", "\n", "", // Xcursor whitespaces
+			";", "", ",", "", // Xcursor separators
 		).Replace(chars)
 
 		if result != "" {
@@ -182,4 +79,138 @@ func parseTheme(content io.Reader) string {
 	}
 
 	return ""
+}
+
+func scanTheme(theme, name string) *os.File {
+	if theme == "" || name == "" {
+		return nil
+	}
+
+	var inherits string
+	var file *os.File
+
+	// Scan this theme
+	for _, path := range strings.Split(libraryPath, ":") {
+		if file != nil {
+			break
+		}
+
+		dir := buildThemeDir(path, theme)
+		if dir != "" {
+			full := filepath.Join(dir, "cursors", name)
+
+			file, _ = os.Open(full)
+
+			if file == nil && inherits == "" {
+				full = filepath.Join(dir, "index.theme")
+				inherits = themeInherits(full)
+			}
+		}
+	}
+
+	// Recurse to scan inherited themes
+	for _, i := range strings.Split(inherits, ":") {
+		if file != nil {
+			break
+		}
+
+		file = scanTheme(i, name)
+	}
+
+	return file
+}
+
+func LoadImages(file, theme string, size int) ([]Image, error) {
+	if file == "" {
+		return nil, nil
+	}
+
+	if theme == "" {
+		theme = "default"
+	}
+
+	f := scanTheme(theme, file)
+	if f == nil {
+		return nil, errors.New("unable to open theme")
+	}
+	defer f.Close()
+
+	imgs, err := fileLoadImages(f, size)
+	if err != nil {
+		return nil, err
+	}
+	if len(imgs) == 0 {
+		return nil, errors.New("got 0 images")
+	}
+
+	return imgs, nil
+}
+
+func loadAllCursorsFromDir(path string, size int, loadCallback func(name string, images []Image)) error {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, ent := range entries {
+		name := ent.Name()
+		full := filepath.Join(path, name)
+
+		f, err := os.Open(full)
+		if err != nil {
+			continue
+		}
+
+		images, err := fileLoadImages(f, size)
+		if err == nil {
+			loadCallback(name, images)
+		}
+
+		f.Close()
+	}
+
+	return nil
+}
+
+// LoadTheme loads all the cursor images of a given theme and its
+// inherited themes. Each cursor is loaded into []Image
+// which is passed to the caller's load callback. If a cursor appears
+// more than once across all the inherited themes, the load callback
+// will be called multiple times, with possibly different []Image
+// which have the same name.
+//
+//  theme: The name of theme that should be loaded
+//  size: The desired size of the cursor images
+//  loadCallback: A callback function that will be called
+//   for each cursor loaded. The first parameter is name of the cursor
+//   representing the loaded cursor and the second is []Image representing
+//   the cursor's animated frames, for static ones slice will contain single image.
+func LoadTheme(theme string, size int, loadCallback func(name string, images []Image)) {
+	if theme == "" {
+		theme = "default"
+	}
+
+	var inherits string
+
+	for _, path := range strings.Split(libraryPath, ":") {
+		dir := buildThemeDir(path, theme)
+		if dir == "" {
+			continue
+		}
+
+		full := filepath.Join(dir, "cursors", "")
+
+		loadAllCursorsFromDir(full, size, loadCallback)
+
+		if inherits == "" {
+			full := filepath.Join(dir, "index.theme")
+			inherits = themeInherits(full)
+		}
+	}
+
+	if inherits != "" {
+		for _, i := range strings.Split(inherits, ":") {
+			LoadTheme(i, size, loadCallback)
+		}
+	}
 }

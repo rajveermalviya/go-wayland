@@ -158,7 +158,11 @@ func (app *appState) HandleWlPointerFrame(_ client.WlPointerFrameEvent) {
 	if (e.eventMask & pointerEventEnter) != 0 {
 		log.Printf("entered %v, %v", e.surfaceX, e.surfaceY)
 
-		app.setCursor(e.serial, cursor.LeftPtr)
+		edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
+		cursorName, ok := cursorMap[edge]
+		if ok {
+			app.setCursor(e.serial, cursorName)
+		}
 	}
 
 	if (e.eventMask & pointerEventLeave) != 0 {
@@ -169,7 +173,7 @@ func (app *appState) HandleWlPointerFrame(_ client.WlPointerFrameEvent) {
 
 		edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
 		cursorName, ok := cursorMap[edge]
-		if ok && cursorName != app.currentCursor {
+		if ok {
 			app.setCursor(e.serial, cursorName)
 		}
 	}
@@ -264,25 +268,62 @@ func componentEdge(width, height, pointerX, pointerY, margin uint32) uint32 {
 }
 
 type cursorData struct {
-	wlCursor *cursor.Cursor
-
+	name    string
 	surface *client.WlSurface
 }
 
+func (c *cursorData) Destory() {
+	if err := c.surface.Destroy(); err != nil {
+		log.Println("unable to destory current cursor surface:", err)
+	}
+}
+
 func (app *appState) setCursor(serial uint32, cursorName string) {
-	c, ok := app.cursors[cursorName]
-	if !ok {
-		log.Print("unable to get %v cursor", cursorName)
-		return
+	if app.currentCursor != nil {
+		if cursorName == app.currentCursor.name {
+			return
+		}
+
+		app.currentCursor.Destory()
 	}
 
-	image := c.wlCursor.Images[0]
+	// Get wl_cursor
+	c := app.cursorTheme.GetCursor(cursorName)
+	if c == nil {
+		log.Fatalf("unable to get %v cursor", cursorName)
+	}
+
+	// Create a wl_surface for cursor
+	surface, err := app.compositor.CreateSurface()
+	if err != nil {
+		log.Fatalf("unable to create compositor surface: %v", err)
+	}
+	log.Print("created new wl_surface for cursor: ", c.Name)
+
+	// For now get the first image (there are multiple images because of animated cursors)
+	// will figure out cursor animation afterwards
+	image := c.Images[0]
+
+	buffer, err := image.GetBuffer()
+	if err != nil {
+		log.Fatalf("unable to get image buffer: %v", err)
+	}
+
+	// Attach the first image to wl_surface
+	if err := surface.Attach(buffer, 0, 0); err != nil {
+		log.Fatalf("unable to attach cursor image buffer to cursor suface: %v", err)
+	}
+	// Commit the surface state changes
+	if err2 := surface.Commit(); err2 != nil {
+		log.Fatalf("unable to commit surface state: %v", err2)
+	}
+
 	if err := app.pointer.SetCursor(
-		serial, c.surface,
+		serial, surface,
 		int32(image.HotspotX), int32(image.HotspotY),
 	); err != nil {
 		log.Print("unable to set cursor")
 	}
 
-	app.currentCursor = cursorName
+	app.currentCursor = &cursorData{name: cursorName, surface: surface}
 }

@@ -40,8 +40,7 @@ type appState struct {
 
 	pointerEvent  pointerEvent
 	cursorTheme   *cursor.Theme
-	cursors       map[string]*cursorData
-	currentCursor string
+	currentCursor *cursorData
 }
 
 func main() {
@@ -84,7 +83,6 @@ func main() {
 		height:   int32(frameRect.Dy()),
 		frame:    frameImage,
 		exitChan: make(chan struct{}),
-		cursors:  make(map[string]*cursorData),
 	}
 
 	// Connect to wayland server
@@ -132,14 +130,8 @@ func main() {
 		app.wmBase = nil
 	}
 
-	for _, c := range app.cursors {
-		if err := c.wlCursor.Destroy(); err != nil {
-			log.Println("unable to destroy cursor", c.wlCursor.Name, ":", err)
-		}
-
-		if err := c.surface.Destroy(); err != nil {
-			log.Println("unable to destroy wl_surface of cursor", c.wlCursor.Name, ":", err)
-		}
+	if app.currentCursor != nil {
+		app.currentCursor.Destory()
 	}
 
 	if app.cursorTheme != nil {
@@ -214,8 +206,12 @@ func run(app *appState) {
 		log.Fatalf("unable to commit surface state: %v", err2)
 	}
 
-	// Preload required cursors
-	app.loadCursors()
+	// Load default cursor theme
+	theme, err := cursor.LoadTheme("default", 24, app.shm)
+	if err != nil {
+		log.Fatalf("unable to load cursor theme: %v", err)
+	}
+	app.cursorTheme = theme
 
 	// Start the dispatch loop
 	for {
@@ -318,60 +314,6 @@ func (app *appState) HandleXdgToplevelConfigure(e xdg_shell.XdgToplevelConfigure
 	// Update app size
 	app.width = width
 	app.height = height
-}
-
-func (app *appState) loadCursors() {
-	// Load default cursor theme
-	theme, err := cursor.LoadTheme(24, app.shm)
-	if err != nil {
-		log.Fatalf("unable to load cursor theme: %v", err)
-	}
-	app.cursorTheme = theme
-
-	// Create
-	for _, name := range []string{
-		cursor.BottomLeftCorner,
-		cursor.BottomRightCorner,
-		cursor.BottomSide,
-		cursor.LeftPtr,
-		cursor.LeftSide,
-		cursor.RightSide,
-		cursor.TopLeftCorner,
-		cursor.TopRightCorner,
-		cursor.TopSide,
-	} {
-		// Get wl_cursor
-		c, err := theme.GetCursor(name)
-		if err != nil {
-			log.Fatalf("unable to get %v cursor: %v", name, err)
-		}
-
-		// Create a wl_surface for cursor
-		surface, err := app.compositor.CreateSurface()
-		if err != nil {
-			log.Fatalf("unable to create compositor surface: %v", err)
-		}
-		log.Print("created new wl_surface for cursor: ", c.Name)
-
-		// For now get the first image (there are multiple images because of animated cursors)
-		// will figure out cursor animation afterwards
-		image := c.Images[0]
-
-		// Attach the first image to wl_surface
-		if err := surface.Attach(image.Buffer, 0, 0); err != nil {
-			log.Fatalf("unable to attach cursor image buffer to cursor suface: %v", err)
-		}
-		// Commit the surface state changes
-		if err2 := surface.Commit(); err2 != nil {
-			log.Fatalf("unable to commit surface state: %v", err2)
-		}
-
-		// Store the surface for later (immediate) use
-		app.cursors[name] = &cursorData{
-			wlCursor: c,
-			surface:  surface,
-		}
-	}
 }
 
 func (app *appState) drawFrame() *client.WlBuffer {

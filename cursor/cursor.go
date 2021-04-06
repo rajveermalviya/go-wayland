@@ -1,12 +1,14 @@
+// Package cursor is Go port of wayland/cursor library
 package cursor
 
 import (
+	"errors"
 	"os"
-	"strconv"
 
 	"github.com/rajveermalviya/go-wayland/client"
 	"github.com/rajveermalviya/go-wayland/cursor/xcursor"
 	"github.com/rajveermalviya/go-wayland/internal/tempfile"
+	"golang.org/x/sys/unix"
 )
 
 // interesting cursor icons.
@@ -26,249 +28,331 @@ const (
 	Watch             = "watch"
 )
 
-type Theme struct {
-	Pool     *client.WlShmPool
-	File     *os.File
-	Name     string
-	Cursors  []*Cursor
-	Size     uint32
-	PoolSize int32
+type shmPool struct {
+	Data []byte
+
+	pool *client.WlShmPool
+	f    *os.File
+	size uint32
+	used uint32
 }
 
-func LoadTheme(size uint32, shm *client.WlShm) (*Theme, error) {
-	return LoadThemeOr("default", size, shm)
-}
-
-func LoadThemeOr(name string, size uint32, shm *client.WlShm) (*Theme, error) {
-	themeName := os.Getenv("XCURSOR_THEME")
-	if themeName == "" {
-		themeName = name
-	}
-
-	themeSize := uint32(0)
-	themeSizeEnv := os.Getenv("XCURSOR_SIZE")
-
-	themeSizeu64, err := strconv.ParseUint(themeSizeEnv, 10, 32)
-	if err == nil {
-		themeSize = uint32(themeSizeu64)
-	} else {
-		themeSize = size
-	}
-
-	return LoadThemeFromName(themeName, themeSize, shm)
-}
-
-func LoadThemeFromName(name string, size uint32, shm *client.WlShm) (*Theme, error) {
-	const initialPoolSize = 16 * 16 * 4
-
-	file, err := tempfile.Create(initialPoolSize)
+func createShmPool(shm *client.WlShm, size int) (*shmPool, error) {
+	f, err := tempfile.Create(int64(size))
 	if err != nil {
 		return nil, err
 	}
 
-	pool, err := shm.CreatePool(file.Fd(), initialPoolSize)
+	data, err := unix.Mmap(int(f.Fd()), 0, size, unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Theme{
-		Name:     name,
-		Size:     size,
-		Pool:     pool,
-		PoolSize: initialPoolSize,
-		File:     file,
+	pool, err := shm.CreatePool(f.Fd(), int32(size))
+	if err != nil {
+		return nil, err
+	}
+
+	return &shmPool{
+		pool: pool,
+		f:    f,
+		Data: data,
+		size: uint32(size),
+		used: 0,
 	}, nil
 }
 
-func (t *Theme) GetCursor(name string) (*Cursor, error) {
-	for _, cursor := range t.Cursors {
-		if cursor.Name == name {
-			return cursor, nil
-		}
+func (pool *shmPool) Resize(size int) error {
+	if err := pool.f.Truncate(int64(size)); err != nil {
+		return err
 	}
 
-	cursor, err := t.loadCursor(name, t.Size)
+	if err := pool.pool.Resize(int32(size)); err != nil {
+		return err
+	}
+
+	if err := unix.Munmap(pool.Data); err != nil {
+		return err
+	}
+	pool.Data = nil
+
+	data, err := unix.Mmap(int(pool.f.Fd()), 0, size, unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	pool.Data = data
 
-	t.Cursors = append(t.Cursors, cursor)
+	pool.size = uint32(size)
 
-	return cursor, nil
+	return nil
 }
 
-func (t *Theme) loadCursor(name string, size uint32) (*Cursor, error) {
-	iconPath := xcursor.Load(t.Name).LoadIcon(name)
-
-	buf, err := os.ReadFile(iconPath)
-	if err != nil {
-		return nil, err
+func (pool *shmPool) Allocate(size int) (int, error) {
+	if pool.used+uint32(size) > pool.size {
+		if err := pool.Resize(2*int(pool.size) + size); err != nil {
+			return 0, err
+		}
 	}
 
-	images := xcursor.ParseXcursor(buf)
+	offset := pool.used
+	pool.used += uint32(size)
 
-	return newCursor(name, t, images, size)
+	return int(offset), nil
 }
 
-func (t *Theme) grow(size int32) error {
-	if size > t.PoolSize {
-		if err := t.File.Truncate(int64(size)); err != nil {
-			return err
-		}
+func (pool *shmPool) Destroy() error {
+	if err := unix.Munmap(pool.Data); err != nil {
+		return err
+	}
+	pool.Data = nil
 
-		if err := t.Pool.Resize(size); err != nil {
-			return err
-		}
+	if err := pool.pool.Destroy(); err != nil {
+		return err
+	}
 
-		t.PoolSize = size
+	if err := pool.f.Close(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (t *Theme) Destroy() error {
-	err := MultiError{}
+// Image is a still image part of a cursor
+//
+// Use Image.GetBuffer() to get the corresponding WlBuffer
+// to attach to your WlSurface.
+type Image struct {
+	/** Actual Width */
+	Width uint32
 
-	err.Add(t.Pool.Destroy())
-	err.Add(t.File.Close())
+	/** Actual Height */
+	Height uint32
 
-	return err.Err()
+	/** Hot spot x (must be inside image) */
+	HotspotX uint32
+
+	/** Hot spot y (must be inside image) */
+	HotspotY uint32
+
+	/** Animation Delay to next frame (ms) */
+	Delay uint32
+
+	theme  *Theme
+	buffer *client.WlBuffer
+	offset int /* data offset of this image in the shm pool */
 }
 
+func (image *Image) GetBuffer() (*client.WlBuffer, error) {
+	theme := image.theme
+
+	if image.buffer == nil {
+		buffer, err := theme.pool.pool.CreateBuffer(
+			int32(image.offset), int32(image.Width), int32(image.Height),
+			int32(image.Width)*4, client.WlShmFormatArgb8888,
+		)
+		if err != nil {
+			return nil, err
+		}
+		image.buffer = buffer
+	}
+
+	return image.buffer, nil
+}
+
+func (image *Image) Destroy() error {
+	if image.buffer != nil {
+		if err := image.buffer.Destroy(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Cursor as returned by Theme.GetCursor()
 type Cursor struct {
-	Name          string
-	Images        []*ImageBuffer
-	TotalDuration uint32
+	// slice of still images composing this animation
+	Images []Image
+
+	// name of this cursor
+	Name string
+
+	// length of the animation in ms
+	totalDelay uint32
 }
 
-func newCursor(name string, theme *Theme, images []*xcursor.Image, size uint32) (*Cursor, error) {
-	totalDuration := uint32(0)
+func createCursorFromXcursorImages(name string, xcimages []xcursor.Image, theme *Theme) (*Cursor, error) {
+	images := make([]Image, len(xcimages))
+	totalDelay := uint32(0)
 
-	nImages := nearestImages(size, images)
-
-	imageBuffers := make([]*ImageBuffer, len(nImages))
-
-	for i, image := range nImages {
-		buffer, err := NewImageBuffer(theme, image)
+	for i, image := range xcimages {
+		size := image.Width * image.Height * 4
+		offset, err := theme.pool.Allocate(int(size))
 		if err != nil {
 			return nil, err
 		}
 
-		totalDuration += buffer.Delay
+		// Copy pixels to shm pool
+		copy(theme.pool.Data[offset:], image.Pixels)
+		totalDelay += image.Delay
 
-		imageBuffers[i] = buffer
+		images[i] = Image{
+			theme:    theme,
+			Width:    image.Width,
+			Height:   image.Height,
+			HotspotX: image.HotspotX,
+			HotspotY: image.HotspotY,
+			Delay:    image.Delay,
+			offset:   offset,
+		}
 	}
 
 	return &Cursor{
-		TotalDuration: totalDuration,
-		Name:          name,
-		Images:        imageBuffers,
+		Name:       name,
+		totalDelay: totalDelay,
+		Images:     images,
 	}, nil
 }
 
-func (c *Cursor) Destroy() error {
+// FrameAndDuration finds the frame for a given elapsed time in a
+// cursor animation as well as the time left until next cursor change.
+//
+//  cursor: The cursor
+//  time: Elapsed time in ms since the beginning of the animation
+//  duration: Time left for this image or zero if the cursor won't change.
+//
+// Returns the index of the image that should be displayed for the
+// given time in the cursor animation and updated duration.
+func (cursor *Cursor) FrameAndDuration(time uint32, d uint32) (int, uint32) {
+	if len(cursor.Images) == 1 {
+		return 0, 0
+	}
+
+	i := 0
+	t := time % cursor.totalDelay
+	duration := d
+
+	// If there is a 0 delay in the image set then this
+	// loop breaks on it and we display that cursor until
+	// time % cursor.totalDelay wraps again.
+	//
+	// Since a 0 delay is silly, and we've never actually
+	// seen one in a cursor file, we haven't bothered to
+	// "fix" this.
+	for t-cursor.Images[i].Delay < t {
+		i++
+		t -= cursor.Images[i].Delay
+	}
+
+	if duration != 0 {
+		return i, duration
+	}
+
+	// Make sure we don't accidentally tell the caller this is
+	// a static cursor image.
+	if t >= cursor.Images[i].Delay {
+		duration = 1
+	} else {
+		duration = cursor.Images[i].Delay - t
+	}
+
+	return i, duration
+}
+
+// Frame finds the frame for a given elapsed time in a cursor animation
+//
+//  cursor: The cursor
+//  time: Elapsed time in ms since the beginning of the animation
+//
+// Returns the index of the image that should be displayed for the
+// given time in the cursor animation.
+func (cursor *Cursor) Frame(time uint32) int {
+	i, _ := cursor.FrameAndDuration(time, 0)
+	return i
+}
+
+func (cursor *Cursor) Destroy() error {
 	err := MultiError{}
 
-	if len(c.Images) > 0 {
-		for _, buf := range c.Images {
-			err.Add(buf.Destroy())
-		}
+	for _, image := range cursor.Images {
+		err.Add(image.Destroy())
 	}
+
+	cursor.Images = nil
 
 	return err.Err()
 }
 
-func nearestImages(size uint32, images []*xcursor.Image) []*xcursor.Image {
-	index := 0
-	for i, image := range images {
-		if size == image.Size {
-			index = i
-			break
-		}
-	}
-
-	nearestImage := images[index]
-
-	nImages := []*xcursor.Image{}
-
-	for _, image := range images {
-		if image.Width == nearestImage.Width && image.Height == nearestImage.Height {
-			nImages = append(nImages, image)
-		}
-	}
-
-	return nImages
+type Theme struct {
+	cursors map[string]*Cursor
+	pool    *shmPool
+	name    string
+	size    int
 }
 
-type FrameAndDuration struct {
-	FrameIndex    int
-	FrameDuration uint32
-}
-
-func (c *Cursor) FrameAndDuration(millis uint32) FrameAndDuration {
-	millis %= c.TotalDuration
-
-	res := 0
-	for i, img := range c.Images {
-		if millis < img.Delay {
-			res = i
-			break
-		}
-		millis -= img.Delay
+func (theme *Theme) loadCallback(name string, images []xcursor.Image) {
+	if c := theme.GetCursor(name); c != nil {
+		return
 	}
 
-	return FrameAndDuration{
-		FrameIndex:    res,
-		FrameDuration: millis,
+	cursor, err := createCursorFromXcursorImages(name, images, theme)
+	if err != nil {
+		return
 	}
+
+	theme.cursors[name] = cursor
 }
 
-type ImageBuffer struct {
-	Buffer   *client.WlBuffer
-	Delay    uint32
-	HotspotX uint32
-	HotspotY uint32
-	Width    uint32
-	Height   uint32
-}
+// LoadTheme loads a cursor theme to memory shared with the compositor
+//
+// name: The name of the cursor theme to load. If empty, the default theme will be loaded.
+// size: Desired size of the cursor images.
+// shm: The compositor's shm interface.
+//
+// Returns an object representing the theme that should be destroyed with
+// Theme.Destroy().
+func LoadTheme(name string, size int, shm *client.WlShm) (*Theme, error) {
+	if name == "" {
+		name = "default"
+	}
 
-func NewImageBuffer(theme *Theme, image *xcursor.Image) (*ImageBuffer, error) {
-	buf := image.PixBGRA
-	offset, err := theme.File.Seek(0, 2)
+	pool, err := createShmPool(shm, size*size*4)
 	if err != nil {
 		return nil, err
 	}
 
-	newSize := offset + int64(len(buf))
-	if err2 := theme.grow(int32(newSize)); err2 != nil {
-		return nil, err2
+	theme := &Theme{
+		name:    name,
+		size:    size,
+		pool:    pool,
+		cursors: map[string]*Cursor{},
 	}
 
-	if _, err3 := theme.File.Write(buf); err3 != nil {
-		return nil, err3
+	xcursor.LoadTheme(name, size, theme.loadCallback)
+
+	if len(theme.cursors) == 0 {
+		_ = pool.Destroy()
+		return nil, errors.New("unable to find cursors in specified theme")
 	}
 
-	buffer, err4 := theme.Pool.CreateBuffer(
-		int32(offset),
-		int32(image.Width),
-		int32(image.Height),
-		int32(image.Width)*4,
-		client.WlShmFormatArgb8888,
-	)
-	if err4 != nil {
-		return nil, err4
-	}
-
-	return &ImageBuffer{
-		Buffer:   buffer,
-		Delay:    image.Delay,
-		HotspotX: image.HotspotX,
-		HotspotY: image.HotspotY,
-		Width:    image.Width,
-		Height:   image.Height,
-	}, nil
+	return theme, nil
 }
 
-func (b *ImageBuffer) Destroy() error {
-	return b.Buffer.Destroy()
+func (theme *Theme) Destroy() error {
+	err := MultiError{}
+
+	for _, cursor := range theme.cursors {
+		err.Add(cursor.Destroy())
+	}
+
+	err.Add(theme.pool.Destroy())
+
+	return err.Err()
+}
+
+// GetCursor gets a cursor for a given name from a cursor theme
+//
+// Returns the theme's cursor of the given name or nil if there is no
+// such cursor
+func (theme *Theme) GetCursor(name string) *Cursor {
+	return theme.cursors[name]
 }
