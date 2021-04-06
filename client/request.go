@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"net"
+	"reflect"
 
 	"golang.org/x/sys/unix"
 
@@ -58,7 +59,11 @@ func (r *Request) PutUint32(u uint32) {
 }
 
 func (r *Request) PutObject(p Proxy) {
-	r.PutUint32(uint32(p.ID()))
+	if reflect.ValueOf(p).IsNil() {
+		r.PutUint32(0)
+	} else {
+		r.PutUint32(p.ID())
+	}
 }
 
 func (r *Request) PutInt32(i int32) {
