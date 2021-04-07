@@ -4,7 +4,6 @@ package xcursor
 
 import (
 	"bufio"
-	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,71 +80,6 @@ func themeInherits(full string) string {
 	return ""
 }
 
-func scanTheme(theme, name string) *os.File {
-	if theme == "" || name == "" {
-		return nil
-	}
-
-	var inherits string
-	var file *os.File
-
-	// Scan this theme
-	for _, path := range strings.Split(libraryPath, ":") {
-		if file != nil {
-			break
-		}
-
-		dir := buildThemeDir(path, theme)
-		if dir != "" {
-			full := filepath.Join(dir, "cursors", name)
-
-			file, _ = os.Open(full)
-
-			if file == nil && inherits == "" {
-				full = filepath.Join(dir, "index.theme")
-				inherits = themeInherits(full)
-			}
-		}
-	}
-
-	// Recurse to scan inherited themes
-	for _, i := range strings.Split(inherits, ":") {
-		if file != nil {
-			break
-		}
-
-		file = scanTheme(i, name)
-	}
-
-	return file
-}
-
-func LoadImages(file, theme string, size int) ([]Image, error) {
-	if file == "" {
-		return nil, nil
-	}
-
-	if theme == "" {
-		theme = "default"
-	}
-
-	f := scanTheme(theme, file)
-	if f == nil {
-		return nil, errors.New("unable to open theme")
-	}
-	defer f.Close()
-
-	imgs, err := fileLoadImages(f, size)
-	if err != nil {
-		return nil, err
-	}
-	if len(imgs) == 0 {
-		return nil, errors.New("got 0 images")
-	}
-
-	return imgs, nil
-}
-
 func loadAllCursorsFromDir(path string, size int, loadCallback func(name string, images []Image)) error {
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -161,8 +95,8 @@ func loadAllCursorsFromDir(path string, size int, loadCallback func(name string,
 			continue
 		}
 
-		images, err := fileLoadImages(f, size)
-		if err == nil {
+		images := fileLoadImages(f, size)
+		if len(images) > 0 {
 			loadCallback(name, images)
 		}
 

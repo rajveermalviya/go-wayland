@@ -122,24 +122,24 @@ func (pool *shmPool) Destroy() error {
 // Use Image.GetBuffer() to get the corresponding WlBuffer
 // to attach to your WlSurface.
 type Image struct {
-	/** Actual Width */
+	// Actual Width
 	Width uint32
 
-	/** Actual Height */
+	// Actual Height
 	Height uint32
 
-	/** Hot spot x (must be inside image) */
+	// Hotspot x (must be inside image)
 	HotspotX uint32
 
-	/** Hot spot y (must be inside image) */
+	// Hotspot y (must be inside image)
 	HotspotY uint32
 
-	/** Animation Delay to next frame (ms) */
+	// Animation Delay to next frame (ms)
 	Delay uint32
 
 	theme  *Theme
 	buffer *client.WlBuffer
-	offset int /* data offset of this image in the shm pool */
+	offset int // data offset of this image in the shm pool
 }
 
 func (image *Image) GetBuffer() (*client.WlBuffer, error) {

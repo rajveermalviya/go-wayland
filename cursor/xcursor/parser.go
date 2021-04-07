@@ -2,7 +2,6 @@ package xcursor
 
 import (
 	"encoding/binary"
-	"errors"
 	"io"
 	"os"
 )
@@ -112,58 +111,55 @@ type Image struct {
 	Pixels   []byte // pointer to pixels
 }
 
-var ErrFileIsNil = errors.New("got nil file")
-
-func readUint32(f *os.File) (uint32, error) {
+func readUint32(f *os.File) (uint32, bool) {
 	if f == nil {
-		return 0, ErrFileIsNil
+		return 0, false
 	}
 
 	bs := make([]byte, 4)
-	_, err := io.ReadFull(f, bs)
-	if err != nil {
-		return 0, err
+	if _, err := io.ReadFull(f, bs); err != nil {
+		return 0, false
 	}
 
-	return binary.LittleEndian.Uint32(bs), nil
+	return binary.LittleEndian.Uint32(bs), true
 }
 
-func readFileHeader(f *os.File) (fh fileHeader, err error) {
+func readFileHeader(f *os.File) (fh fileHeader, ok bool) {
 	if f == nil {
-		return fh, ErrFileIsNil
+		return fh, false
 	}
 
-	magic, err := readUint32(f)
-	if err != nil {
-		return fh, err
+	magic, ok := readUint32(f)
+	if !ok {
+		return fh, false
 	}
 	if magic != xcursorMagic {
-		return fh, errors.New("invalid file: magic doesn't match \"Xcur\"")
+		return fh, false
 	}
 
-	header, err := readUint32(f)
-	if err != nil {
-		return fh, err
+	header, ok := readUint32(f)
+	if !ok {
+		return fh, false
 	}
-	version, err := readUint32(f)
-	if err != nil {
-		return fh, err
+	version, ok := readUint32(f)
+	if !ok {
+		return fh, false
 	}
-	ntoc, err := readUint32(f)
-	if err != nil {
-		return fh, err
+	ntoc, ok := readUint32(f)
+	if !ok {
+		return fh, false
 	}
 
 	skip := header - fileHeaderLen
 	if skip == 0 {
 		_, err := f.Seek(int64(skip), os.SEEK_CUR)
 		if err != nil {
-			return fh, err
+			return fh, false
 		}
 	}
 
 	if ntoc > 0x10000 {
-		return fh, errors.New("got too large ntoc")
+		return fh, false
 	}
 
 	fh.magic = magic
@@ -173,17 +169,17 @@ func readFileHeader(f *os.File) (fh fileHeader, err error) {
 	fh.tocs = make([]fileToc, ntoc)
 
 	for n := uint32(0); n < ntoc; n++ {
-		typ, err := readUint32(f)
-		if err != nil {
-			return fh, err
+		typ, ok := readUint32(f)
+		if !ok {
+			return fh, false
 		}
-		subtype, err := readUint32(f)
-		if err != nil {
-			return fh, err
+		subtype, ok := readUint32(f)
+		if !ok {
+			return fh, false
 		}
-		position, err := readUint32(f)
-		if err != nil {
-			return fh, err
+		position, ok := readUint32(f)
+		if !ok {
+			return fh, false
 		}
 
 		fh.tocs[n] = fileToc{
@@ -193,51 +189,51 @@ func readFileHeader(f *os.File) (fh fileHeader, err error) {
 		}
 	}
 
-	return fh, nil
+	return fh, true
 }
 
-func seekToToc(f *os.File, fh fileHeader, toc int) error {
+func seekToToc(f *os.File, fh fileHeader, toc int) bool {
 	if f == nil {
-		return ErrFileIsNil
+		return false
 	}
 
-	_, err := f.Seek(int64(fh.tocs[toc].position), io.SeekStart)
-	if err != nil {
-		return err
+	if _, err := f.Seek(int64(fh.tocs[toc].position), io.SeekStart); err != nil {
+		return false
 	}
 
-	return nil
+	return true
 }
 
-func readChunkHeader(f *os.File, fh fileHeader, toc int) (ch chunkHeader, err error) {
+func readChunkHeader(f *os.File, fh fileHeader, toc int) (ch chunkHeader, ok bool) {
 	if f == nil {
-		return ch, ErrFileIsNil
+		return ch, false
 	}
 
-	if err2 := seekToToc(f, fh, toc); err2 != nil {
-		return ch, err2
+	ok = seekToToc(f, fh, toc)
+	if !ok {
+		return ch, false
 	}
 
-	header, err := readUint32(f)
-	if err != nil {
-		return ch, err
+	header, ok := readUint32(f)
+	if !ok {
+		return ch, false
 	}
-	typ, err := readUint32(f)
-	if err != nil {
-		return ch, err
+	typ, ok := readUint32(f)
+	if !ok {
+		return ch, false
 	}
-	subtype, err := readUint32(f)
-	if err != nil {
-		return ch, err
+	subtype, ok := readUint32(f)
+	if !ok {
+		return ch, false
 	}
-	version, err := readUint32(f)
-	if err != nil {
-		return ch, err
+	version, ok := readUint32(f)
+	if !ok {
+		return ch, false
 	}
 
-	/* sanity check */
+	// sanity check
 	if typ != fh.tocs[toc].typ || subtype != fh.tocs[toc].subtype {
-		return ch, errors.New("invalid toc type & subtype")
+		return ch, false
 	}
 
 	ch.header = header
@@ -245,7 +241,7 @@ func readChunkHeader(f *os.File, fh fileHeader, toc int) (ch chunkHeader, err er
 	ch.subtype = subtype
 	ch.version = version
 
-	return ch, nil
+	return ch, true
 }
 
 func dist(a, b uint32) uint32 {
@@ -296,46 +292,46 @@ func findImageToc(fh fileHeader, size uint32, count int) int {
 	return int(toc)
 }
 
-func readImage(f *os.File, fh fileHeader, toc int) (img Image, err error) {
+func readImage(f *os.File, fh fileHeader, toc int) (img Image, ok bool) {
 	if f == nil {
-		return img, ErrFileIsNil
+		return img, false
 	}
 
-	ch, err := readChunkHeader(f, fh, toc)
-	if err != nil {
-		return img, err
+	ch, ok := readChunkHeader(f, fh, toc)
+	if !ok {
+		return img, false
 	}
 
-	width, err := readUint32(f)
-	if err != nil {
-		return img, err
+	width, ok := readUint32(f)
+	if !ok {
+		return img, false
 	}
-	height, err := readUint32(f)
-	if err != nil {
-		return img, err
+	height, ok := readUint32(f)
+	if !ok {
+		return img, false
 	}
-	xhot, err := readUint32(f)
-	if err != nil {
-		return img, err
+	xhot, ok := readUint32(f)
+	if !ok {
+		return img, false
 	}
-	yhot, err := readUint32(f)
-	if err != nil {
-		return img, err
+	yhot, ok := readUint32(f)
+	if !ok {
+		return img, false
 	}
-	delay, err := readUint32(f)
-	if err != nil {
-		return img, err
+	delay, ok := readUint32(f)
+	if !ok {
+		return img, false
 	}
 
-	/* sanity check data */
+	// sanity check data
 	if width > imageMaxSize || height > imageMaxSize {
-		return img, errors.New("width or height is too large")
+		return img, false
 	}
 	if width <= 0 || height <= 0 {
-		return img, errors.New("width or height is not a natural number")
+		return img, false
 	}
 	if xhot > width || yhot > height {
-		return img, errors.New("xhot and yhot has to be larger than width and height respectively")
+		return img, false
 	}
 
 	// Create image
@@ -351,9 +347,8 @@ func readImage(f *os.File, fh fileHeader, toc int) (img Image, err error) {
 
 	pixLen := 4 * width * height
 	pixRGBA := make([]byte, pixLen)
-	_, err = io.ReadFull(f, pixRGBA)
-	if err != nil {
-		return img, err
+	if _, err := io.ReadFull(f, pixRGBA); err != nil {
+		return img, false
 	}
 
 	img.Version = version
@@ -365,26 +360,26 @@ func readImage(f *os.File, fh fileHeader, toc int) (img Image, err error) {
 	img.Delay = delay
 	img.Pixels = pixRGBA
 
-	return img, nil
+	return img, true
 }
 
-func fileLoadImages(f *os.File, size int) ([]Image, error) {
+func fileLoadImages(f *os.File, size int) []Image {
 	if f == nil {
-		return nil, ErrFileIsNil
+		return nil
 	}
 
 	if size < 0 {
-		return nil, errors.New("size cannot be negative")
+		return nil
 	}
 
-	fh, err := readFileHeader(f)
-	if err != nil {
-		return nil, err
+	fh, ok := readFileHeader(f)
+	if !ok {
+		return nil
 	}
 
 	bestSize, nsize := findBestSize(fh, uint32(size))
 	if bestSize == 0 {
-		return nil, errors.New("unable to find best size")
+		return nil
 	}
 
 	images := make([]Image, nsize)
@@ -392,16 +387,16 @@ func fileLoadImages(f *os.File, size int) ([]Image, error) {
 	for n := 0; n < nsize; n++ {
 		toc := findImageToc(fh, bestSize, n)
 		if toc < 0 {
-			return nil, errors.New("unable to fined image toc")
+			return nil
 		}
 
-		image, err := readImage(f, fh, toc)
-		if err != nil {
-			return nil, err
+		image, ok := readImage(f, fh, toc)
+		if !ok {
+			return nil
 		}
 
 		images[n] = image
 	}
 
-	return images, nil
+	return images
 }
