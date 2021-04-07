@@ -28,7 +28,7 @@ type appState struct {
 	registry   *client.WlRegistry
 	shm        *client.WlShm
 	compositor *client.WlCompositor
-	wmBase     *xdg_shell.XdgWmBase
+	xdgWmBase  *xdg_shell.XdgWmBase
 	seat       *client.WlSeat
 
 	surface     *client.WlSurface
@@ -51,8 +51,8 @@ func main() {
 	fileName := os.Args[1]
 
 	const (
-		clampedWidth  = 1920
-		clampedHeight = 1080
+		maxWidth  = 1920
+		maxHeight = 1080
 	)
 
 	// Read the image file to *image.RGBA
@@ -61,12 +61,12 @@ func main() {
 		log.Fatal(err)
 	}
 	// Create a proxy image for large images, makes resizing a little better
-	if pImage.Rect.Dy() > pImage.Rect.Dx() && pImage.Rect.Dy() > clampedHeight {
-		pImage = resize.Resize(0, clampedHeight, pImage, resize.Bilinear).(*image.RGBA)
-		log.Print("creating proxy image, resizing by height clamped to", clampedHeight)
-	} else if pImage.Rect.Dx() > pImage.Rect.Dy() && pImage.Rect.Dx() > clampedWidth {
-		pImage = resize.Resize(clampedWidth, 0, pImage, resize.Bilinear).(*image.RGBA)
-		log.Print("creating proxy image, resizing by width clamped to", clampedWidth)
+	if pImage.Rect.Dy() > pImage.Rect.Dx() && pImage.Rect.Dy() > maxHeight {
+		pImage = resize.Resize(0, maxHeight, pImage, resize.Bilinear).(*image.RGBA)
+		log.Print("creating proxy image, resizing by height clamped to", maxHeight)
+	} else if pImage.Rect.Dx() > pImage.Rect.Dy() && pImage.Rect.Dx() > maxWidth {
+		pImage = resize.Resize(maxWidth, 0, pImage, resize.Bilinear).(*image.RGBA)
+		log.Print("creating proxy image, resizing by width clamped to", maxWidth)
 	}
 
 	// Resize again, for first frame
@@ -74,7 +74,7 @@ func main() {
 	frameRect := frameImage.Bounds()
 
 	app := &appState{
-		// Set the title to `cat.jpg - imageview`
+		// Set the title to `cat.jpg - imageviewer`
 		title: fileName + " - imageviewer",
 		appID: "imageviewer",
 		// Keep proxy image in cache, for use in resizing
@@ -85,6 +85,23 @@ func main() {
 		exitChan: make(chan struct{}),
 	}
 
+	app.initWindow()
+
+	// Start the dispatch loop
+loop:
+	for {
+		select {
+		case <-app.exitChan:
+			break loop
+		case app.dispatch() <- struct{}{}:
+		}
+	}
+
+	log.Println("closing")
+	app.cleanup()
+}
+
+func (app *appState) initWindow() {
 	// Connect to wayland server
 	display, err := client.Connect("")
 	if err != nil {
@@ -94,57 +111,6 @@ func main() {
 
 	display.AddErrorHandler(app)
 
-	// Start other stuff in function for simplicity
-	run(app)
-
-	log.Println("closing")
-
-	// Release the pointer if registered
-	if app.pointer != nil {
-		app.releasePointer()
-	}
-
-	// Release the keyboard if registered
-	if app.keyboard != nil {
-		app.releaseKeyboard()
-	}
-
-	// Release wl_seat handlers
-	if app.seat != nil {
-		app.seat.RemoveCapabilitiesHandler(app)
-		app.seat.RemoveNameHandler(app)
-
-		if err := app.seat.Release(); err != nil {
-			log.Println("unable to destroy wl_seat:", err)
-		}
-		app.seat = nil
-	}
-
-	// Release xdg_wmbase
-	if app.wmBase != nil {
-		app.wmBase.RemovePingHandler(app)
-
-		if err := app.wmBase.Destroy(); err != nil {
-			log.Println("unable to destroy xdg_wm_base:", err)
-		}
-		app.wmBase = nil
-	}
-
-	if app.currentCursor != nil {
-		app.currentCursor.Destory()
-	}
-
-	if app.cursorTheme != nil {
-		if err := app.cursorTheme.Destroy(); err != nil {
-			log.Println("unable to destroy cursor theme:", err)
-		}
-	}
-
-	// Close the wayland server connection
-	app.Context().Close()
-}
-
-func run(app *appState) {
 	// Get global interfaces registry
 	registry, err := app.display.GetRegistry()
 	if err != nil {
@@ -155,6 +121,8 @@ func run(app *appState) {
 	// Add global interfaces registrar handler
 	registry.AddGlobalHandler(app)
 	// Wait for interfaces to register
+	app.displayRoundTrip()
+	// Wait for handler events
 	app.displayRoundTrip()
 
 	log.Print("all interfaces registered")
@@ -169,7 +137,7 @@ func run(app *appState) {
 
 	// attach wl_surface to xdg_wmbase to get toplevel
 	// handle
-	xdgSurface, err := app.wmBase.GetXdgSurface(surface)
+	xdgSurface, err := app.xdgWmBase.GetXdgSurface(surface)
 	if err != nil {
 		log.Fatalf("unable to get xdg_surface: %v", err)
 	}
@@ -212,23 +180,13 @@ func run(app *appState) {
 		log.Fatalf("unable to load cursor theme: %v", err)
 	}
 	app.cursorTheme = theme
-
-	// Start the dispatch loop
-	for {
-		select {
-		case <-app.exitChan:
-			return
-
-		case app.Dispatch() <- struct{}{}:
-		}
-	}
 }
 
-func (app *appState) Dispatch() chan<- struct{} {
-	return app.Context().Dispatch()
+func (app *appState) dispatch() chan<- struct{} {
+	return app.context().Dispatch()
 }
 
-func (app *appState) Context() *client.Context {
+func (app *appState) context() *client.Context {
 	return app.display.Context()
 }
 
@@ -236,31 +194,33 @@ func (app *appState) HandleWlRegistryGlobal(e client.WlRegistryGlobalEvent) {
 	log.Printf("discovered an interface: %q\n", e.Interface)
 
 	switch e.Interface {
-	case "wl_shm":
-		shm := client.NewWlShm(app.Context())
-		err := app.registry.Bind(e.Name, e.Interface, e.Version, shm)
-		if err != nil {
-			log.Fatalf("unable to bind wl_shm interface: %v", err)
-		}
-		app.shm = shm
 	case "wl_compositor":
-		compositor := client.NewWlCompositor(app.Context())
+		compositor := client.NewWlCompositor(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, compositor)
 		if err != nil {
 			log.Fatalf("unable to bind wl_compositor interface: %v", err)
 		}
 		app.compositor = compositor
+	case "wl_shm":
+		shm := client.NewWlShm(app.context())
+		err := app.registry.Bind(e.Name, e.Interface, e.Version, shm)
+		if err != nil {
+			log.Fatalf("unable to bind wl_shm interface: %v", err)
+		}
+		app.shm = shm
+
+		shm.AddFormatHandler(app)
 	case "xdg_wm_base":
-		wmBase := xdg_shell.NewXdgWmBase(app.Context())
-		err := app.registry.Bind(e.Name, e.Interface, e.Version, wmBase)
+		xdgWmBase := xdg_shell.NewXdgWmBase(app.context())
+		err := app.registry.Bind(e.Name, e.Interface, e.Version, xdgWmBase)
 		if err != nil {
 			log.Fatalf("unable to bind xdg_wm_base interface: %v", err)
 		}
-		app.wmBase = wmBase
+		app.xdgWmBase = xdgWmBase
 		// Add xdg_wmbase ping handler `app.HandleWmBasePing`
-		wmBase.AddPingHandler(app)
+		xdgWmBase.AddPingHandler(app)
 	case "wl_seat":
-		seat := client.NewWlSeat(app.Context())
+		seat := client.NewWlSeat(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, seat)
 		if err != nil {
 			log.Fatalf("unable to bind wl_seat interface: %v", err)
@@ -270,6 +230,10 @@ func (app *appState) HandleWlRegistryGlobal(e client.WlRegistryGlobalEvent) {
 		seat.AddCapabilitiesHandler(app)
 		seat.AddNameHandler(app)
 	}
+}
+
+func (app *appState) HandleWlShmFormat(e client.WlShmFormatEvent) {
+	log.Printf("supported pixel format: 0x%08x\n", e.Format)
 }
 
 func (app *appState) HandleXdgSurfaceConfigure(e xdg_shell.XdgSurfaceConfigureEvent) {
@@ -349,7 +313,7 @@ func (app *appState) drawFrame() *client.WlBuffer {
 	}
 
 	// Convert RGBA to BGRA
-	imgData := make([]byte, len(app.frame.Pix))
+	imgData := make([]byte, size)
 	copy(imgData, app.frame.Pix)
 	swizzle.BGRA(imgData)
 
@@ -406,7 +370,7 @@ func (*appState) HandleWlDisplayError(e client.WlDisplayErrorEvent) {
 // HandleWmBasePing handles xdg ping by doing a Pong request
 func (app *appState) HandleXdgWmBasePing(e xdg_shell.XdgWmBasePingEvent) {
 	log.Printf("xdg_wmbase ping: serial=%v", e.Serial)
-	app.wmBase.Pong(e.Serial)
+	app.xdgWmBase.Pong(e.Serial)
 	log.Print("xdg_wmbase pong sent")
 }
 
@@ -419,7 +383,7 @@ type doner struct {
 }
 
 func (d doner) HandleWlCallbackDone(e client.WlCallbackDoneEvent) {
-	d.ch <- e
+	close(d.ch)
 }
 
 func (app *appState) displayRoundTrip() {
@@ -428,19 +392,111 @@ func (app *appState) displayRoundTrip() {
 	if err != nil {
 		log.Fatalf("unable to get sync callback: %v", err)
 	}
-	cdeChan := make(chan client.WlCallbackDoneEvent)
-	cdeHandler := doner{cdeChan}
+	doneChan := make(chan client.WlCallbackDoneEvent)
+	cdeHandler := doner{doneChan}
 	callback.AddDoneHandler(cdeHandler)
 
 	// Wait for callback to return
 loop:
 	for {
 		select {
-		case app.Dispatch() <- struct{}{}:
-		case <-cdeChan:
-			callback.RemoveDoneHandler(cdeHandler)
-			close(cdeChan)
+		case app.dispatch() <- struct{}{}:
+		case <-doneChan:
+			_ = callback.Destroy()
 			break loop
 		}
+	}
+}
+
+func (app *appState) cleanup() {
+	// Release the pointer if registered
+	if app.pointer != nil {
+		app.releasePointer()
+	}
+
+	// Release the keyboard if registered
+	if app.keyboard != nil {
+		app.releaseKeyboard()
+	}
+
+	if app.currentCursor != nil {
+		app.currentCursor.Destory()
+		app.currentCursor = nil
+	}
+
+	if app.cursorTheme != nil {
+		if err := app.cursorTheme.Destroy(); err != nil {
+			log.Println("unable to destroy cursor theme:", err)
+		}
+		app.cursorTheme = nil
+	}
+
+	if app.xdgTopLevel != nil {
+		if err := app.xdgTopLevel.Destroy(); err != nil {
+			log.Println("unable to destroy xdg_toplevel:", err)
+		}
+		app.xdgTopLevel = nil
+	}
+
+	if app.xdgSurface != nil {
+		if err := app.xdgSurface.Destroy(); err != nil {
+			log.Println("unable to destroy xdg_surface:", err)
+		}
+		app.xdgSurface = nil
+	}
+
+	if app.surface != nil {
+		if err := app.surface.Destroy(); err != nil {
+			log.Println("unable to destroy wl_surface:", err)
+		}
+		app.surface = nil
+	}
+
+	// Release wl_seat handlers
+	if app.seat != nil {
+		if err := app.seat.Release(); err != nil {
+			log.Println("unable to destroy wl_seat:", err)
+		}
+		app.seat = nil
+	}
+
+	// Release xdg_wmbase
+	if app.xdgWmBase != nil {
+		if err := app.xdgWmBase.Destroy(); err != nil {
+			log.Println("unable to destroy xdg_wm_base:", err)
+		}
+		app.xdgWmBase = nil
+	}
+
+	if app.shm != nil {
+		if err := app.shm.Destroy(); err != nil {
+			log.Println("unable to destroy wl_shm:", err)
+		}
+		app.shm = nil
+	}
+
+	if app.compositor != nil {
+		if err := app.compositor.Destroy(); err != nil {
+			log.Println("unable to destroy wl_compositor:", err)
+		}
+		app.compositor = nil
+	}
+
+	if app.registry != nil {
+		if err := app.registry.Destroy(); err != nil {
+			log.Println("unable to destroy wl_registry:", err)
+		}
+		app.registry = nil
+	}
+
+	if app.display != nil {
+		if err := app.display.Destroy(); err != nil {
+			log.Println("unable to destroy wl_display:", err)
+		}
+	}
+
+	// Close the wayland server connection
+	if err := app.context().Close(); err != nil {
+		log.Println("unable to close wayland context:", err)
 	}
 }

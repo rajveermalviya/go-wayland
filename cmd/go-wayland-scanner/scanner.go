@@ -256,6 +256,13 @@ func writeInterface(w io.Writer, v Interface) {
 		writeRequest(w, ifaceName, i, r)
 	}
 
+	if !hasDestructor(v) {
+		fmt.Fprintf(w, "func (i *%s) Destroy() (error) {\n", ifaceName)
+		fmt.Fprintf(w, "i.Context().Unregister(i)\n")
+		fmt.Fprintf(w, "return nil\n")
+		fmt.Fprintf(w, "}\n")
+	}
+
 	// Enums
 	for _, e := range v.Enums {
 		writeEnum(w, ifaceName, e)
@@ -512,4 +519,14 @@ func comment(s string) string {
 	}
 
 	return strings.TrimSuffix(sb.String(), "// \n")
+}
+
+func hasDestructor(v Interface) bool {
+	for _, r := range v.Requests {
+		if r.Type == "destructor" {
+			return true
+		}
+	}
+
+	return false
 }

@@ -3,21 +3,19 @@ package client
 import (
 	"errors"
 	"io"
+	"log"
 	"net"
 	"os"
-	"strings"
 	"sync"
-
-	"github.com/rajveermalviya/go-wayland/internal/log"
 )
 
 type Context struct {
-	conn         *net.UnixConn
-	objects      map[uint32]Proxy
-	dispatchChan chan struct{}
-	exitChan     chan struct{}
-	mu           sync.RWMutex
-	currentID    uint32
+	conn                  *net.UnixConn
+	objects               map[uint32]Proxy
+	dispatchChan          chan struct{}
+	dispatcherStoppedChan chan struct{}
+	mu                    sync.RWMutex
+	currentID             uint32
 }
 
 func (ctx *Context) Register(p Proxy) {
@@ -48,9 +46,10 @@ func (ctx *Context) Unregister(p Proxy) {
 	delete(ctx.objects, p.ID())
 }
 
-func (ctx *Context) Close() {
-	close(ctx.exitChan)
-	ctx.conn.Close()
+func (ctx *Context) Close() error {
+	close(ctx.dispatchChan)
+	<-ctx.dispatcherStoppedChan
+	return ctx.conn.Close()
 }
 
 func (ctx *Context) Dispatch() chan<- struct{} {
@@ -73,10 +72,10 @@ func Connect(addr string) (*WlDisplay, error) {
 	}
 
 	ctx := &Context{
-		objects:      make(map[uint32]Proxy),
-		currentID:    0,
-		dispatchChan: make(chan struct{}),
-		exitChan:     make(chan struct{}),
+		objects:               make(map[uint32]Proxy),
+		currentID:             0,
+		dispatchChan:          make(chan struct{}),
+		dispatcherStoppedChan: make(chan struct{}),
 	}
 
 	conn, err := net.DialUnix("unix", nil, &net.UnixAddr{Name: addr, Net: "unix"})
@@ -92,42 +91,28 @@ func Connect(addr string) (*WlDisplay, error) {
 }
 
 func (ctx *Context) run() {
-loop:
-	for {
-		select {
-		case _, ok := <-ctx.dispatchChan:
-			if !ok {
-				break loop
+	for range ctx.dispatchChan {
+		e, err := ctx.readEvent()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				// connection closed
+				break
 			}
 
-			e, err := ctx.readEvent()
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					// connection closed
-					break loop
-				}
+			log.Printf("unable to read event: %v", err)
+		}
 
-				if strings.Contains(err.Error(), "use of closed network connection") {
-					break loop
-				}
-
-				log.Printf("unable to read event: %v", err)
-			}
-
-			proxy := ctx.lookupProxy(e.proxyID)
-			if proxy != nil {
-				if dispatcher, ok := proxy.(Dispatcher); ok {
-					dispatcher.Dispatch(e)
-				} else {
-					log.Print("not dispatched")
-				}
+		proxy := ctx.lookupProxy(e.proxyID)
+		if proxy != nil {
+			if dispatcher, ok := proxy.(Dispatcher); ok {
+				dispatcher.Dispatch(e)
 			} else {
-				log.Print("proxy is nil")
+				log.Print("not dispatched")
 			}
-
-		case <-ctx.exitChan:
-			close(ctx.dispatchChan)
-			break loop
+		} else {
+			log.Printf("unable to find proxy for proxyID=%d", e.proxyID)
 		}
 	}
+
+	close(ctx.dispatcherStoppedChan)
 }

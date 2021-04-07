@@ -167,6 +167,10 @@ func (app *appState) HandleWlPointerFrame(_ client.WlPointerFrameEvent) {
 
 	if (e.eventMask & pointerEventLeave) != 0 {
 		log.Print("leave")
+
+		if err := app.pointer.SetCursor(e.serial, nil, 0, 0); err != nil {
+			log.Print("unable to set cursor")
+		}
 	}
 	if (e.eventMask & pointerEventMotion) != 0 {
 		log.Printf("motion %v, %v", e.surfaceX, e.surfaceY)
@@ -224,6 +228,12 @@ func (app *appState) HandleWlPointerFrame(_ client.WlPointerFrameEvent) {
 				log.Printf("(stopped)")
 			}
 		}
+	}
+
+	// keep surface location in state
+	app.pointerEvent = pointerEvent{
+		surfaceX: e.surfaceX,
+		surfaceY: e.surfaceY,
 	}
 }
 

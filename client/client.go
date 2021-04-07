@@ -92,6 +92,11 @@ func (i *WlDisplay) GetRegistry() (*WlRegistry, error) {
 	return registry, err
 }
 
+func (i *WlDisplay) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
+}
+
 // WlDisplayError : global error values
 //
 // These errors are global and can be emitted in response to any
@@ -304,6 +309,11 @@ func (i *WlRegistry) Bind(name uint32, iface string, version uint32, id Proxy) e
 	return err
 }
 
+func (i *WlRegistry) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
+}
+
 // WlRegistryGlobalEvent : announce global object
 //
 // Notify the client of global objects.
@@ -456,6 +466,11 @@ func NewWlCallback(ctx *Context) *WlCallback {
 	return wlCallback
 }
 
+func (i *WlCallback) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
+}
+
 // WlCallbackDoneEvent : done event
 //
 // Notify the client when the related request is done.
@@ -554,6 +569,11 @@ func (i *WlCompositor) CreateRegion() (*WlRegion, error) {
 	id := NewWlRegion(i.Context())
 	err := i.Context().SendRequest(i, 1, id)
 	return id, err
+}
+
+func (i *WlCompositor) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
 }
 
 // WlShmPool : a shared memory pool
@@ -684,6 +704,11 @@ func (i *WlShm) CreatePool(fd uintptr, size int32) (*WlShmPool, error) {
 	id := NewWlShmPool(i.Context())
 	err := i.Context().SendRequest(i, 0, id, fd, size)
 	return id, err
+}
+
+func (i *WlShm) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
 }
 
 // WlShmError : wl_shm error values
@@ -2439,6 +2464,11 @@ func (i *WlDataDeviceManager) GetDataDevice(seat *WlSeat) (*WlDataDevice, error)
 	return id, err
 }
 
+func (i *WlDataDeviceManager) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
+}
+
 // WlDataDeviceManagerDndAction : drag and drop actions
 //
 // This is a bitmask of the available/preferred actions in a
@@ -2518,6 +2548,11 @@ func (i *WlShell) GetShellSurface(surface *WlSurface) (*WlShellSurface, error) {
 	id := NewWlShellSurface(i.Context())
 	err := i.Context().SendRequest(i, 0, id, surface)
 	return id, err
+}
+
+func (i *WlShell) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
 }
 
 // WlShellError :
@@ -2771,6 +2806,11 @@ func (i *WlShellSurface) SetTitle(title string) error {
 func (i *WlShellSurface) SetClass(class string) error {
 	err := i.Context().SendRequest(i, 9, class)
 	return err
+}
+
+func (i *WlShellSurface) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
 }
 
 // WlShellSurfaceResize : edge values for resizing

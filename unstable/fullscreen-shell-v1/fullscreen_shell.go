@@ -341,6 +341,11 @@ func NewZwpFullscreenShellModeFeedbackV1(ctx *client.Context) *ZwpFullscreenShel
 	return zwpFullscreenShellModeFeedbackV1
 }
 
+func (i *ZwpFullscreenShellModeFeedbackV1) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
+}
+
 // ZwpFullscreenShellModeFeedbackV1ModeSuccessfulEvent : mode switch succeeded
 //
 // This event indicates that the attempted mode switch operation was

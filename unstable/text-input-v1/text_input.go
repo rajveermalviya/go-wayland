@@ -239,6 +239,11 @@ func (i *ZwpTextInputV1) InvokeAction(button, index uint32) error {
 	return err
 }
 
+func (i *ZwpTextInputV1) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
+}
+
 // ZwpTextInputV1ContentHint : content hint
 //
 // Content hint is a bitmask to allow to modify the behavior of the text
@@ -1146,4 +1151,9 @@ func (i *ZwpTextInputManagerV1) CreateTextInput() (*ZwpTextInputV1, error) {
 	id := NewZwpTextInputV1(i.Context())
 	err := i.Context().SendRequest(i, 0, id)
 	return id, err
+}
+
+func (i *ZwpTextInputManagerV1) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
 }

@@ -262,6 +262,11 @@ func NewWpPresentationFeedback(ctx *client.Context) *WpPresentationFeedback {
 	return wpPresentationFeedback
 }
 
+func (i *WpPresentationFeedback) Destroy() error {
+	i.Context().Unregister(i)
+	return nil
+}
+
 // WpPresentationFeedbackKind : bitmask of flags in presented event
 //
 // These flags provide information about how the presentation of
