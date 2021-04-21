@@ -2,7 +2,7 @@
 // https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 // XML file : https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/d10d18f3d49374d2e3eb96d63511f32795aab5f7/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml
 //
-// XdgDecorationUnstableV1 Protocol Copyright:
+// xdg_decoration_unstable_v1 Protocol Copyright:
 //
 // Copyright © 2018 Simon Ser
 //
@@ -34,7 +34,7 @@ import (
 	xdg_shell "github.com/rajveermalviya/go-wayland/stable/xdg-shell"
 )
 
-// ZxdgDecorationManagerV1 : window decoration manager
+// DecorationManager : window decoration manager
 //
 // This interface allows a compositor to announce support for server-side
 // decorations.
@@ -58,11 +58,11 @@ import (
 // Once the protocol is to be declared stable, the 'z' prefix and the
 // version number in the protocol and interface names are removed and the
 // interface version number is reset.
-type ZxdgDecorationManagerV1 struct {
+type DecorationManager struct {
 	client.BaseProxy
 }
 
-// NewZxdgDecorationManagerV1 : window decoration manager
+// NewDecorationManager : window decoration manager
 //
 // This interface allows a compositor to announce support for server-side
 // decorations.
@@ -86,8 +86,8 @@ type ZxdgDecorationManagerV1 struct {
 // Once the protocol is to be declared stable, the 'z' prefix and the
 // version number in the protocol and interface names are removed and the
 // interface version number is reset.
-func NewZxdgDecorationManagerV1(ctx *client.Context) *ZxdgDecorationManagerV1 {
-	zxdgDecorationManagerV1 := &ZxdgDecorationManagerV1{}
+func NewDecorationManager(ctx *client.Context) *DecorationManager {
+	zxdgDecorationManagerV1 := &DecorationManager{}
 	ctx.Register(zxdgDecorationManagerV1)
 	return zxdgDecorationManagerV1
 }
@@ -97,7 +97,7 @@ func NewZxdgDecorationManagerV1(ctx *client.Context) *ZxdgDecorationManagerV1 {
 // Destroy the decoration manager. This doesn't destroy objects created
 // with the manager.
 //
-func (i *ZxdgDecorationManagerV1) Destroy() error {
+func (i *DecorationManager) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -113,13 +113,13 @@ func (i *ZxdgDecorationManagerV1) Destroy() error {
 // xdg_toplevel_decoration.configure event must also be treated as
 // errors.
 //
-func (i *ZxdgDecorationManagerV1) GetToplevelDecoration(toplevel *xdg_shell.XdgToplevel) (*ZxdgToplevelDecorationV1, error) {
-	id := NewZxdgToplevelDecorationV1(i.Context())
+func (i *DecorationManager) GetToplevelDecoration(toplevel *xdg_shell.Toplevel) (*ToplevelDecoration, error) {
+	id := NewToplevelDecoration(i.Context())
 	err := i.Context().SendRequest(i, 1, id, toplevel)
 	return id, err
 }
 
-// ZxdgToplevelDecorationV1 : decoration object for a toplevel surface
+// ToplevelDecoration : decoration object for a toplevel surface
 //
 // The decoration object allows the compositor to toggle server-side window
 // decorations for a toplevel surface. The client can request to switch to
@@ -127,13 +127,13 @@ func (i *ZxdgDecorationManagerV1) GetToplevelDecoration(toplevel *xdg_shell.XdgT
 //
 // The xdg_toplevel_decoration object must be destroyed before its
 // xdg_toplevel.
-type ZxdgToplevelDecorationV1 struct {
+type ToplevelDecoration struct {
 	client.BaseProxy
 	mu                sync.RWMutex
-	configureHandlers []ZxdgToplevelDecorationV1ConfigureHandler
+	configureHandlers []ToplevelDecorationConfigureHandler
 }
 
-// NewZxdgToplevelDecorationV1 : decoration object for a toplevel surface
+// NewToplevelDecoration : decoration object for a toplevel surface
 //
 // The decoration object allows the compositor to toggle server-side window
 // decorations for a toplevel surface. The client can request to switch to
@@ -141,8 +141,8 @@ type ZxdgToplevelDecorationV1 struct {
 //
 // The xdg_toplevel_decoration object must be destroyed before its
 // xdg_toplevel.
-func NewZxdgToplevelDecorationV1(ctx *client.Context) *ZxdgToplevelDecorationV1 {
-	zxdgToplevelDecorationV1 := &ZxdgToplevelDecorationV1{}
+func NewToplevelDecoration(ctx *client.Context) *ToplevelDecoration {
+	zxdgToplevelDecorationV1 := &ToplevelDecoration{}
 	ctx.Register(zxdgToplevelDecorationV1)
 	return zxdgToplevelDecorationV1
 }
@@ -152,7 +152,7 @@ func NewZxdgToplevelDecorationV1(ctx *client.Context) *ZxdgToplevelDecorationV1 
 // Switch back to a mode without any server-side decorations at the next
 // commit.
 //
-func (i *ZxdgToplevelDecorationV1) Destroy() error {
+func (i *ToplevelDecoration) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -180,7 +180,7 @@ func (i *ZxdgToplevelDecorationV1) Destroy() error {
 // same decoration mode.
 //
 //  mode: the decoration mode
-func (i *ZxdgToplevelDecorationV1) SetMode(mode uint32) error {
+func (i *ToplevelDecoration) SetMode(mode uint32) error {
 	err := i.Context().SendRequest(i, 1, mode)
 	return err
 }
@@ -192,32 +192,32 @@ func (i *ZxdgToplevelDecorationV1) SetMode(mode uint32) error {
 //
 // This request has the same semantics as set_mode.
 //
-func (i *ZxdgToplevelDecorationV1) UnsetMode() error {
+func (i *ToplevelDecoration) UnsetMode() error {
 	err := i.Context().SendRequest(i, 2)
 	return err
 }
 
-// ZxdgToplevelDecorationV1Error :
+// ToplevelDecorationError :
 const (
-	// ZxdgToplevelDecorationV1ErrorUnconfiguredBuffer : xdg_toplevel has a buffer attached before configure
-	ZxdgToplevelDecorationV1ErrorUnconfiguredBuffer = 0
-	// ZxdgToplevelDecorationV1ErrorAlreadyConstructed : xdg_toplevel already has a decoration object
-	ZxdgToplevelDecorationV1ErrorAlreadyConstructed = 1
-	// ZxdgToplevelDecorationV1ErrorOrphaned : xdg_toplevel destroyed before the decoration object
-	ZxdgToplevelDecorationV1ErrorOrphaned = 2
+	// ToplevelDecorationErrorUnconfiguredBuffer : xdg_toplevel has a buffer attached before configure
+	ToplevelDecorationErrorUnconfiguredBuffer = 0
+	// ToplevelDecorationErrorAlreadyConstructed : xdg_toplevel already has a decoration object
+	ToplevelDecorationErrorAlreadyConstructed = 1
+	// ToplevelDecorationErrorOrphaned : xdg_toplevel destroyed before the decoration object
+	ToplevelDecorationErrorOrphaned = 2
 )
 
-// ZxdgToplevelDecorationV1Mode : window decoration modes
+// ToplevelDecorationMode : window decoration modes
 //
 // These values describe window decoration modes.
 const (
-	// ZxdgToplevelDecorationV1ModeClientSide : no server-side window decoration
-	ZxdgToplevelDecorationV1ModeClientSide = 1
-	// ZxdgToplevelDecorationV1ModeServerSide : server-side window decoration
-	ZxdgToplevelDecorationV1ModeServerSide = 2
+	// ToplevelDecorationModeClientSide : no server-side window decoration
+	ToplevelDecorationModeClientSide = 1
+	// ToplevelDecorationModeServerSide : server-side window decoration
+	ToplevelDecorationModeServerSide = 2
 )
 
-// ZxdgToplevelDecorationV1ConfigureEvent : suggest a surface change
+// ToplevelDecorationConfigureEvent : suggest a surface change
 //
 // The configure event asks the client to change its decoration mode. The
 // configured state should not be applied immediately. Clients must send an
@@ -226,16 +226,16 @@ const (
 //
 // A configure event can be sent at any time. The specified mode must be
 // obeyed by the client.
-type ZxdgToplevelDecorationV1ConfigureEvent struct {
+type ToplevelDecorationConfigureEvent struct {
 	Mode uint32
 }
 
-type ZxdgToplevelDecorationV1ConfigureHandler interface {
-	HandleZxdgToplevelDecorationV1Configure(ZxdgToplevelDecorationV1ConfigureEvent)
+type ToplevelDecorationConfigureHandler interface {
+	HandleToplevelDecorationConfigure(ToplevelDecorationConfigureEvent)
 }
 
-// AddConfigureHandler : adds handler for ZxdgToplevelDecorationV1ConfigureEvent
-func (i *ZxdgToplevelDecorationV1) AddConfigureHandler(h ZxdgToplevelDecorationV1ConfigureHandler) {
+// AddConfigureHandler : adds handler for ToplevelDecorationConfigureEvent
+func (i *ToplevelDecoration) AddConfigureHandler(h ToplevelDecorationConfigureHandler) {
 	if h == nil {
 		return
 	}
@@ -245,7 +245,7 @@ func (i *ZxdgToplevelDecorationV1) AddConfigureHandler(h ZxdgToplevelDecorationV
 	i.mu.Unlock()
 }
 
-func (i *ZxdgToplevelDecorationV1) RemoveConfigureHandler(h ZxdgToplevelDecorationV1ConfigureHandler) {
+func (i *ToplevelDecoration) RemoveConfigureHandler(h ToplevelDecorationConfigureHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -257,7 +257,7 @@ func (i *ZxdgToplevelDecorationV1) RemoveConfigureHandler(h ZxdgToplevelDecorati
 	}
 }
 
-func (i *ZxdgToplevelDecorationV1) Dispatch(event *client.Event) {
+func (i *ToplevelDecoration) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -267,7 +267,7 @@ func (i *ZxdgToplevelDecorationV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZxdgToplevelDecorationV1ConfigureEvent{
+		e := ToplevelDecorationConfigureEvent{
 			Mode: event.Uint32(),
 		}
 
@@ -275,7 +275,7 @@ func (i *ZxdgToplevelDecorationV1) Dispatch(event *client.Event) {
 		for _, h := range i.configureHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZxdgToplevelDecorationV1Configure(e)
+			h.HandleToplevelDecorationConfigure(e)
 
 			i.mu.RLock()
 		}

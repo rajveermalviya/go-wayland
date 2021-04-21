@@ -2,7 +2,7 @@
 // https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 // XML file : https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/d10d18f3d49374d2e3eb96d63511f32795aab5f7/unstable/text-input/text-input-unstable-v1.xml
 //
-// TextInputUnstableV1 Protocol Copyright:
+// text_input_unstable_v1 Protocol Copyright:
 //
 // Copyright © 2012, 2013 Intel Corporation
 //
@@ -33,7 +33,7 @@ import (
 	"github.com/rajveermalviya/go-wayland/client"
 )
 
-// ZwpTextInputV1 : text input
+// TextInput : text input
 //
 // An object used for text input. Adds support for text input and input
 // methods to applications. A text_input object is created from a
@@ -64,25 +64,25 @@ import (
 // Once the protocol is to be declared stable, the 'z' prefix and the
 // version number in the protocol and interface names are removed and the
 // interface version number is reset.
-type ZwpTextInputV1 struct {
+type TextInput struct {
 	client.BaseProxy
 	mu                            sync.RWMutex
-	enterHandlers                 []ZwpTextInputV1EnterHandler
-	leaveHandlers                 []ZwpTextInputV1LeaveHandler
-	modifiersMapHandlers          []ZwpTextInputV1ModifiersMapHandler
-	inputPanelStateHandlers       []ZwpTextInputV1InputPanelStateHandler
-	preeditStringHandlers         []ZwpTextInputV1PreeditStringHandler
-	preeditStylingHandlers        []ZwpTextInputV1PreeditStylingHandler
-	preeditCursorHandlers         []ZwpTextInputV1PreeditCursorHandler
-	commitStringHandlers          []ZwpTextInputV1CommitStringHandler
-	cursorPositionHandlers        []ZwpTextInputV1CursorPositionHandler
-	deleteSurroundingTextHandlers []ZwpTextInputV1DeleteSurroundingTextHandler
-	keysymHandlers                []ZwpTextInputV1KeysymHandler
-	languageHandlers              []ZwpTextInputV1LanguageHandler
-	textDirectionHandlers         []ZwpTextInputV1TextDirectionHandler
+	enterHandlers                 []TextInputEnterHandler
+	leaveHandlers                 []TextInputLeaveHandler
+	modifiersMapHandlers          []TextInputModifiersMapHandler
+	inputPanelStateHandlers       []TextInputInputPanelStateHandler
+	preeditStringHandlers         []TextInputPreeditStringHandler
+	preeditStylingHandlers        []TextInputPreeditStylingHandler
+	preeditCursorHandlers         []TextInputPreeditCursorHandler
+	commitStringHandlers          []TextInputCommitStringHandler
+	cursorPositionHandlers        []TextInputCursorPositionHandler
+	deleteSurroundingTextHandlers []TextInputDeleteSurroundingTextHandler
+	keysymHandlers                []TextInputKeysymHandler
+	languageHandlers              []TextInputLanguageHandler
+	textDirectionHandlers         []TextInputTextDirectionHandler
 }
 
-// NewZwpTextInputV1 : text input
+// NewTextInput : text input
 //
 // An object used for text input. Adds support for text input and input
 // methods to applications. A text_input object is created from a
@@ -113,8 +113,8 @@ type ZwpTextInputV1 struct {
 // Once the protocol is to be declared stable, the 'z' prefix and the
 // version number in the protocol and interface names are removed and the
 // interface version number is reset.
-func NewZwpTextInputV1(ctx *client.Context) *ZwpTextInputV1 {
-	zwpTextInputV1 := &ZwpTextInputV1{}
+func NewTextInput(ctx *client.Context) *TextInput {
+	zwpTextInputV1 := &TextInput{}
 	ctx.Register(zwpTextInputV1)
 	return zwpTextInputV1
 }
@@ -129,7 +129,7 @@ func NewZwpTextInputV1(ctx *client.Context) *ZwpTextInputV1 {
 // text_input object and tracked for focus lost. The enter event
 // is emitted on successful activation.
 //
-func (i *ZwpTextInputV1) Activate(seat *client.WlSeat, surface *client.WlSurface) error {
+func (i *TextInput) Activate(seat *client.Seat, surface *client.Surface) error {
 	err := i.Context().SendRequest(i, 0, seat, surface)
 	return err
 }
@@ -140,7 +140,7 @@ func (i *ZwpTextInputV1) Activate(seat *client.WlSeat, surface *client.WlSurface
 // text entry lost focus). The seat argument is a wl_seat which was used
 // for activation.
 //
-func (i *ZwpTextInputV1) Deactivate(seat *client.WlSeat) error {
+func (i *TextInput) Deactivate(seat *client.Seat) error {
 	err := i.Context().SendRequest(i, 1, seat)
 	return err
 }
@@ -149,7 +149,7 @@ func (i *ZwpTextInputV1) Deactivate(seat *client.WlSeat) error {
 //
 // Requests input panels (virtual keyboard) to show.
 //
-func (i *ZwpTextInputV1) ShowInputPanel() error {
+func (i *TextInput) ShowInputPanel() error {
 	err := i.Context().SendRequest(i, 2)
 	return err
 }
@@ -158,7 +158,7 @@ func (i *ZwpTextInputV1) ShowInputPanel() error {
 //
 // Requests input panels (virtual keyboard) to hide.
 //
-func (i *ZwpTextInputV1) HideInputPanel() error {
+func (i *TextInput) HideInputPanel() error {
 	err := i.Context().SendRequest(i, 3)
 	return err
 }
@@ -169,7 +169,7 @@ func (i *ZwpTextInputV1) HideInputPanel() error {
 // reset, for example after the text was changed outside of the normal
 // input method flow.
 //
-func (i *ZwpTextInputV1) Reset() error {
+func (i *TextInput) Reset() error {
 	err := i.Context().SendRequest(i, 4)
 	return err
 }
@@ -182,7 +182,7 @@ func (i *ZwpTextInputV1) Reset() error {
 // selection anchor within the surrounding text. If there is no selected
 // text anchor, then it is the same as cursor.
 //
-func (i *ZwpTextInputV1) SetSurroundingText(text string, cursor, anchor uint32) error {
+func (i *TextInput) SetSurroundingText(text string, cursor, anchor uint32) error {
 	err := i.Context().SendRequest(i, 5, text, cursor, anchor)
 	return err
 }
@@ -197,14 +197,14 @@ func (i *ZwpTextInputV1) SetSurroundingText(text string, cursor, anchor uint32) 
 // default hints (auto completion, auto correction, auto capitalization)
 // should be assumed.
 //
-func (i *ZwpTextInputV1) SetContentType(hint, purpose uint32) error {
+func (i *TextInput) SetContentType(hint, purpose uint32) error {
 	err := i.Context().SendRequest(i, 6, hint, purpose)
 	return err
 }
 
 // SetCursorRectangle :
 //
-func (i *ZwpTextInputV1) SetCursorRectangle(x, y, width, height int32) error {
+func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 7, x, y, width, height)
 	return err
 }
@@ -219,7 +219,7 @@ func (i *ZwpTextInputV1) SetCursorRectangle(x, y, width, height int32) error {
 // language of the currently edited document or in an instant message
 // application which tracks languages of contacts.
 //
-func (i *ZwpTextInputV1) SetPreferredLanguage(language string) error {
+func (i *TextInput) SetPreferredLanguage(language string) error {
 	err := i.Context().SendRequest(i, 8, language)
 	return err
 }
@@ -227,57 +227,57 @@ func (i *ZwpTextInputV1) SetPreferredLanguage(language string) error {
 // CommitState :
 //
 //  serial: used to identify the known state
-func (i *ZwpTextInputV1) CommitState(serial uint32) error {
+func (i *TextInput) CommitState(serial uint32) error {
 	err := i.Context().SendRequest(i, 9, serial)
 	return err
 }
 
 // InvokeAction :
 //
-func (i *ZwpTextInputV1) InvokeAction(button, index uint32) error {
+func (i *TextInput) InvokeAction(button, index uint32) error {
 	err := i.Context().SendRequest(i, 10, button, index)
 	return err
 }
 
-func (i *ZwpTextInputV1) Destroy() error {
+func (i *TextInput) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// ZwpTextInputV1ContentHint : content hint
+// TextInputContentHint : content hint
 //
 // Content hint is a bitmask to allow to modify the behavior of the text
 // input.
 const (
-	// ZwpTextInputV1ContentHintNone : no special behaviour
-	ZwpTextInputV1ContentHintNone = 0x0
-	// ZwpTextInputV1ContentHintDefault : auto completion, correction and capitalization
-	ZwpTextInputV1ContentHintDefault = 0x7
-	// ZwpTextInputV1ContentHintPassword : hidden and sensitive text
-	ZwpTextInputV1ContentHintPassword = 0xc0
-	// ZwpTextInputV1ContentHintAutoCompletion : suggest word completions
-	ZwpTextInputV1ContentHintAutoCompletion = 0x1
-	// ZwpTextInputV1ContentHintAutoCorrection : suggest word corrections
-	ZwpTextInputV1ContentHintAutoCorrection = 0x2
-	// ZwpTextInputV1ContentHintAutoCapitalization : switch to uppercase letters at the start of a sentence
-	ZwpTextInputV1ContentHintAutoCapitalization = 0x4
-	// ZwpTextInputV1ContentHintLowercase : prefer lowercase letters
-	ZwpTextInputV1ContentHintLowercase = 0x8
-	// ZwpTextInputV1ContentHintUppercase : prefer uppercase letters
-	ZwpTextInputV1ContentHintUppercase = 0x10
-	// ZwpTextInputV1ContentHintTitlecase : prefer casing for titles and headings (can be language dependent)
-	ZwpTextInputV1ContentHintTitlecase = 0x20
-	// ZwpTextInputV1ContentHintHiddenText : characters should be hidden
-	ZwpTextInputV1ContentHintHiddenText = 0x40
-	// ZwpTextInputV1ContentHintSensitiveData : typed text should not be stored
-	ZwpTextInputV1ContentHintSensitiveData = 0x80
-	// ZwpTextInputV1ContentHintLatin : just latin characters should be entered
-	ZwpTextInputV1ContentHintLatin = 0x100
-	// ZwpTextInputV1ContentHintMultiline : the text input is multiline
-	ZwpTextInputV1ContentHintMultiline = 0x200
+	// TextInputContentHintNone : no special behaviour
+	TextInputContentHintNone = 0x0
+	// TextInputContentHintDefault : auto completion, correction and capitalization
+	TextInputContentHintDefault = 0x7
+	// TextInputContentHintPassword : hidden and sensitive text
+	TextInputContentHintPassword = 0xc0
+	// TextInputContentHintAutoCompletion : suggest word completions
+	TextInputContentHintAutoCompletion = 0x1
+	// TextInputContentHintAutoCorrection : suggest word corrections
+	TextInputContentHintAutoCorrection = 0x2
+	// TextInputContentHintAutoCapitalization : switch to uppercase letters at the start of a sentence
+	TextInputContentHintAutoCapitalization = 0x4
+	// TextInputContentHintLowercase : prefer lowercase letters
+	TextInputContentHintLowercase = 0x8
+	// TextInputContentHintUppercase : prefer uppercase letters
+	TextInputContentHintUppercase = 0x10
+	// TextInputContentHintTitlecase : prefer casing for titles and headings (can be language dependent)
+	TextInputContentHintTitlecase = 0x20
+	// TextInputContentHintHiddenText : characters should be hidden
+	TextInputContentHintHiddenText = 0x40
+	// TextInputContentHintSensitiveData : typed text should not be stored
+	TextInputContentHintSensitiveData = 0x80
+	// TextInputContentHintLatin : just latin characters should be entered
+	TextInputContentHintLatin = 0x100
+	// TextInputContentHintMultiline : the text input is multiline
+	TextInputContentHintMultiline = 0x200
 )
 
-// ZwpTextInputV1ContentPurpose : content purpose
+// TextInputContentPurpose : content purpose
 //
 // The content purpose allows to specify the primary purpose of a text
 // input.
@@ -285,72 +285,72 @@ const (
 // This allows an input method to show special purpose input panels with
 // extra characters or to disallow some characters.
 const (
-	// ZwpTextInputV1ContentPurposeNormal : default input, allowing all characters
-	ZwpTextInputV1ContentPurposeNormal = 0
-	// ZwpTextInputV1ContentPurposeAlpha : allow only alphabetic characters
-	ZwpTextInputV1ContentPurposeAlpha = 1
-	// ZwpTextInputV1ContentPurposeDigits : allow only digits
-	ZwpTextInputV1ContentPurposeDigits = 2
-	// ZwpTextInputV1ContentPurposeNumber : input a number (including decimal separator and sign)
-	ZwpTextInputV1ContentPurposeNumber = 3
-	// ZwpTextInputV1ContentPurposePhone : input a phone number
-	ZwpTextInputV1ContentPurposePhone = 4
-	// ZwpTextInputV1ContentPurposeUrl : input an URL
-	ZwpTextInputV1ContentPurposeUrl = 5
-	// ZwpTextInputV1ContentPurposeEmail : input an email address
-	ZwpTextInputV1ContentPurposeEmail = 6
-	// ZwpTextInputV1ContentPurposeName : input a name of a person
-	ZwpTextInputV1ContentPurposeName = 7
-	// ZwpTextInputV1ContentPurposePassword : input a password (combine with password or sensitive_data hint)
-	ZwpTextInputV1ContentPurposePassword = 8
-	// ZwpTextInputV1ContentPurposeDate : input a date
-	ZwpTextInputV1ContentPurposeDate = 9
-	// ZwpTextInputV1ContentPurposeTime : input a time
-	ZwpTextInputV1ContentPurposeTime = 10
-	// ZwpTextInputV1ContentPurposeDatetime : input a date and time
-	ZwpTextInputV1ContentPurposeDatetime = 11
-	// ZwpTextInputV1ContentPurposeTerminal : input for a terminal
-	ZwpTextInputV1ContentPurposeTerminal = 12
+	// TextInputContentPurposeNormal : default input, allowing all characters
+	TextInputContentPurposeNormal = 0
+	// TextInputContentPurposeAlpha : allow only alphabetic characters
+	TextInputContentPurposeAlpha = 1
+	// TextInputContentPurposeDigits : allow only digits
+	TextInputContentPurposeDigits = 2
+	// TextInputContentPurposeNumber : input a number (including decimal separator and sign)
+	TextInputContentPurposeNumber = 3
+	// TextInputContentPurposePhone : input a phone number
+	TextInputContentPurposePhone = 4
+	// TextInputContentPurposeUrl : input an URL
+	TextInputContentPurposeUrl = 5
+	// TextInputContentPurposeEmail : input an email address
+	TextInputContentPurposeEmail = 6
+	// TextInputContentPurposeName : input a name of a person
+	TextInputContentPurposeName = 7
+	// TextInputContentPurposePassword : input a password (combine with password or sensitive_data hint)
+	TextInputContentPurposePassword = 8
+	// TextInputContentPurposeDate : input a date
+	TextInputContentPurposeDate = 9
+	// TextInputContentPurposeTime : input a time
+	TextInputContentPurposeTime = 10
+	// TextInputContentPurposeDatetime : input a date and time
+	TextInputContentPurposeDatetime = 11
+	// TextInputContentPurposeTerminal : input for a terminal
+	TextInputContentPurposeTerminal = 12
 )
 
-// ZwpTextInputV1PreeditStyle :
+// TextInputPreeditStyle :
 const (
-	// ZwpTextInputV1PreeditStyleDefault : default style for composing text
-	ZwpTextInputV1PreeditStyleDefault = 0
-	// ZwpTextInputV1PreeditStyleNone : style should be the same as in non-composing text
-	ZwpTextInputV1PreeditStyleNone      = 1
-	ZwpTextInputV1PreeditStyleActive    = 2
-	ZwpTextInputV1PreeditStyleInactive  = 3
-	ZwpTextInputV1PreeditStyleHighlight = 4
-	ZwpTextInputV1PreeditStyleUnderline = 5
-	ZwpTextInputV1PreeditStyleSelection = 6
-	ZwpTextInputV1PreeditStyleIncorrect = 7
+	// TextInputPreeditStyleDefault : default style for composing text
+	TextInputPreeditStyleDefault = 0
+	// TextInputPreeditStyleNone : style should be the same as in non-composing text
+	TextInputPreeditStyleNone      = 1
+	TextInputPreeditStyleActive    = 2
+	TextInputPreeditStyleInactive  = 3
+	TextInputPreeditStyleHighlight = 4
+	TextInputPreeditStyleUnderline = 5
+	TextInputPreeditStyleSelection = 6
+	TextInputPreeditStyleIncorrect = 7
 )
 
-// ZwpTextInputV1TextDirection :
+// TextInputTextDirection :
 const (
-	// ZwpTextInputV1TextDirectionAuto : automatic text direction based on text and language
-	ZwpTextInputV1TextDirectionAuto = 0
-	// ZwpTextInputV1TextDirectionLtr : left-to-right
-	ZwpTextInputV1TextDirectionLtr = 1
-	// ZwpTextInputV1TextDirectionRtl : right-to-left
-	ZwpTextInputV1TextDirectionRtl = 2
+	// TextInputTextDirectionAuto : automatic text direction based on text and language
+	TextInputTextDirectionAuto = 0
+	// TextInputTextDirectionLtr : left-to-right
+	TextInputTextDirectionLtr = 1
+	// TextInputTextDirectionRtl : right-to-left
+	TextInputTextDirectionRtl = 2
 )
 
-// ZwpTextInputV1EnterEvent : enter event
+// TextInputEnterEvent : enter event
 //
 // Notify the text_input object when it received focus. Typically in
 // response to an activate request.
-type ZwpTextInputV1EnterEvent struct {
-	Surface *client.WlSurface
+type TextInputEnterEvent struct {
+	Surface *client.Surface
 }
 
-type ZwpTextInputV1EnterHandler interface {
-	HandleZwpTextInputV1Enter(ZwpTextInputV1EnterEvent)
+type TextInputEnterHandler interface {
+	HandleTextInputEnter(TextInputEnterEvent)
 }
 
-// AddEnterHandler : adds handler for ZwpTextInputV1EnterEvent
-func (i *ZwpTextInputV1) AddEnterHandler(h ZwpTextInputV1EnterHandler) {
+// AddEnterHandler : adds handler for TextInputEnterEvent
+func (i *TextInput) AddEnterHandler(h TextInputEnterHandler) {
 	if h == nil {
 		return
 	}
@@ -360,7 +360,7 @@ func (i *ZwpTextInputV1) AddEnterHandler(h ZwpTextInputV1EnterHandler) {
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveEnterHandler(h ZwpTextInputV1EnterHandler) {
+func (i *TextInput) RemoveEnterHandler(h TextInputEnterHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -372,18 +372,18 @@ func (i *ZwpTextInputV1) RemoveEnterHandler(h ZwpTextInputV1EnterHandler) {
 	}
 }
 
-// ZwpTextInputV1LeaveEvent : leave event
+// TextInputLeaveEvent : leave event
 //
 // Notify the text_input object when it lost focus. Either in response
 // to a deactivate request or when the assigned surface lost focus or was
 // destroyed.
-type ZwpTextInputV1LeaveEvent struct{}
-type ZwpTextInputV1LeaveHandler interface {
-	HandleZwpTextInputV1Leave(ZwpTextInputV1LeaveEvent)
+type TextInputLeaveEvent struct{}
+type TextInputLeaveHandler interface {
+	HandleTextInputLeave(TextInputLeaveEvent)
 }
 
-// AddLeaveHandler : adds handler for ZwpTextInputV1LeaveEvent
-func (i *ZwpTextInputV1) AddLeaveHandler(h ZwpTextInputV1LeaveHandler) {
+// AddLeaveHandler : adds handler for TextInputLeaveEvent
+func (i *TextInput) AddLeaveHandler(h TextInputLeaveHandler) {
 	if h == nil {
 		return
 	}
@@ -393,7 +393,7 @@ func (i *ZwpTextInputV1) AddLeaveHandler(h ZwpTextInputV1LeaveHandler) {
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveLeaveHandler(h ZwpTextInputV1LeaveHandler) {
+func (i *TextInput) RemoveLeaveHandler(h TextInputLeaveHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -405,21 +405,21 @@ func (i *ZwpTextInputV1) RemoveLeaveHandler(h ZwpTextInputV1LeaveHandler) {
 	}
 }
 
-// ZwpTextInputV1ModifiersMapEvent : modifiers map
+// TextInputModifiersMapEvent : modifiers map
 //
 // Transfer an array of 0-terminated modifier names. The position in
 // the array is the index of the modifier as used in the modifiers
 // bitmask in the keysym event.
-type ZwpTextInputV1ModifiersMapEvent struct {
+type TextInputModifiersMapEvent struct {
 	Map []int32
 }
 
-type ZwpTextInputV1ModifiersMapHandler interface {
-	HandleZwpTextInputV1ModifiersMap(ZwpTextInputV1ModifiersMapEvent)
+type TextInputModifiersMapHandler interface {
+	HandleTextInputModifiersMap(TextInputModifiersMapEvent)
 }
 
-// AddModifiersMapHandler : adds handler for ZwpTextInputV1ModifiersMapEvent
-func (i *ZwpTextInputV1) AddModifiersMapHandler(h ZwpTextInputV1ModifiersMapHandler) {
+// AddModifiersMapHandler : adds handler for TextInputModifiersMapEvent
+func (i *TextInput) AddModifiersMapHandler(h TextInputModifiersMapHandler) {
 	if h == nil {
 		return
 	}
@@ -429,7 +429,7 @@ func (i *ZwpTextInputV1) AddModifiersMapHandler(h ZwpTextInputV1ModifiersMapHand
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveModifiersMapHandler(h ZwpTextInputV1ModifiersMapHandler) {
+func (i *TextInput) RemoveModifiersMapHandler(h TextInputModifiersMapHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -441,19 +441,19 @@ func (i *ZwpTextInputV1) RemoveModifiersMapHandler(h ZwpTextInputV1ModifiersMapH
 	}
 }
 
-// ZwpTextInputV1InputPanelStateEvent : state of the input panel
+// TextInputInputPanelStateEvent : state of the input panel
 //
 // Notify when the visibility state of the input panel changed.
-type ZwpTextInputV1InputPanelStateEvent struct {
+type TextInputInputPanelStateEvent struct {
 	State uint32
 }
 
-type ZwpTextInputV1InputPanelStateHandler interface {
-	HandleZwpTextInputV1InputPanelState(ZwpTextInputV1InputPanelStateEvent)
+type TextInputInputPanelStateHandler interface {
+	HandleTextInputInputPanelState(TextInputInputPanelStateEvent)
 }
 
-// AddInputPanelStateHandler : adds handler for ZwpTextInputV1InputPanelStateEvent
-func (i *ZwpTextInputV1) AddInputPanelStateHandler(h ZwpTextInputV1InputPanelStateHandler) {
+// AddInputPanelStateHandler : adds handler for TextInputInputPanelStateEvent
+func (i *TextInput) AddInputPanelStateHandler(h TextInputInputPanelStateHandler) {
 	if h == nil {
 		return
 	}
@@ -463,7 +463,7 @@ func (i *ZwpTextInputV1) AddInputPanelStateHandler(h ZwpTextInputV1InputPanelSta
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveInputPanelStateHandler(h ZwpTextInputV1InputPanelStateHandler) {
+func (i *TextInput) RemoveInputPanelStateHandler(h TextInputInputPanelStateHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -475,7 +475,7 @@ func (i *ZwpTextInputV1) RemoveInputPanelStateHandler(h ZwpTextInputV1InputPanel
 	}
 }
 
-// ZwpTextInputV1PreeditStringEvent : pre-edit
+// TextInputPreeditStringEvent : pre-edit
 //
 // Notify when a new composing text (pre-edit) should be set around the
 // current cursor position. Any previously set composing text should
@@ -486,18 +486,18 @@ func (i *ZwpTextInputV1) RemoveInputPanelStateHandler(h ZwpTextInputV1InputPanel
 //
 // The text input should also handle all preedit_style and preedit_cursor
 // events occurring directly before preedit_string.
-type ZwpTextInputV1PreeditStringEvent struct {
+type TextInputPreeditStringEvent struct {
 	Serial uint32
 	Text   string
 	Commit string
 }
 
-type ZwpTextInputV1PreeditStringHandler interface {
-	HandleZwpTextInputV1PreeditString(ZwpTextInputV1PreeditStringEvent)
+type TextInputPreeditStringHandler interface {
+	HandleTextInputPreeditString(TextInputPreeditStringEvent)
 }
 
-// AddPreeditStringHandler : adds handler for ZwpTextInputV1PreeditStringEvent
-func (i *ZwpTextInputV1) AddPreeditStringHandler(h ZwpTextInputV1PreeditStringHandler) {
+// AddPreeditStringHandler : adds handler for TextInputPreeditStringEvent
+func (i *TextInput) AddPreeditStringHandler(h TextInputPreeditStringHandler) {
 	if h == nil {
 		return
 	}
@@ -507,7 +507,7 @@ func (i *ZwpTextInputV1) AddPreeditStringHandler(h ZwpTextInputV1PreeditStringHa
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemovePreeditStringHandler(h ZwpTextInputV1PreeditStringHandler) {
+func (i *TextInput) RemovePreeditStringHandler(h TextInputPreeditStringHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -519,7 +519,7 @@ func (i *ZwpTextInputV1) RemovePreeditStringHandler(h ZwpTextInputV1PreeditStrin
 	}
 }
 
-// ZwpTextInputV1PreeditStylingEvent : pre-edit styling
+// TextInputPreeditStylingEvent : pre-edit styling
 //
 // Sets styling information on composing text. The style is applied for
 // length bytes from index relative to the beginning of the composing
@@ -528,18 +528,18 @@ func (i *ZwpTextInputV1) RemovePreeditStringHandler(h ZwpTextInputV1PreeditStrin
 // events.
 //
 // This event is handled as part of a following preedit_string event.
-type ZwpTextInputV1PreeditStylingEvent struct {
+type TextInputPreeditStylingEvent struct {
 	Index  uint32
 	Length uint32
 	Style  uint32
 }
 
-type ZwpTextInputV1PreeditStylingHandler interface {
-	HandleZwpTextInputV1PreeditStyling(ZwpTextInputV1PreeditStylingEvent)
+type TextInputPreeditStylingHandler interface {
+	HandleTextInputPreeditStyling(TextInputPreeditStylingEvent)
 }
 
-// AddPreeditStylingHandler : adds handler for ZwpTextInputV1PreeditStylingEvent
-func (i *ZwpTextInputV1) AddPreeditStylingHandler(h ZwpTextInputV1PreeditStylingHandler) {
+// AddPreeditStylingHandler : adds handler for TextInputPreeditStylingEvent
+func (i *TextInput) AddPreeditStylingHandler(h TextInputPreeditStylingHandler) {
 	if h == nil {
 		return
 	}
@@ -549,7 +549,7 @@ func (i *ZwpTextInputV1) AddPreeditStylingHandler(h ZwpTextInputV1PreeditStyling
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemovePreeditStylingHandler(h ZwpTextInputV1PreeditStylingHandler) {
+func (i *TextInput) RemovePreeditStylingHandler(h TextInputPreeditStylingHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -561,23 +561,23 @@ func (i *ZwpTextInputV1) RemovePreeditStylingHandler(h ZwpTextInputV1PreeditStyl
 	}
 }
 
-// ZwpTextInputV1PreeditCursorEvent : pre-edit cursor
+// TextInputPreeditCursorEvent : pre-edit cursor
 //
 // Sets the cursor position inside the composing text (as byte
 // offset) relative to the start of the composing text. When index is a
 // negative number no cursor is shown.
 //
 // This event is handled as part of a following preedit_string event.
-type ZwpTextInputV1PreeditCursorEvent struct {
+type TextInputPreeditCursorEvent struct {
 	Index int32
 }
 
-type ZwpTextInputV1PreeditCursorHandler interface {
-	HandleZwpTextInputV1PreeditCursor(ZwpTextInputV1PreeditCursorEvent)
+type TextInputPreeditCursorHandler interface {
+	HandleTextInputPreeditCursor(TextInputPreeditCursorEvent)
 }
 
-// AddPreeditCursorHandler : adds handler for ZwpTextInputV1PreeditCursorEvent
-func (i *ZwpTextInputV1) AddPreeditCursorHandler(h ZwpTextInputV1PreeditCursorHandler) {
+// AddPreeditCursorHandler : adds handler for TextInputPreeditCursorEvent
+func (i *TextInput) AddPreeditCursorHandler(h TextInputPreeditCursorHandler) {
 	if h == nil {
 		return
 	}
@@ -587,7 +587,7 @@ func (i *ZwpTextInputV1) AddPreeditCursorHandler(h ZwpTextInputV1PreeditCursorHa
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemovePreeditCursorHandler(h ZwpTextInputV1PreeditCursorHandler) {
+func (i *TextInput) RemovePreeditCursorHandler(h TextInputPreeditCursorHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -599,7 +599,7 @@ func (i *ZwpTextInputV1) RemovePreeditCursorHandler(h ZwpTextInputV1PreeditCurso
 	}
 }
 
-// ZwpTextInputV1CommitStringEvent : commit
+// TextInputCommitStringEvent : commit
 //
 // Notify when text should be inserted into the editor widget. The text to
 // commit could be either just a single character after a key press or the
@@ -608,17 +608,17 @@ func (i *ZwpTextInputV1) RemovePreeditCursorHandler(h ZwpTextInputV1PreeditCurso
 // the input cursor should be moved (see cursor_position).
 //
 // Any previously set composing text should be removed.
-type ZwpTextInputV1CommitStringEvent struct {
+type TextInputCommitStringEvent struct {
 	Serial uint32
 	Text   string
 }
 
-type ZwpTextInputV1CommitStringHandler interface {
-	HandleZwpTextInputV1CommitString(ZwpTextInputV1CommitStringEvent)
+type TextInputCommitStringHandler interface {
+	HandleTextInputCommitString(TextInputCommitStringEvent)
 }
 
-// AddCommitStringHandler : adds handler for ZwpTextInputV1CommitStringEvent
-func (i *ZwpTextInputV1) AddCommitStringHandler(h ZwpTextInputV1CommitStringHandler) {
+// AddCommitStringHandler : adds handler for TextInputCommitStringEvent
+func (i *TextInput) AddCommitStringHandler(h TextInputCommitStringHandler) {
 	if h == nil {
 		return
 	}
@@ -628,7 +628,7 @@ func (i *ZwpTextInputV1) AddCommitStringHandler(h ZwpTextInputV1CommitStringHand
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveCommitStringHandler(h ZwpTextInputV1CommitStringHandler) {
+func (i *TextInput) RemoveCommitStringHandler(h TextInputCommitStringHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -640,23 +640,23 @@ func (i *ZwpTextInputV1) RemoveCommitStringHandler(h ZwpTextInputV1CommitStringH
 	}
 }
 
-// ZwpTextInputV1CursorPositionEvent : set cursor to new position
+// TextInputCursorPositionEvent : set cursor to new position
 //
 // Notify when the cursor or anchor position should be modified.
 //
 // This event should be handled as part of a following commit_string
 // event.
-type ZwpTextInputV1CursorPositionEvent struct {
+type TextInputCursorPositionEvent struct {
 	Index  int32
 	Anchor int32
 }
 
-type ZwpTextInputV1CursorPositionHandler interface {
-	HandleZwpTextInputV1CursorPosition(ZwpTextInputV1CursorPositionEvent)
+type TextInputCursorPositionHandler interface {
+	HandleTextInputCursorPosition(TextInputCursorPositionEvent)
 }
 
-// AddCursorPositionHandler : adds handler for ZwpTextInputV1CursorPositionEvent
-func (i *ZwpTextInputV1) AddCursorPositionHandler(h ZwpTextInputV1CursorPositionHandler) {
+// AddCursorPositionHandler : adds handler for TextInputCursorPositionEvent
+func (i *TextInput) AddCursorPositionHandler(h TextInputCursorPositionHandler) {
 	if h == nil {
 		return
 	}
@@ -666,7 +666,7 @@ func (i *ZwpTextInputV1) AddCursorPositionHandler(h ZwpTextInputV1CursorPosition
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveCursorPositionHandler(h ZwpTextInputV1CursorPositionHandler) {
+func (i *TextInput) RemoveCursorPositionHandler(h TextInputCursorPositionHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -678,7 +678,7 @@ func (i *ZwpTextInputV1) RemoveCursorPositionHandler(h ZwpTextInputV1CursorPosit
 	}
 }
 
-// ZwpTextInputV1DeleteSurroundingTextEvent : delete surrounding text
+// TextInputDeleteSurroundingTextEvent : delete surrounding text
 //
 // Notify when the text around the current cursor position should be
 // deleted.
@@ -688,17 +688,17 @@ func (i *ZwpTextInputV1) RemoveCursorPositionHandler(h ZwpTextInputV1CursorPosit
 //
 // This event should be handled as part of a following commit_string
 // event.
-type ZwpTextInputV1DeleteSurroundingTextEvent struct {
+type TextInputDeleteSurroundingTextEvent struct {
 	Index  int32
 	Length uint32
 }
 
-type ZwpTextInputV1DeleteSurroundingTextHandler interface {
-	HandleZwpTextInputV1DeleteSurroundingText(ZwpTextInputV1DeleteSurroundingTextEvent)
+type TextInputDeleteSurroundingTextHandler interface {
+	HandleTextInputDeleteSurroundingText(TextInputDeleteSurroundingTextEvent)
 }
 
-// AddDeleteSurroundingTextHandler : adds handler for ZwpTextInputV1DeleteSurroundingTextEvent
-func (i *ZwpTextInputV1) AddDeleteSurroundingTextHandler(h ZwpTextInputV1DeleteSurroundingTextHandler) {
+// AddDeleteSurroundingTextHandler : adds handler for TextInputDeleteSurroundingTextEvent
+func (i *TextInput) AddDeleteSurroundingTextHandler(h TextInputDeleteSurroundingTextHandler) {
 	if h == nil {
 		return
 	}
@@ -708,7 +708,7 @@ func (i *ZwpTextInputV1) AddDeleteSurroundingTextHandler(h ZwpTextInputV1DeleteS
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveDeleteSurroundingTextHandler(h ZwpTextInputV1DeleteSurroundingTextHandler) {
+func (i *TextInput) RemoveDeleteSurroundingTextHandler(h TextInputDeleteSurroundingTextHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -720,7 +720,7 @@ func (i *ZwpTextInputV1) RemoveDeleteSurroundingTextHandler(h ZwpTextInputV1Dele
 	}
 }
 
-// ZwpTextInputV1KeysymEvent : keysym
+// TextInputKeysymEvent : keysym
 //
 // Notify when a key event was sent. Key events should not be used
 // for normal text input operations, which should be done with
@@ -728,7 +728,7 @@ func (i *ZwpTextInputV1) RemoveDeleteSurroundingTextHandler(h ZwpTextInputV1Dele
 // the wl_keyboard key event convention. Sym is an XKB keysym, state a
 // wl_keyboard key_state. Modifiers are a mask for effective modifiers
 // (where the modifier indices are set by the modifiers_map event)
-type ZwpTextInputV1KeysymEvent struct {
+type TextInputKeysymEvent struct {
 	Serial    uint32
 	Time      uint32
 	Sym       uint32
@@ -736,12 +736,12 @@ type ZwpTextInputV1KeysymEvent struct {
 	Modifiers uint32
 }
 
-type ZwpTextInputV1KeysymHandler interface {
-	HandleZwpTextInputV1Keysym(ZwpTextInputV1KeysymEvent)
+type TextInputKeysymHandler interface {
+	HandleTextInputKeysym(TextInputKeysymEvent)
 }
 
-// AddKeysymHandler : adds handler for ZwpTextInputV1KeysymEvent
-func (i *ZwpTextInputV1) AddKeysymHandler(h ZwpTextInputV1KeysymHandler) {
+// AddKeysymHandler : adds handler for TextInputKeysymEvent
+func (i *TextInput) AddKeysymHandler(h TextInputKeysymHandler) {
 	if h == nil {
 		return
 	}
@@ -751,7 +751,7 @@ func (i *ZwpTextInputV1) AddKeysymHandler(h ZwpTextInputV1KeysymHandler) {
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveKeysymHandler(h ZwpTextInputV1KeysymHandler) {
+func (i *TextInput) RemoveKeysymHandler(h TextInputKeysymHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -763,21 +763,21 @@ func (i *ZwpTextInputV1) RemoveKeysymHandler(h ZwpTextInputV1KeysymHandler) {
 	}
 }
 
-// ZwpTextInputV1LanguageEvent : language
+// TextInputLanguageEvent : language
 //
 // Sets the language of the input text. The "language" argument is an
 // RFC-3066 format language tag.
-type ZwpTextInputV1LanguageEvent struct {
+type TextInputLanguageEvent struct {
 	Serial   uint32
 	Language string
 }
 
-type ZwpTextInputV1LanguageHandler interface {
-	HandleZwpTextInputV1Language(ZwpTextInputV1LanguageEvent)
+type TextInputLanguageHandler interface {
+	HandleTextInputLanguage(TextInputLanguageEvent)
 }
 
-// AddLanguageHandler : adds handler for ZwpTextInputV1LanguageEvent
-func (i *ZwpTextInputV1) AddLanguageHandler(h ZwpTextInputV1LanguageHandler) {
+// AddLanguageHandler : adds handler for TextInputLanguageEvent
+func (i *TextInput) AddLanguageHandler(h TextInputLanguageHandler) {
 	if h == nil {
 		return
 	}
@@ -787,7 +787,7 @@ func (i *ZwpTextInputV1) AddLanguageHandler(h ZwpTextInputV1LanguageHandler) {
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveLanguageHandler(h ZwpTextInputV1LanguageHandler) {
+func (i *TextInput) RemoveLanguageHandler(h TextInputLanguageHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -799,24 +799,24 @@ func (i *ZwpTextInputV1) RemoveLanguageHandler(h ZwpTextInputV1LanguageHandler) 
 	}
 }
 
-// ZwpTextInputV1TextDirectionEvent : text direction
+// TextInputTextDirectionEvent : text direction
 //
 // Sets the text direction of input text.
 //
 // It is mainly needed for showing an input cursor on the correct side of
 // the editor when there is no input done yet and making sure neutral
 // direction text is laid out properly.
-type ZwpTextInputV1TextDirectionEvent struct {
+type TextInputTextDirectionEvent struct {
 	Serial    uint32
 	Direction uint32
 }
 
-type ZwpTextInputV1TextDirectionHandler interface {
-	HandleZwpTextInputV1TextDirection(ZwpTextInputV1TextDirectionEvent)
+type TextInputTextDirectionHandler interface {
+	HandleTextInputTextDirection(TextInputTextDirectionEvent)
 }
 
-// AddTextDirectionHandler : adds handler for ZwpTextInputV1TextDirectionEvent
-func (i *ZwpTextInputV1) AddTextDirectionHandler(h ZwpTextInputV1TextDirectionHandler) {
+// AddTextDirectionHandler : adds handler for TextInputTextDirectionEvent
+func (i *TextInput) AddTextDirectionHandler(h TextInputTextDirectionHandler) {
 	if h == nil {
 		return
 	}
@@ -826,7 +826,7 @@ func (i *ZwpTextInputV1) AddTextDirectionHandler(h ZwpTextInputV1TextDirectionHa
 	i.mu.Unlock()
 }
 
-func (i *ZwpTextInputV1) RemoveTextDirectionHandler(h ZwpTextInputV1TextDirectionHandler) {
+func (i *TextInput) RemoveTextDirectionHandler(h TextInputTextDirectionHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -838,7 +838,7 @@ func (i *ZwpTextInputV1) RemoveTextDirectionHandler(h ZwpTextInputV1TextDirectio
 	}
 }
 
-func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
+func (i *TextInput) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -848,15 +848,15 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1EnterEvent{
-			Surface: event.Proxy(i.Context()).(*client.WlSurface),
+		e := TextInputEnterEvent{
+			Surface: event.Proxy(i.Context()).(*client.Surface),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.enterHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1Enter(e)
+			h.HandleTextInputEnter(e)
 
 			i.mu.RLock()
 		}
@@ -869,13 +869,13 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1LeaveEvent{}
+		e := TextInputLeaveEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1Leave(e)
+			h.HandleTextInputLeave(e)
 
 			i.mu.RLock()
 		}
@@ -888,7 +888,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1ModifiersMapEvent{
+		e := TextInputModifiersMapEvent{
 			Map: event.Array(),
 		}
 
@@ -896,7 +896,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.modifiersMapHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1ModifiersMap(e)
+			h.HandleTextInputModifiersMap(e)
 
 			i.mu.RLock()
 		}
@@ -909,7 +909,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1InputPanelStateEvent{
+		e := TextInputInputPanelStateEvent{
 			State: event.Uint32(),
 		}
 
@@ -917,7 +917,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.inputPanelStateHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1InputPanelState(e)
+			h.HandleTextInputInputPanelState(e)
 
 			i.mu.RLock()
 		}
@@ -930,7 +930,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1PreeditStringEvent{
+		e := TextInputPreeditStringEvent{
 			Serial: event.Uint32(),
 			Text:   event.String(),
 			Commit: event.String(),
@@ -940,7 +940,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.preeditStringHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1PreeditString(e)
+			h.HandleTextInputPreeditString(e)
 
 			i.mu.RLock()
 		}
@@ -953,7 +953,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1PreeditStylingEvent{
+		e := TextInputPreeditStylingEvent{
 			Index:  event.Uint32(),
 			Length: event.Uint32(),
 			Style:  event.Uint32(),
@@ -963,7 +963,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.preeditStylingHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1PreeditStyling(e)
+			h.HandleTextInputPreeditStyling(e)
 
 			i.mu.RLock()
 		}
@@ -976,7 +976,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1PreeditCursorEvent{
+		e := TextInputPreeditCursorEvent{
 			Index: event.Int32(),
 		}
 
@@ -984,7 +984,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.preeditCursorHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1PreeditCursor(e)
+			h.HandleTextInputPreeditCursor(e)
 
 			i.mu.RLock()
 		}
@@ -997,7 +997,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1CommitStringEvent{
+		e := TextInputCommitStringEvent{
 			Serial: event.Uint32(),
 			Text:   event.String(),
 		}
@@ -1006,7 +1006,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.commitStringHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1CommitString(e)
+			h.HandleTextInputCommitString(e)
 
 			i.mu.RLock()
 		}
@@ -1019,7 +1019,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1CursorPositionEvent{
+		e := TextInputCursorPositionEvent{
 			Index:  event.Int32(),
 			Anchor: event.Int32(),
 		}
@@ -1028,7 +1028,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.cursorPositionHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1CursorPosition(e)
+			h.HandleTextInputCursorPosition(e)
 
 			i.mu.RLock()
 		}
@@ -1041,7 +1041,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1DeleteSurroundingTextEvent{
+		e := TextInputDeleteSurroundingTextEvent{
 			Index:  event.Int32(),
 			Length: event.Uint32(),
 		}
@@ -1050,7 +1050,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.deleteSurroundingTextHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1DeleteSurroundingText(e)
+			h.HandleTextInputDeleteSurroundingText(e)
 
 			i.mu.RLock()
 		}
@@ -1063,7 +1063,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1KeysymEvent{
+		e := TextInputKeysymEvent{
 			Serial:    event.Uint32(),
 			Time:      event.Uint32(),
 			Sym:       event.Uint32(),
@@ -1075,7 +1075,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.keysymHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1Keysym(e)
+			h.HandleTextInputKeysym(e)
 
 			i.mu.RLock()
 		}
@@ -1088,7 +1088,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1LanguageEvent{
+		e := TextInputLanguageEvent{
 			Serial:   event.Uint32(),
 			Language: event.String(),
 		}
@@ -1097,7 +1097,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.languageHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1Language(e)
+			h.HandleTextInputLanguage(e)
 
 			i.mu.RLock()
 		}
@@ -1110,7 +1110,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpTextInputV1TextDirectionEvent{
+		e := TextInputTextDirectionEvent{
 			Serial:    event.Uint32(),
 			Direction: event.Uint32(),
 		}
@@ -1119,7 +1119,7 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 		for _, h := range i.textDirectionHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpTextInputV1TextDirection(e)
+			h.HandleTextInputTextDirection(e)
 
 			i.mu.RLock()
 		}
@@ -1127,18 +1127,18 @@ func (i *ZwpTextInputV1) Dispatch(event *client.Event) {
 	}
 }
 
-// ZwpTextInputManagerV1 : text input manager
+// TextInputManager : text input manager
 //
 // A factory for text_input objects. This object is a global singleton.
-type ZwpTextInputManagerV1 struct {
+type TextInputManager struct {
 	client.BaseProxy
 }
 
-// NewZwpTextInputManagerV1 : text input manager
+// NewTextInputManager : text input manager
 //
 // A factory for text_input objects. This object is a global singleton.
-func NewZwpTextInputManagerV1(ctx *client.Context) *ZwpTextInputManagerV1 {
-	zwpTextInputManagerV1 := &ZwpTextInputManagerV1{}
+func NewTextInputManager(ctx *client.Context) *TextInputManager {
+	zwpTextInputManagerV1 := &TextInputManager{}
 	ctx.Register(zwpTextInputManagerV1)
 	return zwpTextInputManagerV1
 }
@@ -1147,13 +1147,13 @@ func NewZwpTextInputManagerV1(ctx *client.Context) *ZwpTextInputManagerV1 {
 //
 // Creates a new text_input object.
 //
-func (i *ZwpTextInputManagerV1) CreateTextInput() (*ZwpTextInputV1, error) {
-	id := NewZwpTextInputV1(i.Context())
+func (i *TextInputManager) CreateTextInput() (*TextInput, error) {
+	id := NewTextInput(i.Context())
 	err := i.Context().SendRequest(i, 0, id)
 	return id, err
 }
 
-func (i *ZwpTextInputManagerV1) Destroy() error {
+func (i *TextInputManager) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }

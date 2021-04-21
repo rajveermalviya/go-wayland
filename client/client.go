@@ -2,7 +2,7 @@
 // https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 // XML file : https://gitlab.freedesktop.org/wayland/wayland/-/raw/3bda3d1b4729c8ee7c533520a199611cb841bc8f/protocol/wayland.xml
 //
-// Wayland Protocol Copyright:
+// wayland Protocol Copyright:
 //
 // Copyright © 2008-2011 Kristian Høgsberg
 // Copyright © 2010-2011 Intel Corporation
@@ -33,23 +33,23 @@ package client
 
 import "sync"
 
-// WlDisplay : core global object
+// Display : core global object
 //
 // The core global object.  This is a special singleton object.  It
 // is used for internal Wayland protocol features.
-type WlDisplay struct {
+type Display struct {
 	BaseProxy
 	mu               sync.RWMutex
-	errorHandlers    []WlDisplayErrorHandler
-	deleteIDHandlers []WlDisplayDeleteIDHandler
+	errorHandlers    []DisplayErrorHandler
+	deleteIDHandlers []DisplayDeleteIDHandler
 }
 
-// NewWlDisplay : core global object
+// NewDisplay : core global object
 //
 // The core global object.  This is a special singleton object.  It
 // is used for internal Wayland protocol features.
-func NewWlDisplay(ctx *Context) *WlDisplay {
-	wlDisplay := &WlDisplay{}
+func NewDisplay(ctx *Context) *Display {
+	wlDisplay := &Display{}
 	ctx.Register(wlDisplay)
 	return wlDisplay
 }
@@ -68,8 +68,8 @@ func NewWlDisplay(ctx *Context) *WlDisplay {
 //
 // The callback_data passed in the callback is the event serial.
 //
-func (i *WlDisplay) Sync() (*WlCallback, error) {
-	callback := NewWlCallback(i.Context())
+func (i *Display) Sync() (*Callback, error) {
+	callback := NewCallback(i.Context())
 	err := i.Context().SendRequest(i, 0, callback)
 	return callback, err
 }
@@ -86,33 +86,33 @@ func (i *WlDisplay) Sync() (*WlCallback, error) {
 // Therefore, clients should invoke get_registry as infrequently as
 // possible to avoid wasting memory.
 //
-func (i *WlDisplay) GetRegistry() (*WlRegistry, error) {
-	registry := NewWlRegistry(i.Context())
+func (i *Display) GetRegistry() (*Registry, error) {
+	registry := NewRegistry(i.Context())
 	err := i.Context().SendRequest(i, 1, registry)
 	return registry, err
 }
 
-func (i *WlDisplay) Destroy() error {
+func (i *Display) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WlDisplayError : global error values
+// DisplayError : global error values
 //
 // These errors are global and can be emitted in response to any
 // server request.
 const (
-	// WlDisplayErrorInvalidObject : server couldn't find object
-	WlDisplayErrorInvalidObject = 0
-	// WlDisplayErrorInvalidMethod : method doesn't exist on the specified interface or malformed request
-	WlDisplayErrorInvalidMethod = 1
-	// WlDisplayErrorNoMemory : server is out of memory
-	WlDisplayErrorNoMemory = 2
-	// WlDisplayErrorImplementation : implementation error in compositor
-	WlDisplayErrorImplementation = 3
+	// DisplayErrorInvalidObject : server couldn't find object
+	DisplayErrorInvalidObject = 0
+	// DisplayErrorInvalidMethod : method doesn't exist on the specified interface or malformed request
+	DisplayErrorInvalidMethod = 1
+	// DisplayErrorNoMemory : server is out of memory
+	DisplayErrorNoMemory = 2
+	// DisplayErrorImplementation : implementation error in compositor
+	DisplayErrorImplementation = 3
 )
 
-// WlDisplayErrorEvent : fatal error event
+// DisplayErrorEvent : fatal error event
 //
 // The error event is sent out when a fatal (non-recoverable)
 // error has occurred.  The object_id argument is the object
@@ -121,18 +121,18 @@ const (
 // by the object interface.  As such, each interface defines its
 // own set of error codes.  The message is a brief description
 // of the error, for (debugging) convenience.
-type WlDisplayErrorEvent struct {
+type DisplayErrorEvent struct {
 	ObjectID Proxy
 	Code     uint32
 	Message  string
 }
 
-type WlDisplayErrorHandler interface {
-	HandleWlDisplayError(WlDisplayErrorEvent)
+type DisplayErrorHandler interface {
+	HandleDisplayError(DisplayErrorEvent)
 }
 
-// AddErrorHandler : adds handler for WlDisplayErrorEvent
-func (i *WlDisplay) AddErrorHandler(h WlDisplayErrorHandler) {
+// AddErrorHandler : adds handler for DisplayErrorEvent
+func (i *Display) AddErrorHandler(h DisplayErrorHandler) {
 	if h == nil {
 		return
 	}
@@ -142,7 +142,7 @@ func (i *WlDisplay) AddErrorHandler(h WlDisplayErrorHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDisplay) RemoveErrorHandler(h WlDisplayErrorHandler) {
+func (i *Display) RemoveErrorHandler(h DisplayErrorHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -154,23 +154,23 @@ func (i *WlDisplay) RemoveErrorHandler(h WlDisplayErrorHandler) {
 	}
 }
 
-// WlDisplayDeleteIDEvent : acknowledge object ID deletion
+// DisplayDeleteIDEvent : acknowledge object ID deletion
 //
 // This event is used internally by the object ID management
 // logic. When a client deletes an object that it had created,
 // the server will send this event to acknowledge that it has
 // seen the delete request. When the client receives this event,
 // it will know that it can safely reuse the object ID.
-type WlDisplayDeleteIDEvent struct {
+type DisplayDeleteIDEvent struct {
 	ID uint32
 }
 
-type WlDisplayDeleteIDHandler interface {
-	HandleWlDisplayDeleteID(WlDisplayDeleteIDEvent)
+type DisplayDeleteIDHandler interface {
+	HandleDisplayDeleteID(DisplayDeleteIDEvent)
 }
 
-// AddDeleteIDHandler : adds handler for WlDisplayDeleteIDEvent
-func (i *WlDisplay) AddDeleteIDHandler(h WlDisplayDeleteIDHandler) {
+// AddDeleteIDHandler : adds handler for DisplayDeleteIDEvent
+func (i *Display) AddDeleteIDHandler(h DisplayDeleteIDHandler) {
 	if h == nil {
 		return
 	}
@@ -180,7 +180,7 @@ func (i *WlDisplay) AddDeleteIDHandler(h WlDisplayDeleteIDHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDisplay) RemoveDeleteIDHandler(h WlDisplayDeleteIDHandler) {
+func (i *Display) RemoveDeleteIDHandler(h DisplayDeleteIDHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -192,7 +192,7 @@ func (i *WlDisplay) RemoveDeleteIDHandler(h WlDisplayDeleteIDHandler) {
 	}
 }
 
-func (i *WlDisplay) Dispatch(event *Event) {
+func (i *Display) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -202,7 +202,7 @@ func (i *WlDisplay) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDisplayErrorEvent{
+		e := DisplayErrorEvent{
 			ObjectID: event.Proxy(i.Context()),
 			Code:     event.Uint32(),
 			Message:  event.String(),
@@ -212,7 +212,7 @@ func (i *WlDisplay) Dispatch(event *Event) {
 		for _, h := range i.errorHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDisplayError(e)
+			h.HandleDisplayError(e)
 
 			i.mu.RLock()
 		}
@@ -225,7 +225,7 @@ func (i *WlDisplay) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDisplayDeleteIDEvent{
+		e := DisplayDeleteIDEvent{
 			ID: event.Uint32(),
 		}
 
@@ -233,7 +233,7 @@ func (i *WlDisplay) Dispatch(event *Event) {
 		for _, h := range i.deleteIDHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDisplayDeleteID(e)
+			h.HandleDisplayDeleteID(e)
 
 			i.mu.RLock()
 		}
@@ -241,7 +241,7 @@ func (i *WlDisplay) Dispatch(event *Event) {
 	}
 }
 
-// WlRegistry : global registry object
+// Registry : global registry object
 //
 // The singleton global registry object.  The server has a number of
 // global objects that are available to all clients.  These objects
@@ -263,14 +263,14 @@ func (i *WlDisplay) Dispatch(event *Event) {
 // request.  This creates a client-side handle that lets the object
 // emit events to the client and lets the client invoke requests on
 // the object.
-type WlRegistry struct {
+type Registry struct {
 	BaseProxy
 	mu                   sync.RWMutex
-	globalHandlers       []WlRegistryGlobalHandler
-	globalRemoveHandlers []WlRegistryGlobalRemoveHandler
+	globalHandlers       []RegistryGlobalHandler
+	globalRemoveHandlers []RegistryGlobalRemoveHandler
 }
 
-// NewWlRegistry : global registry object
+// NewRegistry : global registry object
 //
 // The singleton global registry object.  The server has a number of
 // global objects that are available to all clients.  These objects
@@ -292,8 +292,8 @@ type WlRegistry struct {
 // request.  This creates a client-side handle that lets the object
 // emit events to the client and lets the client invoke requests on
 // the object.
-func NewWlRegistry(ctx *Context) *WlRegistry {
-	wlRegistry := &WlRegistry{}
+func NewRegistry(ctx *Context) *Registry {
+	wlRegistry := &Registry{}
 	ctx.Register(wlRegistry)
 	return wlRegistry
 }
@@ -304,35 +304,35 @@ func NewWlRegistry(ctx *Context) *WlRegistry {
 // specified name as the identifier.
 //
 //  name: unique numeric name of the object
-func (i *WlRegistry) Bind(name uint32, iface string, version uint32, id Proxy) error {
+func (i *Registry) Bind(name uint32, iface string, version uint32, id Proxy) error {
 	err := i.Context().SendRequest(i, 0, name, iface, version, id)
 	return err
 }
 
-func (i *WlRegistry) Destroy() error {
+func (i *Registry) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WlRegistryGlobalEvent : announce global object
+// RegistryGlobalEvent : announce global object
 //
 // Notify the client of global objects.
 //
 // The event notifies the client that a global object with
 // the given name is now available, and it implements the
 // given version of the given interface.
-type WlRegistryGlobalEvent struct {
+type RegistryGlobalEvent struct {
 	Name      uint32
 	Interface string
 	Version   uint32
 }
 
-type WlRegistryGlobalHandler interface {
-	HandleWlRegistryGlobal(WlRegistryGlobalEvent)
+type RegistryGlobalHandler interface {
+	HandleRegistryGlobal(RegistryGlobalEvent)
 }
 
-// AddGlobalHandler : adds handler for WlRegistryGlobalEvent
-func (i *WlRegistry) AddGlobalHandler(h WlRegistryGlobalHandler) {
+// AddGlobalHandler : adds handler for RegistryGlobalEvent
+func (i *Registry) AddGlobalHandler(h RegistryGlobalHandler) {
 	if h == nil {
 		return
 	}
@@ -342,7 +342,7 @@ func (i *WlRegistry) AddGlobalHandler(h WlRegistryGlobalHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlRegistry) RemoveGlobalHandler(h WlRegistryGlobalHandler) {
+func (i *Registry) RemoveGlobalHandler(h RegistryGlobalHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -354,7 +354,7 @@ func (i *WlRegistry) RemoveGlobalHandler(h WlRegistryGlobalHandler) {
 	}
 }
 
-// WlRegistryGlobalRemoveEvent : announce removal of global object
+// RegistryGlobalRemoveEvent : announce removal of global object
 //
 // Notify the client of removed global objects.
 //
@@ -366,16 +366,16 @@ func (i *WlRegistry) RemoveGlobalHandler(h WlRegistryGlobalHandler) {
 // The object remains valid and requests to the object will be
 // ignored until the client destroys it, to avoid races between
 // the global going away and a client sending a request to it.
-type WlRegistryGlobalRemoveEvent struct {
+type RegistryGlobalRemoveEvent struct {
 	Name uint32
 }
 
-type WlRegistryGlobalRemoveHandler interface {
-	HandleWlRegistryGlobalRemove(WlRegistryGlobalRemoveEvent)
+type RegistryGlobalRemoveHandler interface {
+	HandleRegistryGlobalRemove(RegistryGlobalRemoveEvent)
 }
 
-// AddGlobalRemoveHandler : adds handler for WlRegistryGlobalRemoveEvent
-func (i *WlRegistry) AddGlobalRemoveHandler(h WlRegistryGlobalRemoveHandler) {
+// AddGlobalRemoveHandler : adds handler for RegistryGlobalRemoveEvent
+func (i *Registry) AddGlobalRemoveHandler(h RegistryGlobalRemoveHandler) {
 	if h == nil {
 		return
 	}
@@ -385,7 +385,7 @@ func (i *WlRegistry) AddGlobalRemoveHandler(h WlRegistryGlobalRemoveHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlRegistry) RemoveGlobalRemoveHandler(h WlRegistryGlobalRemoveHandler) {
+func (i *Registry) RemoveGlobalRemoveHandler(h RegistryGlobalRemoveHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -397,7 +397,7 @@ func (i *WlRegistry) RemoveGlobalRemoveHandler(h WlRegistryGlobalRemoveHandler) 
 	}
 }
 
-func (i *WlRegistry) Dispatch(event *Event) {
+func (i *Registry) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -407,7 +407,7 @@ func (i *WlRegistry) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlRegistryGlobalEvent{
+		e := RegistryGlobalEvent{
 			Name:      event.Uint32(),
 			Interface: event.String(),
 			Version:   event.Uint32(),
@@ -417,7 +417,7 @@ func (i *WlRegistry) Dispatch(event *Event) {
 		for _, h := range i.globalHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlRegistryGlobal(e)
+			h.HandleRegistryGlobal(e)
 
 			i.mu.RLock()
 		}
@@ -430,7 +430,7 @@ func (i *WlRegistry) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlRegistryGlobalRemoveEvent{
+		e := RegistryGlobalRemoveEvent{
 			Name: event.Uint32(),
 		}
 
@@ -438,7 +438,7 @@ func (i *WlRegistry) Dispatch(event *Event) {
 		for _, h := range i.globalRemoveHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlRegistryGlobalRemove(e)
+			h.HandleRegistryGlobalRemove(e)
 
 			i.mu.RLock()
 		}
@@ -446,44 +446,44 @@ func (i *WlRegistry) Dispatch(event *Event) {
 	}
 }
 
-// WlCallback : callback object
+// Callback : callback object
 //
 // Clients can handle the 'done' event to get notified when
 // the related request is done.
-type WlCallback struct {
+type Callback struct {
 	BaseProxy
 	mu           sync.RWMutex
-	doneHandlers []WlCallbackDoneHandler
+	doneHandlers []CallbackDoneHandler
 }
 
-// NewWlCallback : callback object
+// NewCallback : callback object
 //
 // Clients can handle the 'done' event to get notified when
 // the related request is done.
-func NewWlCallback(ctx *Context) *WlCallback {
-	wlCallback := &WlCallback{}
+func NewCallback(ctx *Context) *Callback {
+	wlCallback := &Callback{}
 	ctx.Register(wlCallback)
 	return wlCallback
 }
 
-func (i *WlCallback) Destroy() error {
+func (i *Callback) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WlCallbackDoneEvent : done event
+// CallbackDoneEvent : done event
 //
 // Notify the client when the related request is done.
-type WlCallbackDoneEvent struct {
+type CallbackDoneEvent struct {
 	CallbackData uint32
 }
 
-type WlCallbackDoneHandler interface {
-	HandleWlCallbackDone(WlCallbackDoneEvent)
+type CallbackDoneHandler interface {
+	HandleCallbackDone(CallbackDoneEvent)
 }
 
-// AddDoneHandler : adds handler for WlCallbackDoneEvent
-func (i *WlCallback) AddDoneHandler(h WlCallbackDoneHandler) {
+// AddDoneHandler : adds handler for CallbackDoneEvent
+func (i *Callback) AddDoneHandler(h CallbackDoneHandler) {
 	if h == nil {
 		return
 	}
@@ -493,7 +493,7 @@ func (i *WlCallback) AddDoneHandler(h WlCallbackDoneHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlCallback) RemoveDoneHandler(h WlCallbackDoneHandler) {
+func (i *Callback) RemoveDoneHandler(h CallbackDoneHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -505,7 +505,7 @@ func (i *WlCallback) RemoveDoneHandler(h WlCallbackDoneHandler) {
 	}
 }
 
-func (i *WlCallback) Dispatch(event *Event) {
+func (i *Callback) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -515,7 +515,7 @@ func (i *WlCallback) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlCallbackDoneEvent{
+		e := CallbackDoneEvent{
 			CallbackData: event.Uint32(),
 		}
 
@@ -523,7 +523,7 @@ func (i *WlCallback) Dispatch(event *Event) {
 		for _, h := range i.doneHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlCallbackDone(e)
+			h.HandleCallbackDone(e)
 
 			i.mu.RLock()
 		}
@@ -531,22 +531,22 @@ func (i *WlCallback) Dispatch(event *Event) {
 	}
 }
 
-// WlCompositor : the compositor singleton
+// Compositor : the compositor singleton
 //
 // A compositor.  This object is a singleton global.  The
 // compositor is in charge of combining the contents of multiple
 // surfaces into one displayable output.
-type WlCompositor struct {
+type Compositor struct {
 	BaseProxy
 }
 
-// NewWlCompositor : the compositor singleton
+// NewCompositor : the compositor singleton
 //
 // A compositor.  This object is a singleton global.  The
 // compositor is in charge of combining the contents of multiple
 // surfaces into one displayable output.
-func NewWlCompositor(ctx *Context) *WlCompositor {
-	wlCompositor := &WlCompositor{}
+func NewCompositor(ctx *Context) *Compositor {
+	wlCompositor := &Compositor{}
 	ctx.Register(wlCompositor)
 	return wlCompositor
 }
@@ -555,8 +555,8 @@ func NewWlCompositor(ctx *Context) *WlCompositor {
 //
 // Ask the compositor to create a new surface.
 //
-func (i *WlCompositor) CreateSurface() (*WlSurface, error) {
-	id := NewWlSurface(i.Context())
+func (i *Compositor) CreateSurface() (*Surface, error) {
+	id := NewSurface(i.Context())
 	err := i.Context().SendRequest(i, 0, id)
 	return id, err
 }
@@ -565,18 +565,18 @@ func (i *WlCompositor) CreateSurface() (*WlSurface, error) {
 //
 // Ask the compositor to create a new region.
 //
-func (i *WlCompositor) CreateRegion() (*WlRegion, error) {
-	id := NewWlRegion(i.Context())
+func (i *Compositor) CreateRegion() (*Region, error) {
+	id := NewRegion(i.Context())
 	err := i.Context().SendRequest(i, 1, id)
 	return id, err
 }
 
-func (i *WlCompositor) Destroy() error {
+func (i *Compositor) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WlShmPool : a shared memory pool
+// ShmPool : a shared memory pool
 //
 // The wl_shm_pool object encapsulates a piece of memory shared
 // between the compositor and client.  Through the wl_shm_pool
@@ -585,11 +585,11 @@ func (i *WlCompositor) Destroy() error {
 // underlying mapped memory. Reusing the mapped memory avoids the
 // setup/teardown overhead and is useful when interactively resizing
 // a surface or for many small buffers.
-type WlShmPool struct {
+type ShmPool struct {
 	BaseProxy
 }
 
-// NewWlShmPool : a shared memory pool
+// NewShmPool : a shared memory pool
 //
 // The wl_shm_pool object encapsulates a piece of memory shared
 // between the compositor and client.  Through the wl_shm_pool
@@ -598,8 +598,8 @@ type WlShmPool struct {
 // underlying mapped memory. Reusing the mapped memory avoids the
 // setup/teardown overhead and is useful when interactively resizing
 // a surface or for many small buffers.
-func NewWlShmPool(ctx *Context) *WlShmPool {
-	wlShmPool := &WlShmPool{}
+func NewShmPool(ctx *Context) *ShmPool {
+	wlShmPool := &ShmPool{}
 	ctx.Register(wlShmPool)
 	return wlShmPool
 }
@@ -623,8 +623,8 @@ func NewWlShmPool(ctx *Context) *WlShmPool {
 //  height: buffer height, in pixels
 //  stride: number of bytes from the beginning of one row to the beginning of the next row
 //  format: buffer pixel format
-func (i *WlShmPool) CreateBuffer(offset, width, height, stride int32, format uint32) (*WlBuffer, error) {
-	id := NewWlBuffer(i.Context())
+func (i *ShmPool) CreateBuffer(offset, width, height, stride int32, format uint32) (*Buffer, error) {
+	id := NewBuffer(i.Context())
 	err := i.Context().SendRequest(i, 0, id, offset, width, height, stride, format)
 	return id, err
 }
@@ -637,7 +637,7 @@ func (i *WlShmPool) CreateBuffer(offset, width, height, stride int32, format uin
 // buffers that have been created from this pool
 // are gone.
 //
-func (i *WlShmPool) Destroy() error {
+func (i *ShmPool) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 1)
 	return err
@@ -651,12 +651,12 @@ func (i *WlShmPool) Destroy() error {
 // used to make the pool bigger.
 //
 //  size: new size of the pool, in bytes
-func (i *WlShmPool) Resize(size int32) error {
+func (i *ShmPool) Resize(size int32) error {
 	err := i.Context().SendRequest(i, 2, size)
 	return err
 }
 
-// WlShm : shared memory support
+// Shm : shared memory support
 //
 // A singleton global object that provides support for shared
 // memory.
@@ -667,13 +667,13 @@ func (i *WlShmPool) Resize(size int32) error {
 // At connection setup time, the wl_shm object emits one or more
 // format events to inform clients about the valid pixel formats
 // that can be used for buffers.
-type WlShm struct {
+type Shm struct {
 	BaseProxy
 	mu             sync.RWMutex
-	formatHandlers []WlShmFormatHandler
+	formatHandlers []ShmFormatHandler
 }
 
-// NewWlShm : shared memory support
+// NewShm : shared memory support
 //
 // A singleton global object that provides support for shared
 // memory.
@@ -684,8 +684,8 @@ type WlShm struct {
 // At connection setup time, the wl_shm object emits one or more
 // format events to inform clients about the valid pixel formats
 // that can be used for buffers.
-func NewWlShm(ctx *Context) *WlShm {
-	wlShm := &WlShm{}
+func NewShm(ctx *Context) *Shm {
+	wlShm := &Shm{}
 	ctx.Register(wlShm)
 	return wlShm
 }
@@ -700,30 +700,30 @@ func NewWlShm(ctx *Context) *WlShm {
 //
 //  fd: file descriptor for the pool
 //  size: pool size, in bytes
-func (i *WlShm) CreatePool(fd uintptr, size int32) (*WlShmPool, error) {
-	id := NewWlShmPool(i.Context())
+func (i *Shm) CreatePool(fd uintptr, size int32) (*ShmPool, error) {
+	id := NewShmPool(i.Context())
 	err := i.Context().SendRequest(i, 0, id, fd, size)
 	return id, err
 }
 
-func (i *WlShm) Destroy() error {
+func (i *Shm) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WlShmError : wl_shm error values
+// ShmError : wl_shm error values
 //
 // These errors can be emitted in response to wl_shm requests.
 const (
-	// WlShmErrorInvalidFormat : buffer format is not known
-	WlShmErrorInvalidFormat = 0
-	// WlShmErrorInvalidStride : invalid size or stride during pool or buffer creation
-	WlShmErrorInvalidStride = 1
-	// WlShmErrorInvalidFd : mmapping the file descriptor failed
-	WlShmErrorInvalidFd = 2
+	// ShmErrorInvalidFormat : buffer format is not known
+	ShmErrorInvalidFormat = 0
+	// ShmErrorInvalidStride : invalid size or stride during pool or buffer creation
+	ShmErrorInvalidStride = 1
+	// ShmErrorInvalidFd : mmapping the file descriptor failed
+	ShmErrorInvalidFd = 2
 )
 
-// WlShmFormat : pixel formats
+// ShmFormat : pixel formats
 //
 // This describes the memory layout of an individual pixel.
 //
@@ -735,219 +735,219 @@ const (
 // argb8888 and xrgb8888. The formats actually supported by the compositor
 // will be reported by the format event.
 const (
-	// WlShmFormatArgb8888 : 32-bit ARGB format, [31:0] A:R:G:B 8:8:8:8 little endian
-	WlShmFormatArgb8888 = 0
-	// WlShmFormatXrgb8888 : 32-bit RGB format, [31:0] x:R:G:B 8:8:8:8 little endian
-	WlShmFormatXrgb8888 = 1
-	// WlShmFormatC8 : 8-bit color index format, [7:0] C
-	WlShmFormatC8 = 0x20203843
-	// WlShmFormatRgb332 : 8-bit RGB format, [7:0] R:G:B 3:3:2
-	WlShmFormatRgb332 = 0x38424752
-	// WlShmFormatBgr233 : 8-bit BGR format, [7:0] B:G:R 2:3:3
-	WlShmFormatBgr233 = 0x38524742
-	// WlShmFormatXrgb4444 : 16-bit xRGB format, [15:0] x:R:G:B 4:4:4:4 little endian
-	WlShmFormatXrgb4444 = 0x32315258
-	// WlShmFormatXbgr4444 : 16-bit xBGR format, [15:0] x:B:G:R 4:4:4:4 little endian
-	WlShmFormatXbgr4444 = 0x32314258
-	// WlShmFormatRgbx4444 : 16-bit RGBx format, [15:0] R:G:B:x 4:4:4:4 little endian
-	WlShmFormatRgbx4444 = 0x32315852
-	// WlShmFormatBgrx4444 : 16-bit BGRx format, [15:0] B:G:R:x 4:4:4:4 little endian
-	WlShmFormatBgrx4444 = 0x32315842
-	// WlShmFormatArgb4444 : 16-bit ARGB format, [15:0] A:R:G:B 4:4:4:4 little endian
-	WlShmFormatArgb4444 = 0x32315241
-	// WlShmFormatAbgr4444 : 16-bit ABGR format, [15:0] A:B:G:R 4:4:4:4 little endian
-	WlShmFormatAbgr4444 = 0x32314241
-	// WlShmFormatRgba4444 : 16-bit RBGA format, [15:0] R:G:B:A 4:4:4:4 little endian
-	WlShmFormatRgba4444 = 0x32314152
-	// WlShmFormatBgra4444 : 16-bit BGRA format, [15:0] B:G:R:A 4:4:4:4 little endian
-	WlShmFormatBgra4444 = 0x32314142
-	// WlShmFormatXrgb1555 : 16-bit xRGB format, [15:0] x:R:G:B 1:5:5:5 little endian
-	WlShmFormatXrgb1555 = 0x35315258
-	// WlShmFormatXbgr1555 : 16-bit xBGR 1555 format, [15:0] x:B:G:R 1:5:5:5 little endian
-	WlShmFormatXbgr1555 = 0x35314258
-	// WlShmFormatRgbx5551 : 16-bit RGBx 5551 format, [15:0] R:G:B:x 5:5:5:1 little endian
-	WlShmFormatRgbx5551 = 0x35315852
-	// WlShmFormatBgrx5551 : 16-bit BGRx 5551 format, [15:0] B:G:R:x 5:5:5:1 little endian
-	WlShmFormatBgrx5551 = 0x35315842
-	// WlShmFormatArgb1555 : 16-bit ARGB 1555 format, [15:0] A:R:G:B 1:5:5:5 little endian
-	WlShmFormatArgb1555 = 0x35315241
-	// WlShmFormatAbgr1555 : 16-bit ABGR 1555 format, [15:0] A:B:G:R 1:5:5:5 little endian
-	WlShmFormatAbgr1555 = 0x35314241
-	// WlShmFormatRgba5551 : 16-bit RGBA 5551 format, [15:0] R:G:B:A 5:5:5:1 little endian
-	WlShmFormatRgba5551 = 0x35314152
-	// WlShmFormatBgra5551 : 16-bit BGRA 5551 format, [15:0] B:G:R:A 5:5:5:1 little endian
-	WlShmFormatBgra5551 = 0x35314142
-	// WlShmFormatRgb565 : 16-bit RGB 565 format, [15:0] R:G:B 5:6:5 little endian
-	WlShmFormatRgb565 = 0x36314752
-	// WlShmFormatBgr565 : 16-bit BGR 565 format, [15:0] B:G:R 5:6:5 little endian
-	WlShmFormatBgr565 = 0x36314742
-	// WlShmFormatRgb888 : 24-bit RGB format, [23:0] R:G:B little endian
-	WlShmFormatRgb888 = 0x34324752
-	// WlShmFormatBgr888 : 24-bit BGR format, [23:0] B:G:R little endian
-	WlShmFormatBgr888 = 0x34324742
-	// WlShmFormatXbgr8888 : 32-bit xBGR format, [31:0] x:B:G:R 8:8:8:8 little endian
-	WlShmFormatXbgr8888 = 0x34324258
-	// WlShmFormatRgbx8888 : 32-bit RGBx format, [31:0] R:G:B:x 8:8:8:8 little endian
-	WlShmFormatRgbx8888 = 0x34325852
-	// WlShmFormatBgrx8888 : 32-bit BGRx format, [31:0] B:G:R:x 8:8:8:8 little endian
-	WlShmFormatBgrx8888 = 0x34325842
-	// WlShmFormatAbgr8888 : 32-bit ABGR format, [31:0] A:B:G:R 8:8:8:8 little endian
-	WlShmFormatAbgr8888 = 0x34324241
-	// WlShmFormatRgba8888 : 32-bit RGBA format, [31:0] R:G:B:A 8:8:8:8 little endian
-	WlShmFormatRgba8888 = 0x34324152
-	// WlShmFormatBgra8888 : 32-bit BGRA format, [31:0] B:G:R:A 8:8:8:8 little endian
-	WlShmFormatBgra8888 = 0x34324142
-	// WlShmFormatXrgb2101010 : 32-bit xRGB format, [31:0] x:R:G:B 2:10:10:10 little endian
-	WlShmFormatXrgb2101010 = 0x30335258
-	// WlShmFormatXbgr2101010 : 32-bit xBGR format, [31:0] x:B:G:R 2:10:10:10 little endian
-	WlShmFormatXbgr2101010 = 0x30334258
-	// WlShmFormatRgbx1010102 : 32-bit RGBx format, [31:0] R:G:B:x 10:10:10:2 little endian
-	WlShmFormatRgbx1010102 = 0x30335852
-	// WlShmFormatBgrx1010102 : 32-bit BGRx format, [31:0] B:G:R:x 10:10:10:2 little endian
-	WlShmFormatBgrx1010102 = 0x30335842
-	// WlShmFormatArgb2101010 : 32-bit ARGB format, [31:0] A:R:G:B 2:10:10:10 little endian
-	WlShmFormatArgb2101010 = 0x30335241
-	// WlShmFormatAbgr2101010 : 32-bit ABGR format, [31:0] A:B:G:R 2:10:10:10 little endian
-	WlShmFormatAbgr2101010 = 0x30334241
-	// WlShmFormatRgba1010102 : 32-bit RGBA format, [31:0] R:G:B:A 10:10:10:2 little endian
-	WlShmFormatRgba1010102 = 0x30334152
-	// WlShmFormatBgra1010102 : 32-bit BGRA format, [31:0] B:G:R:A 10:10:10:2 little endian
-	WlShmFormatBgra1010102 = 0x30334142
-	// WlShmFormatYuyv : packed YCbCr format, [31:0] Cr0:Y1:Cb0:Y0 8:8:8:8 little endian
-	WlShmFormatYuyv = 0x56595559
-	// WlShmFormatYvyu : packed YCbCr format, [31:0] Cb0:Y1:Cr0:Y0 8:8:8:8 little endian
-	WlShmFormatYvyu = 0x55595659
-	// WlShmFormatUyvy : packed YCbCr format, [31:0] Y1:Cr0:Y0:Cb0 8:8:8:8 little endian
-	WlShmFormatUyvy = 0x59565955
-	// WlShmFormatVyuy : packed YCbCr format, [31:0] Y1:Cb0:Y0:Cr0 8:8:8:8 little endian
-	WlShmFormatVyuy = 0x59555956
-	// WlShmFormatAyuv : packed AYCbCr format, [31:0] A:Y:Cb:Cr 8:8:8:8 little endian
-	WlShmFormatAyuv = 0x56555941
-	// WlShmFormatNv12 : 2 plane YCbCr Cr:Cb format, 2x2 subsampled Cr:Cb plane
-	WlShmFormatNv12 = 0x3231564e
-	// WlShmFormatNv21 : 2 plane YCbCr Cb:Cr format, 2x2 subsampled Cb:Cr plane
-	WlShmFormatNv21 = 0x3132564e
-	// WlShmFormatNv16 : 2 plane YCbCr Cr:Cb format, 2x1 subsampled Cr:Cb plane
-	WlShmFormatNv16 = 0x3631564e
-	// WlShmFormatNv61 : 2 plane YCbCr Cb:Cr format, 2x1 subsampled Cb:Cr plane
-	WlShmFormatNv61 = 0x3136564e
-	// WlShmFormatYuv410 : 3 plane YCbCr format, 4x4 subsampled Cb (1) and Cr (2) planes
-	WlShmFormatYuv410 = 0x39565559
-	// WlShmFormatYvu410 : 3 plane YCbCr format, 4x4 subsampled Cr (1) and Cb (2) planes
-	WlShmFormatYvu410 = 0x39555659
-	// WlShmFormatYuv411 : 3 plane YCbCr format, 4x1 subsampled Cb (1) and Cr (2) planes
-	WlShmFormatYuv411 = 0x31315559
-	// WlShmFormatYvu411 : 3 plane YCbCr format, 4x1 subsampled Cr (1) and Cb (2) planes
-	WlShmFormatYvu411 = 0x31315659
-	// WlShmFormatYuv420 : 3 plane YCbCr format, 2x2 subsampled Cb (1) and Cr (2) planes
-	WlShmFormatYuv420 = 0x32315559
-	// WlShmFormatYvu420 : 3 plane YCbCr format, 2x2 subsampled Cr (1) and Cb (2) planes
-	WlShmFormatYvu420 = 0x32315659
-	// WlShmFormatYuv422 : 3 plane YCbCr format, 2x1 subsampled Cb (1) and Cr (2) planes
-	WlShmFormatYuv422 = 0x36315559
-	// WlShmFormatYvu422 : 3 plane YCbCr format, 2x1 subsampled Cr (1) and Cb (2) planes
-	WlShmFormatYvu422 = 0x36315659
-	// WlShmFormatYuv444 : 3 plane YCbCr format, non-subsampled Cb (1) and Cr (2) planes
-	WlShmFormatYuv444 = 0x34325559
-	// WlShmFormatYvu444 : 3 plane YCbCr format, non-subsampled Cr (1) and Cb (2) planes
-	WlShmFormatYvu444 = 0x34325659
-	// WlShmFormatR8 : [7:0] R
-	WlShmFormatR8 = 0x20203852
-	// WlShmFormatR16 : [15:0] R little endian
-	WlShmFormatR16 = 0x20363152
-	// WlShmFormatRg88 : [15:0] R:G 8:8 little endian
-	WlShmFormatRg88 = 0x38384752
-	// WlShmFormatGr88 : [15:0] G:R 8:8 little endian
-	WlShmFormatGr88 = 0x38385247
-	// WlShmFormatRg1616 : [31:0] R:G 16:16 little endian
-	WlShmFormatRg1616 = 0x32334752
-	// WlShmFormatGr1616 : [31:0] G:R 16:16 little endian
-	WlShmFormatGr1616 = 0x32335247
-	// WlShmFormatXrgb16161616F : [63:0] x:R:G:B 16:16:16:16 little endian
-	WlShmFormatXrgb16161616F = 0x48345258
-	// WlShmFormatXbgr16161616F : [63:0] x:B:G:R 16:16:16:16 little endian
-	WlShmFormatXbgr16161616F = 0x48344258
-	// WlShmFormatArgb16161616F : [63:0] A:R:G:B 16:16:16:16 little endian
-	WlShmFormatArgb16161616F = 0x48345241
-	// WlShmFormatAbgr16161616F : [63:0] A:B:G:R 16:16:16:16 little endian
-	WlShmFormatAbgr16161616F = 0x48344241
-	// WlShmFormatXyuv8888 : [31:0] X:Y:Cb:Cr 8:8:8:8 little endian
-	WlShmFormatXyuv8888 = 0x56555958
-	// WlShmFormatVuy888 : [23:0] Cr:Cb:Y 8:8:8 little endian
-	WlShmFormatVuy888 = 0x34325556
-	// WlShmFormatVuy101010 : Y followed by U then V, 10:10:10.
-	WlShmFormatVuy101010 = 0x30335556
-	// WlShmFormatY210 : [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 10:6:10:6:10:6:10:6 little endian per 2 Y pixels
-	WlShmFormatY210 = 0x30313259
-	// WlShmFormatY212 : [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 12:4:12:4:12:4:12:4 little endian per 2 Y pixels
-	WlShmFormatY212 = 0x32313259
-	// WlShmFormatY216 : [63:0] Cr0:Y1:Cb0:Y0 16:16:16:16 little endian per 2 Y pixels
-	WlShmFormatY216 = 0x36313259
-	// WlShmFormatY410 : [31:0] A:Cr:Y:Cb 2:10:10:10 little endian
-	WlShmFormatY410 = 0x30313459
-	// WlShmFormatY412 : [63:0] A:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
-	WlShmFormatY412 = 0x32313459
-	// WlShmFormatY416 : [63:0] A:Cr:Y:Cb 16:16:16:16 little endian
-	WlShmFormatY416 = 0x36313459
-	// WlShmFormatXvyu2101010 : [31:0] X:Cr:Y:Cb 2:10:10:10 little endian
-	WlShmFormatXvyu2101010 = 0x30335658
-	// WlShmFormatXvyu1216161616 : [63:0] X:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
-	WlShmFormatXvyu1216161616 = 0x36335658
-	// WlShmFormatXvyu16161616 : [63:0] X:Cr:Y:Cb 16:16:16:16 little endian
-	WlShmFormatXvyu16161616 = 0x38345658
-	// WlShmFormatY0L0 : [63:0] A3:A2:Y3:0:Cr0:0:Y2:0:A1:A0:Y1:0:Cb0:0:Y0:0 1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
-	WlShmFormatY0L0 = 0x304c3059
-	// WlShmFormatX0L0 : [63:0] X3:X2:Y3:0:Cr0:0:Y2:0:X1:X0:Y1:0:Cb0:0:Y0:0 1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
-	WlShmFormatX0L0 = 0x304c3058
-	// WlShmFormatY0L2 : [63:0] A3:A2:Y3:Cr0:Y2:A1:A0:Y1:Cb0:Y0 1:1:10:10:10:1:1:10:10:10 little endian
-	WlShmFormatY0L2 = 0x324c3059
-	// WlShmFormatX0L2 : [63:0] X3:X2:Y3:Cr0:Y2:X1:X0:Y1:Cb0:Y0 1:1:10:10:10:1:1:10:10:10 little endian
-	WlShmFormatX0L2        = 0x324c3058
-	WlShmFormatYuv4208Bit  = 0x38305559
-	WlShmFormatYuv42010Bit = 0x30315559
-	WlShmFormatXrgb8888A8  = 0x38415258
-	WlShmFormatXbgr8888A8  = 0x38414258
-	WlShmFormatRgbx8888A8  = 0x38415852
-	WlShmFormatBgrx8888A8  = 0x38415842
-	WlShmFormatRgb888A8    = 0x38413852
-	WlShmFormatBgr888A8    = 0x38413842
-	WlShmFormatRgb565A8    = 0x38413552
-	WlShmFormatBgr565A8    = 0x38413542
-	// WlShmFormatNv24 : non-subsampled Cr:Cb plane
-	WlShmFormatNv24 = 0x3432564e
-	// WlShmFormatNv42 : non-subsampled Cb:Cr plane
-	WlShmFormatNv42 = 0x3234564e
-	// WlShmFormatP210 : 2x1 subsampled Cr:Cb plane, 10 bit per channel
-	WlShmFormatP210 = 0x30313250
-	// WlShmFormatP010 : 2x2 subsampled Cr:Cb plane 10 bits per channel
-	WlShmFormatP010 = 0x30313050
-	// WlShmFormatP012 : 2x2 subsampled Cr:Cb plane 12 bits per channel
-	WlShmFormatP012 = 0x32313050
-	// WlShmFormatP016 : 2x2 subsampled Cr:Cb plane 16 bits per channel
-	WlShmFormatP016 = 0x36313050
-	// WlShmFormatAxbxgxrx106106106106 : [63:0] A:x:B:x:G:x:R:x 10:6:10:6:10:6:10:6 little endian
-	WlShmFormatAxbxgxrx106106106106 = 0x30314241
-	// WlShmFormatNv15 : 2x2 subsampled Cr:Cb plane
-	WlShmFormatNv15 = 0x3531564e
-	WlShmFormatQ410 = 0x30313451
-	WlShmFormatQ401 = 0x31303451
+	// ShmFormatArgb8888 : 32-bit ARGB format, [31:0] A:R:G:B 8:8:8:8 little endian
+	ShmFormatArgb8888 = 0
+	// ShmFormatXrgb8888 : 32-bit RGB format, [31:0] x:R:G:B 8:8:8:8 little endian
+	ShmFormatXrgb8888 = 1
+	// ShmFormatC8 : 8-bit color index format, [7:0] C
+	ShmFormatC8 = 0x20203843
+	// ShmFormatRgb332 : 8-bit RGB format, [7:0] R:G:B 3:3:2
+	ShmFormatRgb332 = 0x38424752
+	// ShmFormatBgr233 : 8-bit BGR format, [7:0] B:G:R 2:3:3
+	ShmFormatBgr233 = 0x38524742
+	// ShmFormatXrgb4444 : 16-bit xRGB format, [15:0] x:R:G:B 4:4:4:4 little endian
+	ShmFormatXrgb4444 = 0x32315258
+	// ShmFormatXbgr4444 : 16-bit xBGR format, [15:0] x:B:G:R 4:4:4:4 little endian
+	ShmFormatXbgr4444 = 0x32314258
+	// ShmFormatRgbx4444 : 16-bit RGBx format, [15:0] R:G:B:x 4:4:4:4 little endian
+	ShmFormatRgbx4444 = 0x32315852
+	// ShmFormatBgrx4444 : 16-bit BGRx format, [15:0] B:G:R:x 4:4:4:4 little endian
+	ShmFormatBgrx4444 = 0x32315842
+	// ShmFormatArgb4444 : 16-bit ARGB format, [15:0] A:R:G:B 4:4:4:4 little endian
+	ShmFormatArgb4444 = 0x32315241
+	// ShmFormatAbgr4444 : 16-bit ABGR format, [15:0] A:B:G:R 4:4:4:4 little endian
+	ShmFormatAbgr4444 = 0x32314241
+	// ShmFormatRgba4444 : 16-bit RBGA format, [15:0] R:G:B:A 4:4:4:4 little endian
+	ShmFormatRgba4444 = 0x32314152
+	// ShmFormatBgra4444 : 16-bit BGRA format, [15:0] B:G:R:A 4:4:4:4 little endian
+	ShmFormatBgra4444 = 0x32314142
+	// ShmFormatXrgb1555 : 16-bit xRGB format, [15:0] x:R:G:B 1:5:5:5 little endian
+	ShmFormatXrgb1555 = 0x35315258
+	// ShmFormatXbgr1555 : 16-bit xBGR 1555 format, [15:0] x:B:G:R 1:5:5:5 little endian
+	ShmFormatXbgr1555 = 0x35314258
+	// ShmFormatRgbx5551 : 16-bit RGBx 5551 format, [15:0] R:G:B:x 5:5:5:1 little endian
+	ShmFormatRgbx5551 = 0x35315852
+	// ShmFormatBgrx5551 : 16-bit BGRx 5551 format, [15:0] B:G:R:x 5:5:5:1 little endian
+	ShmFormatBgrx5551 = 0x35315842
+	// ShmFormatArgb1555 : 16-bit ARGB 1555 format, [15:0] A:R:G:B 1:5:5:5 little endian
+	ShmFormatArgb1555 = 0x35315241
+	// ShmFormatAbgr1555 : 16-bit ABGR 1555 format, [15:0] A:B:G:R 1:5:5:5 little endian
+	ShmFormatAbgr1555 = 0x35314241
+	// ShmFormatRgba5551 : 16-bit RGBA 5551 format, [15:0] R:G:B:A 5:5:5:1 little endian
+	ShmFormatRgba5551 = 0x35314152
+	// ShmFormatBgra5551 : 16-bit BGRA 5551 format, [15:0] B:G:R:A 5:5:5:1 little endian
+	ShmFormatBgra5551 = 0x35314142
+	// ShmFormatRgb565 : 16-bit RGB 565 format, [15:0] R:G:B 5:6:5 little endian
+	ShmFormatRgb565 = 0x36314752
+	// ShmFormatBgr565 : 16-bit BGR 565 format, [15:0] B:G:R 5:6:5 little endian
+	ShmFormatBgr565 = 0x36314742
+	// ShmFormatRgb888 : 24-bit RGB format, [23:0] R:G:B little endian
+	ShmFormatRgb888 = 0x34324752
+	// ShmFormatBgr888 : 24-bit BGR format, [23:0] B:G:R little endian
+	ShmFormatBgr888 = 0x34324742
+	// ShmFormatXbgr8888 : 32-bit xBGR format, [31:0] x:B:G:R 8:8:8:8 little endian
+	ShmFormatXbgr8888 = 0x34324258
+	// ShmFormatRgbx8888 : 32-bit RGBx format, [31:0] R:G:B:x 8:8:8:8 little endian
+	ShmFormatRgbx8888 = 0x34325852
+	// ShmFormatBgrx8888 : 32-bit BGRx format, [31:0] B:G:R:x 8:8:8:8 little endian
+	ShmFormatBgrx8888 = 0x34325842
+	// ShmFormatAbgr8888 : 32-bit ABGR format, [31:0] A:B:G:R 8:8:8:8 little endian
+	ShmFormatAbgr8888 = 0x34324241
+	// ShmFormatRgba8888 : 32-bit RGBA format, [31:0] R:G:B:A 8:8:8:8 little endian
+	ShmFormatRgba8888 = 0x34324152
+	// ShmFormatBgra8888 : 32-bit BGRA format, [31:0] B:G:R:A 8:8:8:8 little endian
+	ShmFormatBgra8888 = 0x34324142
+	// ShmFormatXrgb2101010 : 32-bit xRGB format, [31:0] x:R:G:B 2:10:10:10 little endian
+	ShmFormatXrgb2101010 = 0x30335258
+	// ShmFormatXbgr2101010 : 32-bit xBGR format, [31:0] x:B:G:R 2:10:10:10 little endian
+	ShmFormatXbgr2101010 = 0x30334258
+	// ShmFormatRgbx1010102 : 32-bit RGBx format, [31:0] R:G:B:x 10:10:10:2 little endian
+	ShmFormatRgbx1010102 = 0x30335852
+	// ShmFormatBgrx1010102 : 32-bit BGRx format, [31:0] B:G:R:x 10:10:10:2 little endian
+	ShmFormatBgrx1010102 = 0x30335842
+	// ShmFormatArgb2101010 : 32-bit ARGB format, [31:0] A:R:G:B 2:10:10:10 little endian
+	ShmFormatArgb2101010 = 0x30335241
+	// ShmFormatAbgr2101010 : 32-bit ABGR format, [31:0] A:B:G:R 2:10:10:10 little endian
+	ShmFormatAbgr2101010 = 0x30334241
+	// ShmFormatRgba1010102 : 32-bit RGBA format, [31:0] R:G:B:A 10:10:10:2 little endian
+	ShmFormatRgba1010102 = 0x30334152
+	// ShmFormatBgra1010102 : 32-bit BGRA format, [31:0] B:G:R:A 10:10:10:2 little endian
+	ShmFormatBgra1010102 = 0x30334142
+	// ShmFormatYuyv : packed YCbCr format, [31:0] Cr0:Y1:Cb0:Y0 8:8:8:8 little endian
+	ShmFormatYuyv = 0x56595559
+	// ShmFormatYvyu : packed YCbCr format, [31:0] Cb0:Y1:Cr0:Y0 8:8:8:8 little endian
+	ShmFormatYvyu = 0x55595659
+	// ShmFormatUyvy : packed YCbCr format, [31:0] Y1:Cr0:Y0:Cb0 8:8:8:8 little endian
+	ShmFormatUyvy = 0x59565955
+	// ShmFormatVyuy : packed YCbCr format, [31:0] Y1:Cb0:Y0:Cr0 8:8:8:8 little endian
+	ShmFormatVyuy = 0x59555956
+	// ShmFormatAyuv : packed AYCbCr format, [31:0] A:Y:Cb:Cr 8:8:8:8 little endian
+	ShmFormatAyuv = 0x56555941
+	// ShmFormatNv12 : 2 plane YCbCr Cr:Cb format, 2x2 subsampled Cr:Cb plane
+	ShmFormatNv12 = 0x3231564e
+	// ShmFormatNv21 : 2 plane YCbCr Cb:Cr format, 2x2 subsampled Cb:Cr plane
+	ShmFormatNv21 = 0x3132564e
+	// ShmFormatNv16 : 2 plane YCbCr Cr:Cb format, 2x1 subsampled Cr:Cb plane
+	ShmFormatNv16 = 0x3631564e
+	// ShmFormatNv61 : 2 plane YCbCr Cb:Cr format, 2x1 subsampled Cb:Cr plane
+	ShmFormatNv61 = 0x3136564e
+	// ShmFormatYuv410 : 3 plane YCbCr format, 4x4 subsampled Cb (1) and Cr (2) planes
+	ShmFormatYuv410 = 0x39565559
+	// ShmFormatYvu410 : 3 plane YCbCr format, 4x4 subsampled Cr (1) and Cb (2) planes
+	ShmFormatYvu410 = 0x39555659
+	// ShmFormatYuv411 : 3 plane YCbCr format, 4x1 subsampled Cb (1) and Cr (2) planes
+	ShmFormatYuv411 = 0x31315559
+	// ShmFormatYvu411 : 3 plane YCbCr format, 4x1 subsampled Cr (1) and Cb (2) planes
+	ShmFormatYvu411 = 0x31315659
+	// ShmFormatYuv420 : 3 plane YCbCr format, 2x2 subsampled Cb (1) and Cr (2) planes
+	ShmFormatYuv420 = 0x32315559
+	// ShmFormatYvu420 : 3 plane YCbCr format, 2x2 subsampled Cr (1) and Cb (2) planes
+	ShmFormatYvu420 = 0x32315659
+	// ShmFormatYuv422 : 3 plane YCbCr format, 2x1 subsampled Cb (1) and Cr (2) planes
+	ShmFormatYuv422 = 0x36315559
+	// ShmFormatYvu422 : 3 plane YCbCr format, 2x1 subsampled Cr (1) and Cb (2) planes
+	ShmFormatYvu422 = 0x36315659
+	// ShmFormatYuv444 : 3 plane YCbCr format, non-subsampled Cb (1) and Cr (2) planes
+	ShmFormatYuv444 = 0x34325559
+	// ShmFormatYvu444 : 3 plane YCbCr format, non-subsampled Cr (1) and Cb (2) planes
+	ShmFormatYvu444 = 0x34325659
+	// ShmFormatR8 : [7:0] R
+	ShmFormatR8 = 0x20203852
+	// ShmFormatR16 : [15:0] R little endian
+	ShmFormatR16 = 0x20363152
+	// ShmFormatRg88 : [15:0] R:G 8:8 little endian
+	ShmFormatRg88 = 0x38384752
+	// ShmFormatGr88 : [15:0] G:R 8:8 little endian
+	ShmFormatGr88 = 0x38385247
+	// ShmFormatRg1616 : [31:0] R:G 16:16 little endian
+	ShmFormatRg1616 = 0x32334752
+	// ShmFormatGr1616 : [31:0] G:R 16:16 little endian
+	ShmFormatGr1616 = 0x32335247
+	// ShmFormatXrgb16161616F : [63:0] x:R:G:B 16:16:16:16 little endian
+	ShmFormatXrgb16161616F = 0x48345258
+	// ShmFormatXbgr16161616F : [63:0] x:B:G:R 16:16:16:16 little endian
+	ShmFormatXbgr16161616F = 0x48344258
+	// ShmFormatArgb16161616F : [63:0] A:R:G:B 16:16:16:16 little endian
+	ShmFormatArgb16161616F = 0x48345241
+	// ShmFormatAbgr16161616F : [63:0] A:B:G:R 16:16:16:16 little endian
+	ShmFormatAbgr16161616F = 0x48344241
+	// ShmFormatXyuv8888 : [31:0] X:Y:Cb:Cr 8:8:8:8 little endian
+	ShmFormatXyuv8888 = 0x56555958
+	// ShmFormatVuy888 : [23:0] Cr:Cb:Y 8:8:8 little endian
+	ShmFormatVuy888 = 0x34325556
+	// ShmFormatVuy101010 : Y followed by U then V, 10:10:10.
+	ShmFormatVuy101010 = 0x30335556
+	// ShmFormatY210 : [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 10:6:10:6:10:6:10:6 little endian per 2 Y pixels
+	ShmFormatY210 = 0x30313259
+	// ShmFormatY212 : [63:0] Cr0:0:Y1:0:Cb0:0:Y0:0 12:4:12:4:12:4:12:4 little endian per 2 Y pixels
+	ShmFormatY212 = 0x32313259
+	// ShmFormatY216 : [63:0] Cr0:Y1:Cb0:Y0 16:16:16:16 little endian per 2 Y pixels
+	ShmFormatY216 = 0x36313259
+	// ShmFormatY410 : [31:0] A:Cr:Y:Cb 2:10:10:10 little endian
+	ShmFormatY410 = 0x30313459
+	// ShmFormatY412 : [63:0] A:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
+	ShmFormatY412 = 0x32313459
+	// ShmFormatY416 : [63:0] A:Cr:Y:Cb 16:16:16:16 little endian
+	ShmFormatY416 = 0x36313459
+	// ShmFormatXvyu2101010 : [31:0] X:Cr:Y:Cb 2:10:10:10 little endian
+	ShmFormatXvyu2101010 = 0x30335658
+	// ShmFormatXvyu1216161616 : [63:0] X:0:Cr:0:Y:0:Cb:0 12:4:12:4:12:4:12:4 little endian
+	ShmFormatXvyu1216161616 = 0x36335658
+	// ShmFormatXvyu16161616 : [63:0] X:Cr:Y:Cb 16:16:16:16 little endian
+	ShmFormatXvyu16161616 = 0x38345658
+	// ShmFormatY0L0 : [63:0] A3:A2:Y3:0:Cr0:0:Y2:0:A1:A0:Y1:0:Cb0:0:Y0:0 1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
+	ShmFormatY0L0 = 0x304c3059
+	// ShmFormatX0L0 : [63:0] X3:X2:Y3:0:Cr0:0:Y2:0:X1:X0:Y1:0:Cb0:0:Y0:0 1:1:8:2:8:2:8:2:1:1:8:2:8:2:8:2 little endian
+	ShmFormatX0L0 = 0x304c3058
+	// ShmFormatY0L2 : [63:0] A3:A2:Y3:Cr0:Y2:A1:A0:Y1:Cb0:Y0 1:1:10:10:10:1:1:10:10:10 little endian
+	ShmFormatY0L2 = 0x324c3059
+	// ShmFormatX0L2 : [63:0] X3:X2:Y3:Cr0:Y2:X1:X0:Y1:Cb0:Y0 1:1:10:10:10:1:1:10:10:10 little endian
+	ShmFormatX0L2        = 0x324c3058
+	ShmFormatYuv4208Bit  = 0x38305559
+	ShmFormatYuv42010Bit = 0x30315559
+	ShmFormatXrgb8888A8  = 0x38415258
+	ShmFormatXbgr8888A8  = 0x38414258
+	ShmFormatRgbx8888A8  = 0x38415852
+	ShmFormatBgrx8888A8  = 0x38415842
+	ShmFormatRgb888A8    = 0x38413852
+	ShmFormatBgr888A8    = 0x38413842
+	ShmFormatRgb565A8    = 0x38413552
+	ShmFormatBgr565A8    = 0x38413542
+	// ShmFormatNv24 : non-subsampled Cr:Cb plane
+	ShmFormatNv24 = 0x3432564e
+	// ShmFormatNv42 : non-subsampled Cb:Cr plane
+	ShmFormatNv42 = 0x3234564e
+	// ShmFormatP210 : 2x1 subsampled Cr:Cb plane, 10 bit per channel
+	ShmFormatP210 = 0x30313250
+	// ShmFormatP010 : 2x2 subsampled Cr:Cb plane 10 bits per channel
+	ShmFormatP010 = 0x30313050
+	// ShmFormatP012 : 2x2 subsampled Cr:Cb plane 12 bits per channel
+	ShmFormatP012 = 0x32313050
+	// ShmFormatP016 : 2x2 subsampled Cr:Cb plane 16 bits per channel
+	ShmFormatP016 = 0x36313050
+	// ShmFormatAxbxgxrx106106106106 : [63:0] A:x:B:x:G:x:R:x 10:6:10:6:10:6:10:6 little endian
+	ShmFormatAxbxgxrx106106106106 = 0x30314241
+	// ShmFormatNv15 : 2x2 subsampled Cr:Cb plane
+	ShmFormatNv15 = 0x3531564e
+	ShmFormatQ410 = 0x30313451
+	ShmFormatQ401 = 0x31303451
 )
 
-// WlShmFormatEvent : pixel format description
+// ShmFormatEvent : pixel format description
 //
 // Informs the client about a valid pixel format that
 // can be used for buffers. Known formats include
 // argb8888 and xrgb8888.
-type WlShmFormatEvent struct {
+type ShmFormatEvent struct {
 	Format uint32
 }
 
-type WlShmFormatHandler interface {
-	HandleWlShmFormat(WlShmFormatEvent)
+type ShmFormatHandler interface {
+	HandleShmFormat(ShmFormatEvent)
 }
 
-// AddFormatHandler : adds handler for WlShmFormatEvent
-func (i *WlShm) AddFormatHandler(h WlShmFormatHandler) {
+// AddFormatHandler : adds handler for ShmFormatEvent
+func (i *Shm) AddFormatHandler(h ShmFormatHandler) {
 	if h == nil {
 		return
 	}
@@ -957,7 +957,7 @@ func (i *WlShm) AddFormatHandler(h WlShmFormatHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlShm) RemoveFormatHandler(h WlShmFormatHandler) {
+func (i *Shm) RemoveFormatHandler(h ShmFormatHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -969,7 +969,7 @@ func (i *WlShm) RemoveFormatHandler(h WlShmFormatHandler) {
 	}
 }
 
-func (i *WlShm) Dispatch(event *Event) {
+func (i *Shm) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -979,7 +979,7 @@ func (i *WlShm) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlShmFormatEvent{
+		e := ShmFormatEvent{
 			Format: event.Uint32(),
 		}
 
@@ -987,7 +987,7 @@ func (i *WlShm) Dispatch(event *Event) {
 		for _, h := range i.formatHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlShmFormat(e)
+			h.HandleShmFormat(e)
 
 			i.mu.RLock()
 		}
@@ -995,28 +995,28 @@ func (i *WlShm) Dispatch(event *Event) {
 	}
 }
 
-// WlBuffer : content for a wl_surface
+// Buffer : content for a wl_surface
 //
 // A buffer provides the content for a wl_surface. Buffers are
 // created through factory interfaces such as wl_drm, wl_shm or
 // similar. It has a width and a height and can be attached to a
 // wl_surface, but the mechanism by which a client provides and
 // updates the contents is defined by the buffer factory interface.
-type WlBuffer struct {
+type Buffer struct {
 	BaseProxy
 	mu              sync.RWMutex
-	releaseHandlers []WlBufferReleaseHandler
+	releaseHandlers []BufferReleaseHandler
 }
 
-// NewWlBuffer : content for a wl_surface
+// NewBuffer : content for a wl_surface
 //
 // A buffer provides the content for a wl_surface. Buffers are
 // created through factory interfaces such as wl_drm, wl_shm or
 // similar. It has a width and a height and can be attached to a
 // wl_surface, but the mechanism by which a client provides and
 // updates the contents is defined by the buffer factory interface.
-func NewWlBuffer(ctx *Context) *WlBuffer {
-	wlBuffer := &WlBuffer{}
+func NewBuffer(ctx *Context) *Buffer {
+	wlBuffer := &Buffer{}
 	ctx.Register(wlBuffer)
 	return wlBuffer
 }
@@ -1028,13 +1028,13 @@ func NewWlBuffer(ctx *Context) *WlBuffer {
 //
 // For possible side-effects to a surface, see wl_surface.attach.
 //
-func (i *WlBuffer) Destroy() error {
+func (i *Buffer) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
 
-// WlBufferReleaseEvent : compositor releases buffer
+// BufferReleaseEvent : compositor releases buffer
 //
 // Sent when this wl_buffer is no longer used by the compositor.
 // The client is now free to reuse or destroy this buffer and its
@@ -1048,13 +1048,13 @@ func (i *WlBuffer) Destroy() error {
 // this is possible, when the compositor maintains a copy of the
 // wl_surface contents, e.g. as a GL texture. This is an important
 // optimization for GL(ES) compositors with wl_shm clients.
-type WlBufferReleaseEvent struct{}
-type WlBufferReleaseHandler interface {
-	HandleWlBufferRelease(WlBufferReleaseEvent)
+type BufferReleaseEvent struct{}
+type BufferReleaseHandler interface {
+	HandleBufferRelease(BufferReleaseEvent)
 }
 
-// AddReleaseHandler : adds handler for WlBufferReleaseEvent
-func (i *WlBuffer) AddReleaseHandler(h WlBufferReleaseHandler) {
+// AddReleaseHandler : adds handler for BufferReleaseEvent
+func (i *Buffer) AddReleaseHandler(h BufferReleaseHandler) {
 	if h == nil {
 		return
 	}
@@ -1064,7 +1064,7 @@ func (i *WlBuffer) AddReleaseHandler(h WlBufferReleaseHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlBuffer) RemoveReleaseHandler(h WlBufferReleaseHandler) {
+func (i *Buffer) RemoveReleaseHandler(h BufferReleaseHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1076,7 +1076,7 @@ func (i *WlBuffer) RemoveReleaseHandler(h WlBufferReleaseHandler) {
 	}
 }
 
-func (i *WlBuffer) Dispatch(event *Event) {
+func (i *Buffer) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -1086,13 +1086,13 @@ func (i *WlBuffer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlBufferReleaseEvent{}
+		e := BufferReleaseEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.releaseHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlBufferRelease(e)
+			h.HandleBufferRelease(e)
 
 			i.mu.RLock()
 		}
@@ -1100,7 +1100,7 @@ func (i *WlBuffer) Dispatch(event *Event) {
 	}
 }
 
-// WlDataOffer : offer to transfer data
+// DataOffer : offer to transfer data
 //
 // A wl_data_offer represents a piece of data offered for transfer
 // by another client (the source client).  It is used by the
@@ -1108,15 +1108,15 @@ func (i *WlBuffer) Dispatch(event *Event) {
 // describes the different mime types that the data can be
 // converted to and provides the mechanism for transferring the
 // data directly from the source client.
-type WlDataOffer struct {
+type DataOffer struct {
 	BaseProxy
 	mu                    sync.RWMutex
-	offerHandlers         []WlDataOfferOfferHandler
-	sourceActionsHandlers []WlDataOfferSourceActionsHandler
-	actionHandlers        []WlDataOfferActionHandler
+	offerHandlers         []DataOfferOfferHandler
+	sourceActionsHandlers []DataOfferSourceActionsHandler
+	actionHandlers        []DataOfferActionHandler
 }
 
-// NewWlDataOffer : offer to transfer data
+// NewDataOffer : offer to transfer data
 //
 // A wl_data_offer represents a piece of data offered for transfer
 // by another client (the source client).  It is used by the
@@ -1124,8 +1124,8 @@ type WlDataOffer struct {
 // describes the different mime types that the data can be
 // converted to and provides the mechanism for transferring the
 // data directly from the source client.
-func NewWlDataOffer(ctx *Context) *WlDataOffer {
-	wlDataOffer := &WlDataOffer{}
+func NewDataOffer(ctx *Context) *DataOffer {
+	wlDataOffer := &DataOffer{}
 	ctx.Register(wlDataOffer)
 	return wlDataOffer
 }
@@ -1149,7 +1149,7 @@ func NewWlDataOffer(ctx *Context) *WlDataOffer {
 //
 //  serial: serial number of the accept request
 //  mimeType: mime type accepted by the client
-func (i *WlDataOffer) Accept(serial uint32, mimeType string) error {
+func (i *DataOffer) Accept(serial uint32, mimeType string) error {
 	err := i.Context().SendRequest(i, 0, serial, mimeType)
 	return err
 }
@@ -1174,7 +1174,7 @@ func (i *WlDataOffer) Accept(serial uint32, mimeType string) error {
 //
 //  mimeType: mime type desired by receiver
 //  fd: file descriptor for data transfer
-func (i *WlDataOffer) Receive(mimeType string, fd uintptr) error {
+func (i *DataOffer) Receive(mimeType string, fd uintptr) error {
 	err := i.Context().SendRequest(i, 1, mimeType, fd)
 	return err
 }
@@ -1183,7 +1183,7 @@ func (i *WlDataOffer) Receive(mimeType string, fd uintptr) error {
 //
 // Destroy the data offer.
 //
-func (i *WlDataOffer) Destroy() error {
+func (i *DataOffer) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 2)
 	return err
@@ -1206,7 +1206,7 @@ func (i *WlDataOffer) Destroy() error {
 // If wl_data_offer.finish request is received for a non drag and drop
 // operation, the invalid_finish protocol error is raised.
 //
-func (i *WlDataOffer) Finish() error {
+func (i *DataOffer) Finish() error {
 	err := i.Context().SendRequest(i, 3)
 	return err
 }
@@ -1247,37 +1247,37 @@ func (i *WlDataOffer) Finish() error {
 //
 //  dndActions: actions supported by the destination client
 //  preferredAction: action preferred by the destination client
-func (i *WlDataOffer) SetActions(dndActions, preferredAction uint32) error {
+func (i *DataOffer) SetActions(dndActions, preferredAction uint32) error {
 	err := i.Context().SendRequest(i, 4, dndActions, preferredAction)
 	return err
 }
 
-// WlDataOfferError :
+// DataOfferError :
 const (
-	// WlDataOfferErrorInvalidFinish : finish request was called untimely
-	WlDataOfferErrorInvalidFinish = 0
-	// WlDataOfferErrorInvalidActionMask : action mask contains invalid values
-	WlDataOfferErrorInvalidActionMask = 1
-	// WlDataOfferErrorInvalidAction : action argument has an invalid value
-	WlDataOfferErrorInvalidAction = 2
-	// WlDataOfferErrorInvalidOffer : offer doesn't accept this request
-	WlDataOfferErrorInvalidOffer = 3
+	// DataOfferErrorInvalidFinish : finish request was called untimely
+	DataOfferErrorInvalidFinish = 0
+	// DataOfferErrorInvalidActionMask : action mask contains invalid values
+	DataOfferErrorInvalidActionMask = 1
+	// DataOfferErrorInvalidAction : action argument has an invalid value
+	DataOfferErrorInvalidAction = 2
+	// DataOfferErrorInvalidOffer : offer doesn't accept this request
+	DataOfferErrorInvalidOffer = 3
 )
 
-// WlDataOfferOfferEvent : advertise offered mime type
+// DataOfferOfferEvent : advertise offered mime type
 //
 // Sent immediately after creating the wl_data_offer object.  One
 // event per offered mime type.
-type WlDataOfferOfferEvent struct {
+type DataOfferOfferEvent struct {
 	MimeType string
 }
 
-type WlDataOfferOfferHandler interface {
-	HandleWlDataOfferOffer(WlDataOfferOfferEvent)
+type DataOfferOfferHandler interface {
+	HandleDataOfferOffer(DataOfferOfferEvent)
 }
 
-// AddOfferHandler : adds handler for WlDataOfferOfferEvent
-func (i *WlDataOffer) AddOfferHandler(h WlDataOfferOfferHandler) {
+// AddOfferHandler : adds handler for DataOfferOfferEvent
+func (i *DataOffer) AddOfferHandler(h DataOfferOfferHandler) {
 	if h == nil {
 		return
 	}
@@ -1287,7 +1287,7 @@ func (i *WlDataOffer) AddOfferHandler(h WlDataOfferOfferHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataOffer) RemoveOfferHandler(h WlDataOfferOfferHandler) {
+func (i *DataOffer) RemoveOfferHandler(h DataOfferOfferHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1299,21 +1299,21 @@ func (i *WlDataOffer) RemoveOfferHandler(h WlDataOfferOfferHandler) {
 	}
 }
 
-// WlDataOfferSourceActionsEvent : notify the source-side available actions
+// DataOfferSourceActionsEvent : notify the source-side available actions
 //
 // This event indicates the actions offered by the data source. It
 // will be sent right after wl_data_device.enter, or anytime the source
 // side changes its offered actions through wl_data_source.set_actions.
-type WlDataOfferSourceActionsEvent struct {
+type DataOfferSourceActionsEvent struct {
 	SourceActions uint32
 }
 
-type WlDataOfferSourceActionsHandler interface {
-	HandleWlDataOfferSourceActions(WlDataOfferSourceActionsEvent)
+type DataOfferSourceActionsHandler interface {
+	HandleDataOfferSourceActions(DataOfferSourceActionsEvent)
 }
 
-// AddSourceActionsHandler : adds handler for WlDataOfferSourceActionsEvent
-func (i *WlDataOffer) AddSourceActionsHandler(h WlDataOfferSourceActionsHandler) {
+// AddSourceActionsHandler : adds handler for DataOfferSourceActionsEvent
+func (i *DataOffer) AddSourceActionsHandler(h DataOfferSourceActionsHandler) {
 	if h == nil {
 		return
 	}
@@ -1323,7 +1323,7 @@ func (i *WlDataOffer) AddSourceActionsHandler(h WlDataOfferSourceActionsHandler)
 	i.mu.Unlock()
 }
 
-func (i *WlDataOffer) RemoveSourceActionsHandler(h WlDataOfferSourceActionsHandler) {
+func (i *DataOffer) RemoveSourceActionsHandler(h DataOfferSourceActionsHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1335,7 +1335,7 @@ func (i *WlDataOffer) RemoveSourceActionsHandler(h WlDataOfferSourceActionsHandl
 	}
 }
 
-// WlDataOfferActionEvent : notify the selected action
+// DataOfferActionEvent : notify the selected action
 //
 // This event indicates the action selected by the compositor after
 // matching the source/destination side actions. Only one action (or
@@ -1372,16 +1372,16 @@ func (i *WlDataOffer) RemoveSourceActionsHandler(h WlDataOfferSourceActionsHandl
 // user (e.g. popping up a menu with the available options). The
 // final wl_data_offer.set_actions and wl_data_offer.accept requests
 // must happen before the call to wl_data_offer.finish.
-type WlDataOfferActionEvent struct {
+type DataOfferActionEvent struct {
 	DndAction uint32
 }
 
-type WlDataOfferActionHandler interface {
-	HandleWlDataOfferAction(WlDataOfferActionEvent)
+type DataOfferActionHandler interface {
+	HandleDataOfferAction(DataOfferActionEvent)
 }
 
-// AddActionHandler : adds handler for WlDataOfferActionEvent
-func (i *WlDataOffer) AddActionHandler(h WlDataOfferActionHandler) {
+// AddActionHandler : adds handler for DataOfferActionEvent
+func (i *DataOffer) AddActionHandler(h DataOfferActionHandler) {
 	if h == nil {
 		return
 	}
@@ -1391,7 +1391,7 @@ func (i *WlDataOffer) AddActionHandler(h WlDataOfferActionHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataOffer) RemoveActionHandler(h WlDataOfferActionHandler) {
+func (i *DataOffer) RemoveActionHandler(h DataOfferActionHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1403,7 +1403,7 @@ func (i *WlDataOffer) RemoveActionHandler(h WlDataOfferActionHandler) {
 	}
 }
 
-func (i *WlDataOffer) Dispatch(event *Event) {
+func (i *DataOffer) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -1413,7 +1413,7 @@ func (i *WlDataOffer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataOfferOfferEvent{
+		e := DataOfferOfferEvent{
 			MimeType: event.String(),
 		}
 
@@ -1421,7 +1421,7 @@ func (i *WlDataOffer) Dispatch(event *Event) {
 		for _, h := range i.offerHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataOfferOffer(e)
+			h.HandleDataOfferOffer(e)
 
 			i.mu.RLock()
 		}
@@ -1434,7 +1434,7 @@ func (i *WlDataOffer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataOfferSourceActionsEvent{
+		e := DataOfferSourceActionsEvent{
 			SourceActions: event.Uint32(),
 		}
 
@@ -1442,7 +1442,7 @@ func (i *WlDataOffer) Dispatch(event *Event) {
 		for _, h := range i.sourceActionsHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataOfferSourceActions(e)
+			h.HandleDataOfferSourceActions(e)
 
 			i.mu.RLock()
 		}
@@ -1455,7 +1455,7 @@ func (i *WlDataOffer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataOfferActionEvent{
+		e := DataOfferActionEvent{
 			DndAction: event.Uint32(),
 		}
 
@@ -1463,7 +1463,7 @@ func (i *WlDataOffer) Dispatch(event *Event) {
 		for _, h := range i.actionHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataOfferAction(e)
+			h.HandleDataOfferAction(e)
 
 			i.mu.RLock()
 		}
@@ -1471,31 +1471,31 @@ func (i *WlDataOffer) Dispatch(event *Event) {
 	}
 }
 
-// WlDataSource : offer to transfer data
+// DataSource : offer to transfer data
 //
 // The wl_data_source object is the source side of a wl_data_offer.
 // It is created by the source client in a data transfer and
 // provides a way to describe the offered data and a way to respond
 // to requests to transfer the data.
-type WlDataSource struct {
+type DataSource struct {
 	BaseProxy
 	mu                       sync.RWMutex
-	targetHandlers           []WlDataSourceTargetHandler
-	sendHandlers             []WlDataSourceSendHandler
-	cancelledHandlers        []WlDataSourceCancelledHandler
-	dndDropPerformedHandlers []WlDataSourceDndDropPerformedHandler
-	dndFinishedHandlers      []WlDataSourceDndFinishedHandler
-	actionHandlers           []WlDataSourceActionHandler
+	targetHandlers           []DataSourceTargetHandler
+	sendHandlers             []DataSourceSendHandler
+	cancelledHandlers        []DataSourceCancelledHandler
+	dndDropPerformedHandlers []DataSourceDndDropPerformedHandler
+	dndFinishedHandlers      []DataSourceDndFinishedHandler
+	actionHandlers           []DataSourceActionHandler
 }
 
-// NewWlDataSource : offer to transfer data
+// NewDataSource : offer to transfer data
 //
 // The wl_data_source object is the source side of a wl_data_offer.
 // It is created by the source client in a data transfer and
 // provides a way to describe the offered data and a way to respond
 // to requests to transfer the data.
-func NewWlDataSource(ctx *Context) *WlDataSource {
-	wlDataSource := &WlDataSource{}
+func NewDataSource(ctx *Context) *DataSource {
+	wlDataSource := &DataSource{}
 	ctx.Register(wlDataSource)
 	return wlDataSource
 }
@@ -1507,7 +1507,7 @@ func NewWlDataSource(ctx *Context) *WlDataSource {
 // multiple types.
 //
 //  mimeType: mime type offered by the data source
-func (i *WlDataSource) Offer(mimeType string) error {
+func (i *DataSource) Offer(mimeType string) error {
 	err := i.Context().SendRequest(i, 0, mimeType)
 	return err
 }
@@ -1516,7 +1516,7 @@ func (i *WlDataSource) Offer(mimeType string) error {
 //
 // Destroy the data source.
 //
-func (i *WlDataSource) Destroy() error {
+func (i *DataSource) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 1)
 	return err
@@ -1539,35 +1539,35 @@ func (i *WlDataSource) Destroy() error {
 // for drag-and-drop will raise a protocol error.
 //
 //  dndActions: actions supported by the data source
-func (i *WlDataSource) SetActions(dndActions uint32) error {
+func (i *DataSource) SetActions(dndActions uint32) error {
 	err := i.Context().SendRequest(i, 2, dndActions)
 	return err
 }
 
-// WlDataSourceError :
+// DataSourceError :
 const (
-	// WlDataSourceErrorInvalidActionMask : action mask contains invalid values
-	WlDataSourceErrorInvalidActionMask = 0
-	// WlDataSourceErrorInvalidSource : source doesn't accept this request
-	WlDataSourceErrorInvalidSource = 1
+	// DataSourceErrorInvalidActionMask : action mask contains invalid values
+	DataSourceErrorInvalidActionMask = 0
+	// DataSourceErrorInvalidSource : source doesn't accept this request
+	DataSourceErrorInvalidSource = 1
 )
 
-// WlDataSourceTargetEvent : a target accepts an offered mime type
+// DataSourceTargetEvent : a target accepts an offered mime type
 //
 // Sent when a target accepts pointer_focus or motion events.  If
 // a target does not accept any of the offered types, type is NULL.
 //
 // Used for feedback during drag-and-drop.
-type WlDataSourceTargetEvent struct {
+type DataSourceTargetEvent struct {
 	MimeType string
 }
 
-type WlDataSourceTargetHandler interface {
-	HandleWlDataSourceTarget(WlDataSourceTargetEvent)
+type DataSourceTargetHandler interface {
+	HandleDataSourceTarget(DataSourceTargetEvent)
 }
 
-// AddTargetHandler : adds handler for WlDataSourceTargetEvent
-func (i *WlDataSource) AddTargetHandler(h WlDataSourceTargetHandler) {
+// AddTargetHandler : adds handler for DataSourceTargetEvent
+func (i *DataSource) AddTargetHandler(h DataSourceTargetHandler) {
 	if h == nil {
 		return
 	}
@@ -1577,7 +1577,7 @@ func (i *WlDataSource) AddTargetHandler(h WlDataSourceTargetHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataSource) RemoveTargetHandler(h WlDataSourceTargetHandler) {
+func (i *DataSource) RemoveTargetHandler(h DataSourceTargetHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1589,22 +1589,22 @@ func (i *WlDataSource) RemoveTargetHandler(h WlDataSourceTargetHandler) {
 	}
 }
 
-// WlDataSourceSendEvent : send the data
+// DataSourceSendEvent : send the data
 //
 // Request for data from the client.  Send the data as the
 // specified mime type over the passed file descriptor, then
 // close it.
-type WlDataSourceSendEvent struct {
+type DataSourceSendEvent struct {
 	MimeType string
 	Fd       uintptr
 }
 
-type WlDataSourceSendHandler interface {
-	HandleWlDataSourceSend(WlDataSourceSendEvent)
+type DataSourceSendHandler interface {
+	HandleDataSourceSend(DataSourceSendEvent)
 }
 
-// AddSendHandler : adds handler for WlDataSourceSendEvent
-func (i *WlDataSource) AddSendHandler(h WlDataSourceSendHandler) {
+// AddSendHandler : adds handler for DataSourceSendEvent
+func (i *DataSource) AddSendHandler(h DataSourceSendHandler) {
 	if h == nil {
 		return
 	}
@@ -1614,7 +1614,7 @@ func (i *WlDataSource) AddSendHandler(h WlDataSourceSendHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataSource) RemoveSendHandler(h WlDataSourceSendHandler) {
+func (i *DataSource) RemoveSendHandler(h DataSourceSendHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1626,7 +1626,7 @@ func (i *WlDataSource) RemoveSendHandler(h WlDataSourceSendHandler) {
 	}
 }
 
-// WlDataSourceCancelledEvent : selection was cancelled
+// DataSourceCancelledEvent : selection was cancelled
 //
 // This data source is no longer valid. There are several reasons why
 // this could happen:
@@ -1648,13 +1648,13 @@ func (i *WlDataSource) RemoveSendHandler(h WlDataSourceSendHandler) {
 // For objects of version 2 or older, wl_data_source.cancelled will
 // only be emitted if the data source was replaced by another data
 // source.
-type WlDataSourceCancelledEvent struct{}
-type WlDataSourceCancelledHandler interface {
-	HandleWlDataSourceCancelled(WlDataSourceCancelledEvent)
+type DataSourceCancelledEvent struct{}
+type DataSourceCancelledHandler interface {
+	HandleDataSourceCancelled(DataSourceCancelledEvent)
 }
 
-// AddCancelledHandler : adds handler for WlDataSourceCancelledEvent
-func (i *WlDataSource) AddCancelledHandler(h WlDataSourceCancelledHandler) {
+// AddCancelledHandler : adds handler for DataSourceCancelledEvent
+func (i *DataSource) AddCancelledHandler(h DataSourceCancelledHandler) {
 	if h == nil {
 		return
 	}
@@ -1664,7 +1664,7 @@ func (i *WlDataSource) AddCancelledHandler(h WlDataSourceCancelledHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataSource) RemoveCancelledHandler(h WlDataSourceCancelledHandler) {
+func (i *DataSource) RemoveCancelledHandler(h DataSourceCancelledHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1676,7 +1676,7 @@ func (i *WlDataSource) RemoveCancelledHandler(h WlDataSourceCancelledHandler) {
 	}
 }
 
-// WlDataSourceDndDropPerformedEvent : the drag-and-drop operation physically finished
+// DataSourceDndDropPerformedEvent : the drag-and-drop operation physically finished
 //
 // The user performed the drop action. This event does not indicate
 // acceptance, wl_data_source.cancelled may still be emitted afterwards
@@ -1687,13 +1687,13 @@ func (i *WlDataSource) RemoveCancelledHandler(h WlDataSourceCancelledHandler) {
 //
 // Note that the data_source may still be used in the future and should
 // not be destroyed here.
-type WlDataSourceDndDropPerformedEvent struct{}
-type WlDataSourceDndDropPerformedHandler interface {
-	HandleWlDataSourceDndDropPerformed(WlDataSourceDndDropPerformedEvent)
+type DataSourceDndDropPerformedEvent struct{}
+type DataSourceDndDropPerformedHandler interface {
+	HandleDataSourceDndDropPerformed(DataSourceDndDropPerformedEvent)
 }
 
-// AddDndDropPerformedHandler : adds handler for WlDataSourceDndDropPerformedEvent
-func (i *WlDataSource) AddDndDropPerformedHandler(h WlDataSourceDndDropPerformedHandler) {
+// AddDndDropPerformedHandler : adds handler for DataSourceDndDropPerformedEvent
+func (i *DataSource) AddDndDropPerformedHandler(h DataSourceDndDropPerformedHandler) {
 	if h == nil {
 		return
 	}
@@ -1703,7 +1703,7 @@ func (i *WlDataSource) AddDndDropPerformedHandler(h WlDataSourceDndDropPerformed
 	i.mu.Unlock()
 }
 
-func (i *WlDataSource) RemoveDndDropPerformedHandler(h WlDataSourceDndDropPerformedHandler) {
+func (i *DataSource) RemoveDndDropPerformedHandler(h DataSourceDndDropPerformedHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1715,7 +1715,7 @@ func (i *WlDataSource) RemoveDndDropPerformedHandler(h WlDataSourceDndDropPerfor
 	}
 }
 
-// WlDataSourceDndFinishedEvent : the drag-and-drop operation concluded
+// DataSourceDndFinishedEvent : the drag-and-drop operation concluded
 //
 // The drop destination finished interoperating with this data
 // source, so the client is now free to destroy this data source and
@@ -1723,13 +1723,13 @@ func (i *WlDataSource) RemoveDndDropPerformedHandler(h WlDataSourceDndDropPerfor
 //
 // If the action used to perform the operation was "move", the
 // source can now delete the transferred data.
-type WlDataSourceDndFinishedEvent struct{}
-type WlDataSourceDndFinishedHandler interface {
-	HandleWlDataSourceDndFinished(WlDataSourceDndFinishedEvent)
+type DataSourceDndFinishedEvent struct{}
+type DataSourceDndFinishedHandler interface {
+	HandleDataSourceDndFinished(DataSourceDndFinishedEvent)
 }
 
-// AddDndFinishedHandler : adds handler for WlDataSourceDndFinishedEvent
-func (i *WlDataSource) AddDndFinishedHandler(h WlDataSourceDndFinishedHandler) {
+// AddDndFinishedHandler : adds handler for DataSourceDndFinishedEvent
+func (i *DataSource) AddDndFinishedHandler(h DataSourceDndFinishedHandler) {
 	if h == nil {
 		return
 	}
@@ -1739,7 +1739,7 @@ func (i *WlDataSource) AddDndFinishedHandler(h WlDataSourceDndFinishedHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataSource) RemoveDndFinishedHandler(h WlDataSourceDndFinishedHandler) {
+func (i *DataSource) RemoveDndFinishedHandler(h DataSourceDndFinishedHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1751,7 +1751,7 @@ func (i *WlDataSource) RemoveDndFinishedHandler(h WlDataSourceDndFinishedHandler
 	}
 }
 
-// WlDataSourceActionEvent : notify the selected action
+// DataSourceActionEvent : notify the selected action
 //
 // This event indicates the action selected by the compositor after
 // matching the source/destination side actions. Only one action (or
@@ -1778,16 +1778,16 @@ func (i *WlDataSource) RemoveDndFinishedHandler(h WlDataSourceDndFinishedHandler
 //
 // Clients can trigger cursor surface changes from this point, so
 // they reflect the current action.
-type WlDataSourceActionEvent struct {
+type DataSourceActionEvent struct {
 	DndAction uint32
 }
 
-type WlDataSourceActionHandler interface {
-	HandleWlDataSourceAction(WlDataSourceActionEvent)
+type DataSourceActionHandler interface {
+	HandleDataSourceAction(DataSourceActionEvent)
 }
 
-// AddActionHandler : adds handler for WlDataSourceActionEvent
-func (i *WlDataSource) AddActionHandler(h WlDataSourceActionHandler) {
+// AddActionHandler : adds handler for DataSourceActionEvent
+func (i *DataSource) AddActionHandler(h DataSourceActionHandler) {
 	if h == nil {
 		return
 	}
@@ -1797,7 +1797,7 @@ func (i *WlDataSource) AddActionHandler(h WlDataSourceActionHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataSource) RemoveActionHandler(h WlDataSourceActionHandler) {
+func (i *DataSource) RemoveActionHandler(h DataSourceActionHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1809,7 +1809,7 @@ func (i *WlDataSource) RemoveActionHandler(h WlDataSourceActionHandler) {
 	}
 }
 
-func (i *WlDataSource) Dispatch(event *Event) {
+func (i *DataSource) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -1819,7 +1819,7 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataSourceTargetEvent{
+		e := DataSourceTargetEvent{
 			MimeType: event.String(),
 		}
 
@@ -1827,7 +1827,7 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		for _, h := range i.targetHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataSourceTarget(e)
+			h.HandleDataSourceTarget(e)
 
 			i.mu.RLock()
 		}
@@ -1840,7 +1840,7 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataSourceSendEvent{
+		e := DataSourceSendEvent{
 			MimeType: event.String(),
 			Fd:       event.FD(),
 		}
@@ -1849,7 +1849,7 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		for _, h := range i.sendHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataSourceSend(e)
+			h.HandleDataSourceSend(e)
 
 			i.mu.RLock()
 		}
@@ -1862,13 +1862,13 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataSourceCancelledEvent{}
+		e := DataSourceCancelledEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.cancelledHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataSourceCancelled(e)
+			h.HandleDataSourceCancelled(e)
 
 			i.mu.RLock()
 		}
@@ -1881,13 +1881,13 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataSourceDndDropPerformedEvent{}
+		e := DataSourceDndDropPerformedEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.dndDropPerformedHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataSourceDndDropPerformed(e)
+			h.HandleDataSourceDndDropPerformed(e)
 
 			i.mu.RLock()
 		}
@@ -1900,13 +1900,13 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataSourceDndFinishedEvent{}
+		e := DataSourceDndFinishedEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.dndFinishedHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataSourceDndFinished(e)
+			h.HandleDataSourceDndFinished(e)
 
 			i.mu.RLock()
 		}
@@ -1919,7 +1919,7 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataSourceActionEvent{
+		e := DataSourceActionEvent{
 			DndAction: event.Uint32(),
 		}
 
@@ -1927,7 +1927,7 @@ func (i *WlDataSource) Dispatch(event *Event) {
 		for _, h := range i.actionHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataSourceAction(e)
+			h.HandleDataSourceAction(e)
 
 			i.mu.RLock()
 		}
@@ -1935,33 +1935,33 @@ func (i *WlDataSource) Dispatch(event *Event) {
 	}
 }
 
-// WlDataDevice : data transfer device
+// DataDevice : data transfer device
 //
 // There is one wl_data_device per seat which can be obtained
 // from the global wl_data_device_manager singleton.
 //
 // A wl_data_device provides access to inter-client data transfer
 // mechanisms such as copy-and-paste and drag-and-drop.
-type WlDataDevice struct {
+type DataDevice struct {
 	BaseProxy
 	mu                sync.RWMutex
-	dataOfferHandlers []WlDataDeviceDataOfferHandler
-	enterHandlers     []WlDataDeviceEnterHandler
-	leaveHandlers     []WlDataDeviceLeaveHandler
-	motionHandlers    []WlDataDeviceMotionHandler
-	dropHandlers      []WlDataDeviceDropHandler
-	selectionHandlers []WlDataDeviceSelectionHandler
+	dataOfferHandlers []DataDeviceDataOfferHandler
+	enterHandlers     []DataDeviceEnterHandler
+	leaveHandlers     []DataDeviceLeaveHandler
+	motionHandlers    []DataDeviceMotionHandler
+	dropHandlers      []DataDeviceDropHandler
+	selectionHandlers []DataDeviceSelectionHandler
 }
 
-// NewWlDataDevice : data transfer device
+// NewDataDevice : data transfer device
 //
 // There is one wl_data_device per seat which can be obtained
 // from the global wl_data_device_manager singleton.
 //
 // A wl_data_device provides access to inter-client data transfer
 // mechanisms such as copy-and-paste and drag-and-drop.
-func NewWlDataDevice(ctx *Context) *WlDataDevice {
-	wlDataDevice := &WlDataDevice{}
+func NewDataDevice(ctx *Context) *DataDevice {
+	wlDataDevice := &DataDevice{}
 	ctx.Register(wlDataDevice)
 	return wlDataDevice
 }
@@ -2001,7 +2001,7 @@ func NewWlDataDevice(ctx *Context) *WlDataDevice {
 //  origin: surface where the drag originates
 //  icon: drag-and-drop icon surface
 //  serial: serial number of the implicit grab on the origin
-func (i *WlDataDevice) StartDrag(source *WlDataSource, origin, icon *WlSurface, serial uint32) error {
+func (i *DataDevice) StartDrag(source *DataSource, origin, icon *Surface, serial uint32) error {
 	err := i.Context().SendRequest(i, 0, source, origin, icon, serial)
 	return err
 }
@@ -2015,7 +2015,7 @@ func (i *WlDataDevice) StartDrag(source *WlDataSource, origin, icon *WlSurface, 
 //
 //  source: data source for the selection
 //  serial: serial number of the event that triggered this request
-func (i *WlDataDevice) SetSelection(source *WlDataSource, serial uint32) error {
+func (i *DataDevice) SetSelection(source *DataSource, serial uint32) error {
 	err := i.Context().SendRequest(i, 1, source, serial)
 	return err
 }
@@ -2024,19 +2024,19 @@ func (i *WlDataDevice) SetSelection(source *WlDataSource, serial uint32) error {
 //
 // This request destroys the data device.
 //
-func (i *WlDataDevice) Release() error {
+func (i *DataDevice) Release() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 2)
 	return err
 }
 
-// WlDataDeviceError :
+// DataDeviceError :
 const (
-	// WlDataDeviceErrorRole : given wl_surface has another role
-	WlDataDeviceErrorRole = 0
+	// DataDeviceErrorRole : given wl_surface has another role
+	DataDeviceErrorRole = 0
 )
 
-// WlDataDeviceDataOfferEvent : introduce a new wl_data_offer
+// DataDeviceDataOfferEvent : introduce a new wl_data_offer
 //
 // The data_offer event introduces a new wl_data_offer object,
 // which will subsequently be used in either the
@@ -2045,16 +2045,16 @@ const (
 // following the data_device_data_offer event, the new data_offer
 // object will send out data_offer.offer events to describe the
 // mime types it offers.
-type WlDataDeviceDataOfferEvent struct {
-	ID *WlDataOffer
+type DataDeviceDataOfferEvent struct {
+	ID *DataOffer
 }
 
-type WlDataDeviceDataOfferHandler interface {
-	HandleWlDataDeviceDataOffer(WlDataDeviceDataOfferEvent)
+type DataDeviceDataOfferHandler interface {
+	HandleDataDeviceDataOffer(DataDeviceDataOfferEvent)
 }
 
-// AddDataOfferHandler : adds handler for WlDataDeviceDataOfferEvent
-func (i *WlDataDevice) AddDataOfferHandler(h WlDataDeviceDataOfferHandler) {
+// AddDataOfferHandler : adds handler for DataDeviceDataOfferEvent
+func (i *DataDevice) AddDataOfferHandler(h DataDeviceDataOfferHandler) {
 	if h == nil {
 		return
 	}
@@ -2064,7 +2064,7 @@ func (i *WlDataDevice) AddDataOfferHandler(h WlDataDeviceDataOfferHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataDevice) RemoveDataOfferHandler(h WlDataDeviceDataOfferHandler) {
+func (i *DataDevice) RemoveDataOfferHandler(h DataDeviceDataOfferHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2076,26 +2076,26 @@ func (i *WlDataDevice) RemoveDataOfferHandler(h WlDataDeviceDataOfferHandler) {
 	}
 }
 
-// WlDataDeviceEnterEvent : initiate drag-and-drop session
+// DataDeviceEnterEvent : initiate drag-and-drop session
 //
 // This event is sent when an active drag-and-drop pointer enters
 // a surface owned by the client.  The position of the pointer at
 // enter time is provided by the x and y arguments, in surface-local
 // coordinates.
-type WlDataDeviceEnterEvent struct {
+type DataDeviceEnterEvent struct {
 	Serial  uint32
-	Surface *WlSurface
+	Surface *Surface
 	X       float32
 	Y       float32
-	ID      *WlDataOffer
+	ID      *DataOffer
 }
 
-type WlDataDeviceEnterHandler interface {
-	HandleWlDataDeviceEnter(WlDataDeviceEnterEvent)
+type DataDeviceEnterHandler interface {
+	HandleDataDeviceEnter(DataDeviceEnterEvent)
 }
 
-// AddEnterHandler : adds handler for WlDataDeviceEnterEvent
-func (i *WlDataDevice) AddEnterHandler(h WlDataDeviceEnterHandler) {
+// AddEnterHandler : adds handler for DataDeviceEnterEvent
+func (i *DataDevice) AddEnterHandler(h DataDeviceEnterHandler) {
 	if h == nil {
 		return
 	}
@@ -2105,7 +2105,7 @@ func (i *WlDataDevice) AddEnterHandler(h WlDataDeviceEnterHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataDevice) RemoveEnterHandler(h WlDataDeviceEnterHandler) {
+func (i *DataDevice) RemoveEnterHandler(h DataDeviceEnterHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2117,18 +2117,18 @@ func (i *WlDataDevice) RemoveEnterHandler(h WlDataDeviceEnterHandler) {
 	}
 }
 
-// WlDataDeviceLeaveEvent : end drag-and-drop session
+// DataDeviceLeaveEvent : end drag-and-drop session
 //
 // This event is sent when the drag-and-drop pointer leaves the
 // surface and the session ends.  The client must destroy the
 // wl_data_offer introduced at enter time at this point.
-type WlDataDeviceLeaveEvent struct{}
-type WlDataDeviceLeaveHandler interface {
-	HandleWlDataDeviceLeave(WlDataDeviceLeaveEvent)
+type DataDeviceLeaveEvent struct{}
+type DataDeviceLeaveHandler interface {
+	HandleDataDeviceLeave(DataDeviceLeaveEvent)
 }
 
-// AddLeaveHandler : adds handler for WlDataDeviceLeaveEvent
-func (i *WlDataDevice) AddLeaveHandler(h WlDataDeviceLeaveHandler) {
+// AddLeaveHandler : adds handler for DataDeviceLeaveEvent
+func (i *DataDevice) AddLeaveHandler(h DataDeviceLeaveHandler) {
 	if h == nil {
 		return
 	}
@@ -2138,7 +2138,7 @@ func (i *WlDataDevice) AddLeaveHandler(h WlDataDeviceLeaveHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataDevice) RemoveLeaveHandler(h WlDataDeviceLeaveHandler) {
+func (i *DataDevice) RemoveLeaveHandler(h DataDeviceLeaveHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2150,24 +2150,24 @@ func (i *WlDataDevice) RemoveLeaveHandler(h WlDataDeviceLeaveHandler) {
 	}
 }
 
-// WlDataDeviceMotionEvent : drag-and-drop session motion
+// DataDeviceMotionEvent : drag-and-drop session motion
 //
 // This event is sent when the drag-and-drop pointer moves within
 // the currently focused surface. The new position of the pointer
 // is provided by the x and y arguments, in surface-local
 // coordinates.
-type WlDataDeviceMotionEvent struct {
+type DataDeviceMotionEvent struct {
 	Time uint32
 	X    float32
 	Y    float32
 }
 
-type WlDataDeviceMotionHandler interface {
-	HandleWlDataDeviceMotion(WlDataDeviceMotionEvent)
+type DataDeviceMotionHandler interface {
+	HandleDataDeviceMotion(DataDeviceMotionEvent)
 }
 
-// AddMotionHandler : adds handler for WlDataDeviceMotionEvent
-func (i *WlDataDevice) AddMotionHandler(h WlDataDeviceMotionHandler) {
+// AddMotionHandler : adds handler for DataDeviceMotionEvent
+func (i *DataDevice) AddMotionHandler(h DataDeviceMotionHandler) {
 	if h == nil {
 		return
 	}
@@ -2177,7 +2177,7 @@ func (i *WlDataDevice) AddMotionHandler(h WlDataDeviceMotionHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataDevice) RemoveMotionHandler(h WlDataDeviceMotionHandler) {
+func (i *DataDevice) RemoveMotionHandler(h DataDeviceMotionHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2189,7 +2189,7 @@ func (i *WlDataDevice) RemoveMotionHandler(h WlDataDeviceMotionHandler) {
 	}
 }
 
-// WlDataDeviceDropEvent : end drag-and-drop session successfully
+// DataDeviceDropEvent : end drag-and-drop session successfully
 //
 // The event is sent when a drag-and-drop operation is ended
 // because the implicit grab is removed.
@@ -2204,13 +2204,13 @@ func (i *WlDataDevice) RemoveMotionHandler(h WlDataDeviceMotionHandler) {
 // final. The drag-and-drop destination is expected to perform one last
 // wl_data_offer.set_actions request, or wl_data_offer.destroy in order
 // to cancel the operation.
-type WlDataDeviceDropEvent struct{}
-type WlDataDeviceDropHandler interface {
-	HandleWlDataDeviceDrop(WlDataDeviceDropEvent)
+type DataDeviceDropEvent struct{}
+type DataDeviceDropHandler interface {
+	HandleDataDeviceDrop(DataDeviceDropEvent)
 }
 
-// AddDropHandler : adds handler for WlDataDeviceDropEvent
-func (i *WlDataDevice) AddDropHandler(h WlDataDeviceDropHandler) {
+// AddDropHandler : adds handler for DataDeviceDropEvent
+func (i *DataDevice) AddDropHandler(h DataDeviceDropHandler) {
 	if h == nil {
 		return
 	}
@@ -2220,7 +2220,7 @@ func (i *WlDataDevice) AddDropHandler(h WlDataDeviceDropHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataDevice) RemoveDropHandler(h WlDataDeviceDropHandler) {
+func (i *DataDevice) RemoveDropHandler(h DataDeviceDropHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2232,7 +2232,7 @@ func (i *WlDataDevice) RemoveDropHandler(h WlDataDeviceDropHandler) {
 	}
 }
 
-// WlDataDeviceSelectionEvent : advertise new selection
+// DataDeviceSelectionEvent : advertise new selection
 //
 // The selection event is sent out to notify the client of a new
 // wl_data_offer for the selection for this device.  The
@@ -2245,16 +2245,16 @@ func (i *WlDataDevice) RemoveDropHandler(h WlDataDeviceDropHandler) {
 // or until the client loses keyboard focus.  The client must
 // destroy the previous selection data_offer, if any, upon receiving
 // this event.
-type WlDataDeviceSelectionEvent struct {
-	ID *WlDataOffer
+type DataDeviceSelectionEvent struct {
+	ID *DataOffer
 }
 
-type WlDataDeviceSelectionHandler interface {
-	HandleWlDataDeviceSelection(WlDataDeviceSelectionEvent)
+type DataDeviceSelectionHandler interface {
+	HandleDataDeviceSelection(DataDeviceSelectionEvent)
 }
 
-// AddSelectionHandler : adds handler for WlDataDeviceSelectionEvent
-func (i *WlDataDevice) AddSelectionHandler(h WlDataDeviceSelectionHandler) {
+// AddSelectionHandler : adds handler for DataDeviceSelectionEvent
+func (i *DataDevice) AddSelectionHandler(h DataDeviceSelectionHandler) {
 	if h == nil {
 		return
 	}
@@ -2264,7 +2264,7 @@ func (i *WlDataDevice) AddSelectionHandler(h WlDataDeviceSelectionHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlDataDevice) RemoveSelectionHandler(h WlDataDeviceSelectionHandler) {
+func (i *DataDevice) RemoveSelectionHandler(h DataDeviceSelectionHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2276,7 +2276,7 @@ func (i *WlDataDevice) RemoveSelectionHandler(h WlDataDeviceSelectionHandler) {
 	}
 }
 
-func (i *WlDataDevice) Dispatch(event *Event) {
+func (i *DataDevice) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -2286,15 +2286,15 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataDeviceDataOfferEvent{
-			ID: event.Proxy(i.Context()).(*WlDataOffer),
+		e := DataDeviceDataOfferEvent{
+			ID: event.Proxy(i.Context()).(*DataOffer),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.dataOfferHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataDeviceDataOffer(e)
+			h.HandleDataDeviceDataOffer(e)
 
 			i.mu.RLock()
 		}
@@ -2307,19 +2307,19 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataDeviceEnterEvent{
+		e := DataDeviceEnterEvent{
 			Serial:  event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*WlSurface),
+			Surface: event.Proxy(i.Context()).(*Surface),
 			X:       event.Float32(),
 			Y:       event.Float32(),
-			ID:      event.Proxy(i.Context()).(*WlDataOffer),
+			ID:      event.Proxy(i.Context()).(*DataOffer),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.enterHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataDeviceEnter(e)
+			h.HandleDataDeviceEnter(e)
 
 			i.mu.RLock()
 		}
@@ -2332,13 +2332,13 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataDeviceLeaveEvent{}
+		e := DataDeviceLeaveEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataDeviceLeave(e)
+			h.HandleDataDeviceLeave(e)
 
 			i.mu.RLock()
 		}
@@ -2351,7 +2351,7 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataDeviceMotionEvent{
+		e := DataDeviceMotionEvent{
 			Time: event.Uint32(),
 			X:    event.Float32(),
 			Y:    event.Float32(),
@@ -2361,7 +2361,7 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 		for _, h := range i.motionHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataDeviceMotion(e)
+			h.HandleDataDeviceMotion(e)
 
 			i.mu.RLock()
 		}
@@ -2374,13 +2374,13 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataDeviceDropEvent{}
+		e := DataDeviceDropEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.dropHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataDeviceDrop(e)
+			h.HandleDataDeviceDrop(e)
 
 			i.mu.RLock()
 		}
@@ -2393,15 +2393,15 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlDataDeviceSelectionEvent{
-			ID: event.Proxy(i.Context()).(*WlDataOffer),
+		e := DataDeviceSelectionEvent{
+			ID: event.Proxy(i.Context()).(*DataOffer),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.selectionHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlDataDeviceSelection(e)
+			h.HandleDataDeviceSelection(e)
 
 			i.mu.RLock()
 		}
@@ -2409,7 +2409,7 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 	}
 }
 
-// WlDataDeviceManager : data transfer interface
+// DataDeviceManager : data transfer interface
 //
 // The wl_data_device_manager is a singleton global object that
 // provides access to inter-client data transfer mechanisms such as
@@ -2421,11 +2421,11 @@ func (i *WlDataDevice) Dispatch(event *Event) {
 // wl_data_device_manager object will have different requirements for
 // functioning properly. See wl_data_source.set_actions,
 // wl_data_offer.accept and wl_data_offer.finish for details.
-type WlDataDeviceManager struct {
+type DataDeviceManager struct {
 	BaseProxy
 }
 
-// NewWlDataDeviceManager : data transfer interface
+// NewDataDeviceManager : data transfer interface
 //
 // The wl_data_device_manager is a singleton global object that
 // provides access to inter-client data transfer mechanisms such as
@@ -2437,8 +2437,8 @@ type WlDataDeviceManager struct {
 // wl_data_device_manager object will have different requirements for
 // functioning properly. See wl_data_source.set_actions,
 // wl_data_offer.accept and wl_data_offer.finish for details.
-func NewWlDataDeviceManager(ctx *Context) *WlDataDeviceManager {
-	wlDataDeviceManager := &WlDataDeviceManager{}
+func NewDataDeviceManager(ctx *Context) *DataDeviceManager {
+	wlDataDeviceManager := &DataDeviceManager{}
 	ctx.Register(wlDataDeviceManager)
 	return wlDataDeviceManager
 }
@@ -2447,8 +2447,8 @@ func NewWlDataDeviceManager(ctx *Context) *WlDataDeviceManager {
 //
 // Create a new data source.
 //
-func (i *WlDataDeviceManager) CreateDataSource() (*WlDataSource, error) {
-	id := NewWlDataSource(i.Context())
+func (i *DataDeviceManager) CreateDataSource() (*DataSource, error) {
+	id := NewDataSource(i.Context())
 	err := i.Context().SendRequest(i, 0, id)
 	return id, err
 }
@@ -2458,18 +2458,18 @@ func (i *WlDataDeviceManager) CreateDataSource() (*WlDataSource, error) {
 // Create a new data device for a given seat.
 //
 //  seat: seat associated with the data device
-func (i *WlDataDeviceManager) GetDataDevice(seat *WlSeat) (*WlDataDevice, error) {
-	id := NewWlDataDevice(i.Context())
+func (i *DataDeviceManager) GetDataDevice(seat *Seat) (*DataDevice, error) {
+	id := NewDataDevice(i.Context())
 	err := i.Context().SendRequest(i, 1, id, seat)
 	return id, err
 }
 
-func (i *WlDataDeviceManager) Destroy() error {
+func (i *DataDeviceManager) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WlDataDeviceManagerDndAction : drag and drop actions
+// DataDeviceManagerDndAction : drag and drop actions
 //
 // This is a bitmask of the available/preferred actions in a
 // drag-and-drop operation.
@@ -2495,17 +2495,17 @@ func (i *WlDataDeviceManager) Destroy() error {
 // or drags initiated with other buttons than BTN_LEFT to specific
 // actions (e.g. "ask").
 const (
-	// WlDataDeviceManagerDndActionNone : no action
-	WlDataDeviceManagerDndActionNone = 0
-	// WlDataDeviceManagerDndActionCopy : copy action
-	WlDataDeviceManagerDndActionCopy = 1
-	// WlDataDeviceManagerDndActionMove : move action
-	WlDataDeviceManagerDndActionMove = 2
-	// WlDataDeviceManagerDndActionAsk : ask action
-	WlDataDeviceManagerDndActionAsk = 4
+	// DataDeviceManagerDndActionNone : no action
+	DataDeviceManagerDndActionNone = 0
+	// DataDeviceManagerDndActionCopy : copy action
+	DataDeviceManagerDndActionCopy = 1
+	// DataDeviceManagerDndActionMove : move action
+	DataDeviceManagerDndActionMove = 2
+	// DataDeviceManagerDndActionAsk : ask action
+	DataDeviceManagerDndActionAsk = 4
 )
 
-// WlShell : create desktop-style surfaces
+// Shell : create desktop-style surfaces
 //
 // This interface is implemented by servers that provide
 // desktop-style user interfaces.
@@ -2515,11 +2515,11 @@ const (
 //
 // Note! This protocol is deprecated and not intended for production use.
 // For desktop-style user interfaces, use xdg_shell.
-type WlShell struct {
+type Shell struct {
 	BaseProxy
 }
 
-// NewWlShell : create desktop-style surfaces
+// NewShell : create desktop-style surfaces
 //
 // This interface is implemented by servers that provide
 // desktop-style user interfaces.
@@ -2529,8 +2529,8 @@ type WlShell struct {
 //
 // Note! This protocol is deprecated and not intended for production use.
 // For desktop-style user interfaces, use xdg_shell.
-func NewWlShell(ctx *Context) *WlShell {
-	wlShell := &WlShell{}
+func NewShell(ctx *Context) *Shell {
+	wlShell := &Shell{}
 	ctx.Register(wlShell)
 	return wlShell
 }
@@ -2544,24 +2544,24 @@ func NewWlShell(ctx *Context) *WlShell {
 // Only one shell surface can be associated with a given surface.
 //
 //  surface: surface to be given the shell surface role
-func (i *WlShell) GetShellSurface(surface *WlSurface) (*WlShellSurface, error) {
-	id := NewWlShellSurface(i.Context())
+func (i *Shell) GetShellSurface(surface *Surface) (*ShellSurface, error) {
+	id := NewShellSurface(i.Context())
 	err := i.Context().SendRequest(i, 0, id, surface)
 	return id, err
 }
 
-func (i *WlShell) Destroy() error {
+func (i *Shell) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WlShellError :
+// ShellError :
 const (
-	// WlShellErrorRole : given wl_surface has another role
-	WlShellErrorRole = 0
+	// ShellErrorRole : given wl_surface has another role
+	ShellErrorRole = 0
 )
 
-// WlShellSurface : desktop-style metadata interface
+// ShellSurface : desktop-style metadata interface
 //
 // An interface that may be implemented by a wl_surface, for
 // implementations that provide a desktop-style user interface.
@@ -2574,15 +2574,15 @@ const (
 // the related wl_surface is destroyed. On the client side,
 // wl_shell_surface_destroy() must be called before destroying
 // the wl_surface object.
-type WlShellSurface struct {
+type ShellSurface struct {
 	BaseProxy
 	mu                sync.RWMutex
-	pingHandlers      []WlShellSurfacePingHandler
-	configureHandlers []WlShellSurfaceConfigureHandler
-	popupDoneHandlers []WlShellSurfacePopupDoneHandler
+	pingHandlers      []ShellSurfacePingHandler
+	configureHandlers []ShellSurfaceConfigureHandler
+	popupDoneHandlers []ShellSurfacePopupDoneHandler
 }
 
-// NewWlShellSurface : desktop-style metadata interface
+// NewShellSurface : desktop-style metadata interface
 //
 // An interface that may be implemented by a wl_surface, for
 // implementations that provide a desktop-style user interface.
@@ -2595,8 +2595,8 @@ type WlShellSurface struct {
 // the related wl_surface is destroyed. On the client side,
 // wl_shell_surface_destroy() must be called before destroying
 // the wl_surface object.
-func NewWlShellSurface(ctx *Context) *WlShellSurface {
-	wlShellSurface := &WlShellSurface{}
+func NewShellSurface(ctx *Context) *ShellSurface {
+	wlShellSurface := &ShellSurface{}
 	ctx.Register(wlShellSurface)
 	return wlShellSurface
 }
@@ -2607,7 +2607,7 @@ func NewWlShellSurface(ctx *Context) *WlShellSurface {
 // the client may be deemed unresponsive.
 //
 //  serial: serial number of the ping event
-func (i *WlShellSurface) Pong(serial uint32) error {
+func (i *ShellSurface) Pong(serial uint32) error {
 	err := i.Context().SendRequest(i, 0, serial)
 	return err
 }
@@ -2622,7 +2622,7 @@ func (i *WlShellSurface) Pong(serial uint32) error {
 //
 //  seat: seat whose pointer is used
 //  serial: serial number of the implicit grab on the pointer
-func (i *WlShellSurface) Move(seat *WlSeat, serial uint32) error {
+func (i *ShellSurface) Move(seat *Seat, serial uint32) error {
 	err := i.Context().SendRequest(i, 1, seat, serial)
 	return err
 }
@@ -2638,7 +2638,7 @@ func (i *WlShellSurface) Move(seat *WlSeat, serial uint32) error {
 //  seat: seat whose pointer is used
 //  serial: serial number of the implicit grab on the pointer
 //  edges: which edge or corner is being dragged
-func (i *WlShellSurface) Resize(seat *WlSeat, serial, edges uint32) error {
+func (i *ShellSurface) Resize(seat *Seat, serial, edges uint32) error {
 	err := i.Context().SendRequest(i, 2, seat, serial, edges)
 	return err
 }
@@ -2649,7 +2649,7 @@ func (i *WlShellSurface) Resize(seat *WlSeat, serial, edges uint32) error {
 //
 // A toplevel surface is not fullscreen, maximized or transient.
 //
-func (i *WlShellSurface) SetToplevel() error {
+func (i *ShellSurface) SetToplevel() error {
 	err := i.Context().SendRequest(i, 3)
 	return err
 }
@@ -2668,7 +2668,7 @@ func (i *WlShellSurface) SetToplevel() error {
 //  x: surface-local x coordinate
 //  y: surface-local y coordinate
 //  flags: transient surface behavior
-func (i *WlShellSurface) SetTransient(parent *WlSurface, x, y int32, flags uint32) error {
+func (i *ShellSurface) SetTransient(parent *Surface, x, y int32, flags uint32) error {
 	err := i.Context().SendRequest(i, 4, parent, x, y, flags)
 	return err
 }
@@ -2712,7 +2712,7 @@ func (i *WlShellSurface) SetTransient(parent *WlSurface, x, y int32, flags uint3
 //  method: method for resolving size conflict
 //  framerate: framerate in mHz
 //  output: output on which the surface is to be fullscreen
-func (i *WlShellSurface) SetFullscreen(method, framerate uint32, output *WlOutput) error {
+func (i *ShellSurface) SetFullscreen(method, framerate uint32, output *Output) error {
 	err := i.Context().SendRequest(i, 5, method, framerate, output)
 	return err
 }
@@ -2745,7 +2745,7 @@ func (i *WlShellSurface) SetFullscreen(method, framerate uint32, output *WlOutpu
 //  x: surface-local x coordinate
 //  y: surface-local y coordinate
 //  flags: transient surface behavior
-func (i *WlShellSurface) SetPopup(seat *WlSeat, serial uint32, parent *WlSurface, x, y int32, flags uint32) error {
+func (i *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x, y int32, flags uint32) error {
 	err := i.Context().SendRequest(i, 6, seat, serial, parent, x, y, flags)
 	return err
 }
@@ -2772,7 +2772,7 @@ func (i *WlShellSurface) SetPopup(seat *WlSeat, serial uint32, parent *WlSurface
 // The details depend on the compositor implementation.
 //
 //  output: output on which the surface is to be maximized
-func (i *WlShellSurface) SetMaximized(output *WlOutput) error {
+func (i *ShellSurface) SetMaximized(output *Output) error {
 	err := i.Context().SendRequest(i, 7, output)
 	return err
 }
@@ -2788,7 +2788,7 @@ func (i *WlShellSurface) SetMaximized(output *WlOutput) error {
 // The string must be encoded in UTF-8.
 //
 //  title: surface title
-func (i *WlShellSurface) SetTitle(title string) error {
+func (i *ShellSurface) SetTitle(title string) error {
 	err := i.Context().SendRequest(i, 8, title)
 	return err
 }
@@ -2803,82 +2803,82 @@ func (i *WlShellSurface) SetTitle(title string) error {
 // the application's .desktop file as the class.
 //
 //  class: surface class
-func (i *WlShellSurface) SetClass(class string) error {
+func (i *ShellSurface) SetClass(class string) error {
 	err := i.Context().SendRequest(i, 9, class)
 	return err
 }
 
-func (i *WlShellSurface) Destroy() error {
+func (i *ShellSurface) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WlShellSurfaceResize : edge values for resizing
+// ShellSurfaceResize : edge values for resizing
 //
 // These values are used to indicate which edge of a surface
 // is being dragged in a resize operation. The server may
 // use this information to adapt its behavior, e.g. choose
 // an appropriate cursor image.
 const (
-	// WlShellSurfaceResizeNone : no edge
-	WlShellSurfaceResizeNone = 0
-	// WlShellSurfaceResizeTop : top edge
-	WlShellSurfaceResizeTop = 1
-	// WlShellSurfaceResizeBottom : bottom edge
-	WlShellSurfaceResizeBottom = 2
-	// WlShellSurfaceResizeLeft : left edge
-	WlShellSurfaceResizeLeft = 4
-	// WlShellSurfaceResizeTopLeft : top and left edges
-	WlShellSurfaceResizeTopLeft = 5
-	// WlShellSurfaceResizeBottomLeft : bottom and left edges
-	WlShellSurfaceResizeBottomLeft = 6
-	// WlShellSurfaceResizeRight : right edge
-	WlShellSurfaceResizeRight = 8
-	// WlShellSurfaceResizeTopRight : top and right edges
-	WlShellSurfaceResizeTopRight = 9
-	// WlShellSurfaceResizeBottomRight : bottom and right edges
-	WlShellSurfaceResizeBottomRight = 10
+	// ShellSurfaceResizeNone : no edge
+	ShellSurfaceResizeNone = 0
+	// ShellSurfaceResizeTop : top edge
+	ShellSurfaceResizeTop = 1
+	// ShellSurfaceResizeBottom : bottom edge
+	ShellSurfaceResizeBottom = 2
+	// ShellSurfaceResizeLeft : left edge
+	ShellSurfaceResizeLeft = 4
+	// ShellSurfaceResizeTopLeft : top and left edges
+	ShellSurfaceResizeTopLeft = 5
+	// ShellSurfaceResizeBottomLeft : bottom and left edges
+	ShellSurfaceResizeBottomLeft = 6
+	// ShellSurfaceResizeRight : right edge
+	ShellSurfaceResizeRight = 8
+	// ShellSurfaceResizeTopRight : top and right edges
+	ShellSurfaceResizeTopRight = 9
+	// ShellSurfaceResizeBottomRight : bottom and right edges
+	ShellSurfaceResizeBottomRight = 10
 )
 
-// WlShellSurfaceTransient : details of transient behaviour
+// ShellSurfaceTransient : details of transient behaviour
 //
 // These flags specify details of the expected behaviour
 // of transient surfaces. Used in the set_transient request.
 const (
-	// WlShellSurfaceTransientInactive : do not set keyboard focus
-	WlShellSurfaceTransientInactive = 0x1
+	// ShellSurfaceTransientInactive : do not set keyboard focus
+	ShellSurfaceTransientInactive = 0x1
 )
 
-// WlShellSurfaceFullscreenMethod : different method to set the surface fullscreen
+// ShellSurfaceFullscreenMethod : different method to set the surface fullscreen
 //
 // Hints to indicate to the compositor how to deal with a conflict
 // between the dimensions of the surface and the dimensions of the
 // output. The compositor is free to ignore this parameter.
 const (
-	// WlShellSurfaceFullscreenMethodDefault : no preference, apply default policy
-	WlShellSurfaceFullscreenMethodDefault = 0
-	// WlShellSurfaceFullscreenMethodScale : scale, preserve the surface's aspect ratio and center on output
-	WlShellSurfaceFullscreenMethodScale = 1
-	// WlShellSurfaceFullscreenMethodDriver : switch output mode to the smallest mode that can fit the surface, add black borders to compensate size mismatch
-	WlShellSurfaceFullscreenMethodDriver = 2
-	// WlShellSurfaceFullscreenMethodFill : no upscaling, center on output and add black borders to compensate size mismatch
-	WlShellSurfaceFullscreenMethodFill = 3
+	// ShellSurfaceFullscreenMethodDefault : no preference, apply default policy
+	ShellSurfaceFullscreenMethodDefault = 0
+	// ShellSurfaceFullscreenMethodScale : scale, preserve the surface's aspect ratio and center on output
+	ShellSurfaceFullscreenMethodScale = 1
+	// ShellSurfaceFullscreenMethodDriver : switch output mode to the smallest mode that can fit the surface, add black borders to compensate size mismatch
+	ShellSurfaceFullscreenMethodDriver = 2
+	// ShellSurfaceFullscreenMethodFill : no upscaling, center on output and add black borders to compensate size mismatch
+	ShellSurfaceFullscreenMethodFill = 3
 )
 
-// WlShellSurfacePingEvent : ping client
+// ShellSurfacePingEvent : ping client
 //
 // Ping a client to check if it is receiving events and sending
 // requests. A client is expected to reply with a pong request.
-type WlShellSurfacePingEvent struct {
+type ShellSurfacePingEvent struct {
 	Serial uint32
 }
 
-type WlShellSurfacePingHandler interface {
-	HandleWlShellSurfacePing(WlShellSurfacePingEvent)
+type ShellSurfacePingHandler interface {
+	HandleShellSurfacePing(ShellSurfacePingEvent)
 }
 
-// AddPingHandler : adds handler for WlShellSurfacePingEvent
-func (i *WlShellSurface) AddPingHandler(h WlShellSurfacePingHandler) {
+// AddPingHandler : adds handler for ShellSurfacePingEvent
+func (i *ShellSurface) AddPingHandler(h ShellSurfacePingHandler) {
 	if h == nil {
 		return
 	}
@@ -2888,7 +2888,7 @@ func (i *WlShellSurface) AddPingHandler(h WlShellSurfacePingHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlShellSurface) RemovePingHandler(h WlShellSurfacePingHandler) {
+func (i *ShellSurface) RemovePingHandler(h ShellSurfacePingHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2900,7 +2900,7 @@ func (i *WlShellSurface) RemovePingHandler(h WlShellSurfacePingHandler) {
 	}
 }
 
-// WlShellSurfaceConfigureEvent : suggest resize
+// ShellSurfaceConfigureEvent : suggest resize
 //
 // The configure event asks the client to resize its surface.
 //
@@ -2919,18 +2919,18 @@ func (i *WlShellSurface) RemovePingHandler(h WlShellSurfacePingHandler) {
 //
 // The width and height arguments specify the size of the window
 // in surface-local coordinates.
-type WlShellSurfaceConfigureEvent struct {
+type ShellSurfaceConfigureEvent struct {
 	Edges  uint32
 	Width  int32
 	Height int32
 }
 
-type WlShellSurfaceConfigureHandler interface {
-	HandleWlShellSurfaceConfigure(WlShellSurfaceConfigureEvent)
+type ShellSurfaceConfigureHandler interface {
+	HandleShellSurfaceConfigure(ShellSurfaceConfigureEvent)
 }
 
-// AddConfigureHandler : adds handler for WlShellSurfaceConfigureEvent
-func (i *WlShellSurface) AddConfigureHandler(h WlShellSurfaceConfigureHandler) {
+// AddConfigureHandler : adds handler for ShellSurfaceConfigureEvent
+func (i *ShellSurface) AddConfigureHandler(h ShellSurfaceConfigureHandler) {
 	if h == nil {
 		return
 	}
@@ -2940,7 +2940,7 @@ func (i *WlShellSurface) AddConfigureHandler(h WlShellSurfaceConfigureHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlShellSurface) RemoveConfigureHandler(h WlShellSurfaceConfigureHandler) {
+func (i *ShellSurface) RemoveConfigureHandler(h ShellSurfaceConfigureHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2952,18 +2952,18 @@ func (i *WlShellSurface) RemoveConfigureHandler(h WlShellSurfaceConfigureHandler
 	}
 }
 
-// WlShellSurfacePopupDoneEvent : popup interaction is done
+// ShellSurfacePopupDoneEvent : popup interaction is done
 //
 // The popup_done event is sent out when a popup grab is broken,
 // that is, when the user clicks a surface that doesn't belong
 // to the client owning the popup surface.
-type WlShellSurfacePopupDoneEvent struct{}
-type WlShellSurfacePopupDoneHandler interface {
-	HandleWlShellSurfacePopupDone(WlShellSurfacePopupDoneEvent)
+type ShellSurfacePopupDoneEvent struct{}
+type ShellSurfacePopupDoneHandler interface {
+	HandleShellSurfacePopupDone(ShellSurfacePopupDoneEvent)
 }
 
-// AddPopupDoneHandler : adds handler for WlShellSurfacePopupDoneEvent
-func (i *WlShellSurface) AddPopupDoneHandler(h WlShellSurfacePopupDoneHandler) {
+// AddPopupDoneHandler : adds handler for ShellSurfacePopupDoneEvent
+func (i *ShellSurface) AddPopupDoneHandler(h ShellSurfacePopupDoneHandler) {
 	if h == nil {
 		return
 	}
@@ -2973,7 +2973,7 @@ func (i *WlShellSurface) AddPopupDoneHandler(h WlShellSurfacePopupDoneHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlShellSurface) RemovePopupDoneHandler(h WlShellSurfacePopupDoneHandler) {
+func (i *ShellSurface) RemovePopupDoneHandler(h ShellSurfacePopupDoneHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -2985,7 +2985,7 @@ func (i *WlShellSurface) RemovePopupDoneHandler(h WlShellSurfacePopupDoneHandler
 	}
 }
 
-func (i *WlShellSurface) Dispatch(event *Event) {
+func (i *ShellSurface) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -2995,7 +2995,7 @@ func (i *WlShellSurface) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlShellSurfacePingEvent{
+		e := ShellSurfacePingEvent{
 			Serial: event.Uint32(),
 		}
 
@@ -3003,7 +3003,7 @@ func (i *WlShellSurface) Dispatch(event *Event) {
 		for _, h := range i.pingHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlShellSurfacePing(e)
+			h.HandleShellSurfacePing(e)
 
 			i.mu.RLock()
 		}
@@ -3016,7 +3016,7 @@ func (i *WlShellSurface) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlShellSurfaceConfigureEvent{
+		e := ShellSurfaceConfigureEvent{
 			Edges:  event.Uint32(),
 			Width:  event.Int32(),
 			Height: event.Int32(),
@@ -3026,7 +3026,7 @@ func (i *WlShellSurface) Dispatch(event *Event) {
 		for _, h := range i.configureHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlShellSurfaceConfigure(e)
+			h.HandleShellSurfaceConfigure(e)
 
 			i.mu.RLock()
 		}
@@ -3039,13 +3039,13 @@ func (i *WlShellSurface) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlShellSurfacePopupDoneEvent{}
+		e := ShellSurfacePopupDoneEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.popupDoneHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlShellSurfacePopupDone(e)
+			h.HandleShellSurfacePopupDone(e)
 
 			i.mu.RLock()
 		}
@@ -3053,7 +3053,7 @@ func (i *WlShellSurface) Dispatch(event *Event) {
 	}
 }
 
-// WlSurface : an onscreen surface
+// Surface : an onscreen surface
 //
 // A surface is a rectangular area that may be displayed on zero
 // or more outputs, and shown any number of times at the compositor's
@@ -3096,14 +3096,14 @@ func (i *WlShellSurface) Dispatch(event *Event) {
 // wl_surface again, but it is not allowed to use the wl_surface as
 // a cursor (cursor is a different role than sub-surface, and role
 // switching is not allowed).
-type WlSurface struct {
+type Surface struct {
 	BaseProxy
 	mu            sync.RWMutex
-	enterHandlers []WlSurfaceEnterHandler
-	leaveHandlers []WlSurfaceLeaveHandler
+	enterHandlers []SurfaceEnterHandler
+	leaveHandlers []SurfaceLeaveHandler
 }
 
-// NewWlSurface : an onscreen surface
+// NewSurface : an onscreen surface
 //
 // A surface is a rectangular area that may be displayed on zero
 // or more outputs, and shown any number of times at the compositor's
@@ -3146,8 +3146,8 @@ type WlSurface struct {
 // wl_surface again, but it is not allowed to use the wl_surface as
 // a cursor (cursor is a different role than sub-surface, and role
 // switching is not allowed).
-func NewWlSurface(ctx *Context) *WlSurface {
-	wlSurface := &WlSurface{}
+func NewSurface(ctx *Context) *Surface {
+	wlSurface := &Surface{}
 	ctx.Register(wlSurface)
 	return wlSurface
 }
@@ -3156,7 +3156,7 @@ func NewWlSurface(ctx *Context) *WlSurface {
 //
 // Deletes the surface and invalidates its object ID.
 //
-func (i *WlSurface) Destroy() error {
+func (i *Surface) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -3214,7 +3214,7 @@ func (i *WlSurface) Destroy() error {
 //  buffer: buffer of surface contents
 //  x: surface-local x coordinate
 //  y: surface-local y coordinate
-func (i *WlSurface) Attach(buffer *WlBuffer, x, y int32) error {
+func (i *Surface) Attach(buffer *Buffer, x, y int32) error {
 	err := i.Context().SendRequest(i, 1, buffer, x, y)
 	return err
 }
@@ -3247,7 +3247,7 @@ func (i *WlSurface) Attach(buffer *WlBuffer, x, y int32) error {
 //  y: surface-local y coordinate
 //  width: width of damage rectangle
 //  height: height of damage rectangle
-func (i *WlSurface) Damage(x, y, width, height int32) error {
+func (i *Surface) Damage(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 2, x, y, width, height)
 	return err
 }
@@ -3287,8 +3287,8 @@ func (i *WlSurface) Damage(x, y, width, height int32) error {
 // The callback_data passed in the callback is the current time, in
 // milliseconds, with an undefined base.
 //
-func (i *WlSurface) Frame() (*WlCallback, error) {
-	callback := NewWlCallback(i.Context())
+func (i *Surface) Frame() (*Callback, error) {
+	callback := NewCallback(i.Context())
 	err := i.Context().SendRequest(i, 3, callback)
 	return callback, err
 }
@@ -3321,7 +3321,7 @@ func (i *WlSurface) Frame() (*WlCallback, error) {
 // region to be set to empty.
 //
 //  region: opaque region of the surface
-func (i *WlSurface) SetOpaqueRegion(region *WlRegion) error {
+func (i *Surface) SetOpaqueRegion(region *Region) error {
 	err := i.Context().SendRequest(i, 4, region)
 	return err
 }
@@ -3352,7 +3352,7 @@ func (i *WlSurface) SetOpaqueRegion(region *WlRegion) error {
 // to infinite.
 //
 //  region: input region of the surface
-func (i *WlSurface) SetInputRegion(region *WlRegion) error {
+func (i *Surface) SetInputRegion(region *Region) error {
 	err := i.Context().SendRequest(i, 5, region)
 	return err
 }
@@ -3377,7 +3377,7 @@ func (i *WlSurface) SetInputRegion(region *WlRegion) error {
 //
 // Other interfaces may add further double-buffered surface state.
 //
-func (i *WlSurface) Commit() error {
+func (i *Surface) Commit() error {
 	err := i.Context().SendRequest(i, 6)
 	return err
 }
@@ -3415,7 +3415,7 @@ func (i *WlSurface) Commit() error {
 // is raised.
 //
 //  transform: transform for interpreting buffer contents
-func (i *WlSurface) SetBufferTransform(transform int32) error {
+func (i *Surface) SetBufferTransform(transform int32) error {
 	err := i.Context().SendRequest(i, 7, transform)
 	return err
 }
@@ -3447,7 +3447,7 @@ func (i *WlSurface) SetBufferTransform(transform int32) error {
 // raised.
 //
 //  scale: positive scale for interpreting buffer contents
-func (i *WlSurface) SetBufferScale(scale int32) error {
+func (i *Surface) SetBufferScale(scale int32) error {
 	err := i.Context().SendRequest(i, 8, scale)
 	return err
 }
@@ -3491,40 +3491,40 @@ func (i *WlSurface) SetBufferScale(scale int32) error {
 //  y: buffer-local y coordinate
 //  width: width of damage rectangle
 //  height: height of damage rectangle
-func (i *WlSurface) DamageBuffer(x, y, width, height int32) error {
+func (i *Surface) DamageBuffer(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 9, x, y, width, height)
 	return err
 }
 
-// WlSurfaceError : wl_surface error values
+// SurfaceError : wl_surface error values
 //
 // These errors can be emitted in response to wl_surface requests.
 const (
-	// WlSurfaceErrorInvalidScale : buffer scale value is invalid
-	WlSurfaceErrorInvalidScale = 0
-	// WlSurfaceErrorInvalidTransform : buffer transform value is invalid
-	WlSurfaceErrorInvalidTransform = 1
-	// WlSurfaceErrorInvalidSize : buffer size is invalid
-	WlSurfaceErrorInvalidSize = 2
+	// SurfaceErrorInvalidScale : buffer scale value is invalid
+	SurfaceErrorInvalidScale = 0
+	// SurfaceErrorInvalidTransform : buffer transform value is invalid
+	SurfaceErrorInvalidTransform = 1
+	// SurfaceErrorInvalidSize : buffer size is invalid
+	SurfaceErrorInvalidSize = 2
 )
 
-// WlSurfaceEnterEvent : surface enters an output
+// SurfaceEnterEvent : surface enters an output
 //
 // This is emitted whenever a surface's creation, movement, or resizing
 // results in some part of it being within the scanout region of an
 // output.
 //
 // Note that a surface may be overlapping with zero or more outputs.
-type WlSurfaceEnterEvent struct {
-	Output *WlOutput
+type SurfaceEnterEvent struct {
+	Output *Output
 }
 
-type WlSurfaceEnterHandler interface {
-	HandleWlSurfaceEnter(WlSurfaceEnterEvent)
+type SurfaceEnterHandler interface {
+	HandleSurfaceEnter(SurfaceEnterEvent)
 }
 
-// AddEnterHandler : adds handler for WlSurfaceEnterEvent
-func (i *WlSurface) AddEnterHandler(h WlSurfaceEnterHandler) {
+// AddEnterHandler : adds handler for SurfaceEnterEvent
+func (i *Surface) AddEnterHandler(h SurfaceEnterHandler) {
 	if h == nil {
 		return
 	}
@@ -3534,7 +3534,7 @@ func (i *WlSurface) AddEnterHandler(h WlSurfaceEnterHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlSurface) RemoveEnterHandler(h WlSurfaceEnterHandler) {
+func (i *Surface) RemoveEnterHandler(h SurfaceEnterHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -3546,7 +3546,7 @@ func (i *WlSurface) RemoveEnterHandler(h WlSurfaceEnterHandler) {
 	}
 }
 
-// WlSurfaceLeaveEvent : surface leaves an output
+// SurfaceLeaveEvent : surface leaves an output
 //
 // This is emitted whenever a surface's creation, movement, or resizing
 // results in it no longer having any part of it within the scanout region
@@ -3557,16 +3557,16 @@ func (i *WlSurface) RemoveEnterHandler(h WlSurfaceEnterHandler) {
 // has been sent, and the compositor might expect new surface content
 // updates even if no enter event has been sent. The frame event should be
 // used instead.
-type WlSurfaceLeaveEvent struct {
-	Output *WlOutput
+type SurfaceLeaveEvent struct {
+	Output *Output
 }
 
-type WlSurfaceLeaveHandler interface {
-	HandleWlSurfaceLeave(WlSurfaceLeaveEvent)
+type SurfaceLeaveHandler interface {
+	HandleSurfaceLeave(SurfaceLeaveEvent)
 }
 
-// AddLeaveHandler : adds handler for WlSurfaceLeaveEvent
-func (i *WlSurface) AddLeaveHandler(h WlSurfaceLeaveHandler) {
+// AddLeaveHandler : adds handler for SurfaceLeaveEvent
+func (i *Surface) AddLeaveHandler(h SurfaceLeaveHandler) {
 	if h == nil {
 		return
 	}
@@ -3576,7 +3576,7 @@ func (i *WlSurface) AddLeaveHandler(h WlSurfaceLeaveHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlSurface) RemoveLeaveHandler(h WlSurfaceLeaveHandler) {
+func (i *Surface) RemoveLeaveHandler(h SurfaceLeaveHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -3588,7 +3588,7 @@ func (i *WlSurface) RemoveLeaveHandler(h WlSurfaceLeaveHandler) {
 	}
 }
 
-func (i *WlSurface) Dispatch(event *Event) {
+func (i *Surface) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -3598,15 +3598,15 @@ func (i *WlSurface) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlSurfaceEnterEvent{
-			Output: event.Proxy(i.Context()).(*WlOutput),
+		e := SurfaceEnterEvent{
+			Output: event.Proxy(i.Context()).(*Output),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.enterHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlSurfaceEnter(e)
+			h.HandleSurfaceEnter(e)
 
 			i.mu.RLock()
 		}
@@ -3619,15 +3619,15 @@ func (i *WlSurface) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlSurfaceLeaveEvent{
-			Output: event.Proxy(i.Context()).(*WlOutput),
+		e := SurfaceLeaveEvent{
+			Output: event.Proxy(i.Context()).(*Output),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlSurfaceLeave(e)
+			h.HandleSurfaceLeave(e)
 
 			i.mu.RLock()
 		}
@@ -3635,27 +3635,27 @@ func (i *WlSurface) Dispatch(event *Event) {
 	}
 }
 
-// WlSeat : group of input devices
+// Seat : group of input devices
 //
 // A seat is a group of keyboards, pointer and touch devices. This
 // object is published as a global during start up, or when such a
 // device is hot plugged.  A seat typically has a pointer and
 // maintains a keyboard focus and a pointer focus.
-type WlSeat struct {
+type Seat struct {
 	BaseProxy
 	mu                   sync.RWMutex
-	capabilitiesHandlers []WlSeatCapabilitiesHandler
-	nameHandlers         []WlSeatNameHandler
+	capabilitiesHandlers []SeatCapabilitiesHandler
+	nameHandlers         []SeatNameHandler
 }
 
-// NewWlSeat : group of input devices
+// NewSeat : group of input devices
 //
 // A seat is a group of keyboards, pointer and touch devices. This
 // object is published as a global during start up, or when such a
 // device is hot plugged.  A seat typically has a pointer and
 // maintains a keyboard focus and a pointer focus.
-func NewWlSeat(ctx *Context) *WlSeat {
-	wlSeat := &WlSeat{}
+func NewSeat(ctx *Context) *Seat {
+	wlSeat := &Seat{}
 	ctx.Register(wlSeat)
 	return wlSeat
 }
@@ -3671,8 +3671,8 @@ func NewWlSeat(ctx *Context) *WlSeat {
 // never had the pointer capability. The missing_capability error will
 // be sent in this case.
 //
-func (i *WlSeat) GetPointer() (*WlPointer, error) {
-	id := NewWlPointer(i.Context())
+func (i *Seat) GetPointer() (*Pointer, error) {
+	id := NewPointer(i.Context())
 	err := i.Context().SendRequest(i, 0, id)
 	return id, err
 }
@@ -3688,8 +3688,8 @@ func (i *WlSeat) GetPointer() (*WlPointer, error) {
 // never had the keyboard capability. The missing_capability error will
 // be sent in this case.
 //
-func (i *WlSeat) GetKeyboard() (*WlKeyboard, error) {
-	id := NewWlKeyboard(i.Context())
+func (i *Seat) GetKeyboard() (*Keyboard, error) {
+	id := NewKeyboard(i.Context())
 	err := i.Context().SendRequest(i, 1, id)
 	return id, err
 }
@@ -3705,8 +3705,8 @@ func (i *WlSeat) GetKeyboard() (*WlKeyboard, error) {
 // never had the touch capability. The missing_capability error will
 // be sent in this case.
 //
-func (i *WlSeat) GetTouch() (*WlTouch, error) {
-	id := NewWlTouch(i.Context())
+func (i *Seat) GetTouch() (*Touch, error) {
+	id := NewTouch(i.Context())
 	err := i.Context().SendRequest(i, 2, id)
 	return id, err
 }
@@ -3716,34 +3716,34 @@ func (i *WlSeat) GetTouch() (*WlTouch, error) {
 // Using this request a client can tell the server that it is not going to
 // use the seat object anymore.
 //
-func (i *WlSeat) Release() error {
+func (i *Seat) Release() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 3)
 	return err
 }
 
-// WlSeatCapability : seat capability bitmask
+// SeatCapability : seat capability bitmask
 //
 // This is a bitmask of capabilities this seat has; if a member is
 // set, then it is present on the seat.
 const (
-	// WlSeatCapabilityPointer : the seat has pointer devices
-	WlSeatCapabilityPointer = 1
-	// WlSeatCapabilityKeyboard : the seat has one or more keyboards
-	WlSeatCapabilityKeyboard = 2
-	// WlSeatCapabilityTouch : the seat has touch devices
-	WlSeatCapabilityTouch = 4
+	// SeatCapabilityPointer : the seat has pointer devices
+	SeatCapabilityPointer = 1
+	// SeatCapabilityKeyboard : the seat has one or more keyboards
+	SeatCapabilityKeyboard = 2
+	// SeatCapabilityTouch : the seat has touch devices
+	SeatCapabilityTouch = 4
 )
 
-// WlSeatError : wl_seat error values
+// SeatError : wl_seat error values
 //
 // These errors can be emitted in response to wl_seat requests.
 const (
-	// WlSeatErrorMissingCapability : get_pointer, get_keyboard or get_touch called on seat without the matching capability
-	WlSeatErrorMissingCapability = 0
+	// SeatErrorMissingCapability : get_pointer, get_keyboard or get_touch called on seat without the matching capability
+	SeatErrorMissingCapability = 0
 )
 
-// WlSeatCapabilitiesEvent : seat capabilities changed
+// SeatCapabilitiesEvent : seat capabilities changed
 //
 // This is emitted whenever a seat gains or loses the pointer,
 // keyboard or touch capabilities.  The argument is a capability
@@ -3769,16 +3769,16 @@ const (
 //
 // The above behavior also applies to wl_keyboard and wl_touch with the
 // keyboard and touch capabilities, respectively.
-type WlSeatCapabilitiesEvent struct {
+type SeatCapabilitiesEvent struct {
 	Capabilities uint32
 }
 
-type WlSeatCapabilitiesHandler interface {
-	HandleWlSeatCapabilities(WlSeatCapabilitiesEvent)
+type SeatCapabilitiesHandler interface {
+	HandleSeatCapabilities(SeatCapabilitiesEvent)
 }
 
-// AddCapabilitiesHandler : adds handler for WlSeatCapabilitiesEvent
-func (i *WlSeat) AddCapabilitiesHandler(h WlSeatCapabilitiesHandler) {
+// AddCapabilitiesHandler : adds handler for SeatCapabilitiesEvent
+func (i *Seat) AddCapabilitiesHandler(h SeatCapabilitiesHandler) {
 	if h == nil {
 		return
 	}
@@ -3788,7 +3788,7 @@ func (i *WlSeat) AddCapabilitiesHandler(h WlSeatCapabilitiesHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlSeat) RemoveCapabilitiesHandler(h WlSeatCapabilitiesHandler) {
+func (i *Seat) RemoveCapabilitiesHandler(h SeatCapabilitiesHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -3800,21 +3800,21 @@ func (i *WlSeat) RemoveCapabilitiesHandler(h WlSeatCapabilitiesHandler) {
 	}
 }
 
-// WlSeatNameEvent : unique identifier for this seat
+// SeatNameEvent : unique identifier for this seat
 //
 // In a multiseat configuration this can be used by the client to help
 // identify which physical devices the seat represents. Based on
 // the seat configuration used by the compositor.
-type WlSeatNameEvent struct {
+type SeatNameEvent struct {
 	Name string
 }
 
-type WlSeatNameHandler interface {
-	HandleWlSeatName(WlSeatNameEvent)
+type SeatNameHandler interface {
+	HandleSeatName(SeatNameEvent)
 }
 
-// AddNameHandler : adds handler for WlSeatNameEvent
-func (i *WlSeat) AddNameHandler(h WlSeatNameHandler) {
+// AddNameHandler : adds handler for SeatNameEvent
+func (i *Seat) AddNameHandler(h SeatNameHandler) {
 	if h == nil {
 		return
 	}
@@ -3824,7 +3824,7 @@ func (i *WlSeat) AddNameHandler(h WlSeatNameHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlSeat) RemoveNameHandler(h WlSeatNameHandler) {
+func (i *Seat) RemoveNameHandler(h SeatNameHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -3836,7 +3836,7 @@ func (i *WlSeat) RemoveNameHandler(h WlSeatNameHandler) {
 	}
 }
 
-func (i *WlSeat) Dispatch(event *Event) {
+func (i *Seat) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -3846,7 +3846,7 @@ func (i *WlSeat) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlSeatCapabilitiesEvent{
+		e := SeatCapabilitiesEvent{
 			Capabilities: event.Uint32(),
 		}
 
@@ -3854,7 +3854,7 @@ func (i *WlSeat) Dispatch(event *Event) {
 		for _, h := range i.capabilitiesHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlSeatCapabilities(e)
+			h.HandleSeatCapabilities(e)
 
 			i.mu.RLock()
 		}
@@ -3867,7 +3867,7 @@ func (i *WlSeat) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlSeatNameEvent{
+		e := SeatNameEvent{
 			Name: event.String(),
 		}
 
@@ -3875,7 +3875,7 @@ func (i *WlSeat) Dispatch(event *Event) {
 		for _, h := range i.nameHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlSeatName(e)
+			h.HandleSeatName(e)
 
 			i.mu.RLock()
 		}
@@ -3883,7 +3883,7 @@ func (i *WlSeat) Dispatch(event *Event) {
 	}
 }
 
-// WlPointer : pointer input device
+// Pointer : pointer input device
 //
 // The wl_pointer interface represents one or more input devices,
 // such as mice, which control the pointer location and pointer_focus
@@ -3893,21 +3893,21 @@ func (i *WlSeat) Dispatch(event *Event) {
 // events for the surfaces that the pointer is located over,
 // and button and axis events for button presses, button releases
 // and scrolling.
-type WlPointer struct {
+type Pointer struct {
 	BaseProxy
 	mu                   sync.RWMutex
-	enterHandlers        []WlPointerEnterHandler
-	leaveHandlers        []WlPointerLeaveHandler
-	motionHandlers       []WlPointerMotionHandler
-	buttonHandlers       []WlPointerButtonHandler
-	axisHandlers         []WlPointerAxisHandler
-	frameHandlers        []WlPointerFrameHandler
-	axisSourceHandlers   []WlPointerAxisSourceHandler
-	axisStopHandlers     []WlPointerAxisStopHandler
-	axisDiscreteHandlers []WlPointerAxisDiscreteHandler
+	enterHandlers        []PointerEnterHandler
+	leaveHandlers        []PointerLeaveHandler
+	motionHandlers       []PointerMotionHandler
+	buttonHandlers       []PointerButtonHandler
+	axisHandlers         []PointerAxisHandler
+	frameHandlers        []PointerFrameHandler
+	axisSourceHandlers   []PointerAxisSourceHandler
+	axisStopHandlers     []PointerAxisStopHandler
+	axisDiscreteHandlers []PointerAxisDiscreteHandler
 }
 
-// NewWlPointer : pointer input device
+// NewPointer : pointer input device
 //
 // The wl_pointer interface represents one or more input devices,
 // such as mice, which control the pointer location and pointer_focus
@@ -3917,8 +3917,8 @@ type WlPointer struct {
 // events for the surfaces that the pointer is located over,
 // and button and axis events for button presses, button releases
 // and scrolling.
-func NewWlPointer(ctx *Context) *WlPointer {
-	wlPointer := &WlPointer{}
+func NewPointer(ctx *Context) *Pointer {
+	wlPointer := &Pointer{}
 	ctx.Register(wlPointer)
 	return wlPointer
 }
@@ -3961,7 +3961,7 @@ func NewWlPointer(ctx *Context) *WlPointer {
 //  surface: pointer surface
 //  hotspotX: surface-local x coordinate
 //  hotspotY: surface-local y coordinate
-func (i *WlPointer) SetCursor(serial uint32, surface *WlSurface, hotspotX, hotspotY int32) error {
+func (i *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX, hotspotY int32) error {
 	err := i.Context().SendRequest(i, 0, serial, surface, hotspotX, hotspotY)
 	return err
 }
@@ -3974,40 +3974,40 @@ func (i *WlPointer) SetCursor(serial uint32, surface *WlSurface, hotspotX, hotsp
 // This request destroys the pointer proxy object, so clients must not call
 // wl_pointer_destroy() after using this request.
 //
-func (i *WlPointer) Release() error {
+func (i *Pointer) Release() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 1)
 	return err
 }
 
-// WlPointerError :
+// PointerError :
 const (
-	// WlPointerErrorRole : given wl_surface has another role
-	WlPointerErrorRole = 0
+	// PointerErrorRole : given wl_surface has another role
+	PointerErrorRole = 0
 )
 
-// WlPointerButtonState : physical button state
+// PointerButtonState : physical button state
 //
 // Describes the physical state of a button that produced the button
 // event.
 const (
-	// WlPointerButtonStateReleased : the button is not pressed
-	WlPointerButtonStateReleased = 0
-	// WlPointerButtonStatePressed : the button is pressed
-	WlPointerButtonStatePressed = 1
+	// PointerButtonStateReleased : the button is not pressed
+	PointerButtonStateReleased = 0
+	// PointerButtonStatePressed : the button is pressed
+	PointerButtonStatePressed = 1
 )
 
-// WlPointerAxis : axis types
+// PointerAxis : axis types
 //
 // Describes the axis types of scroll events.
 const (
-	// WlPointerAxisVerticalScroll : vertical axis
-	WlPointerAxisVerticalScroll = 0
-	// WlPointerAxisHorizontalScroll : horizontal axis
-	WlPointerAxisHorizontalScroll = 1
+	// PointerAxisVerticalScroll : vertical axis
+	PointerAxisVerticalScroll = 0
+	// PointerAxisHorizontalScroll : horizontal axis
+	PointerAxisHorizontalScroll = 1
 )
 
-// WlPointerAxisSource : axis source types
+// PointerAxisSource : axis source types
 //
 // Describes the source types for axis events. This indicates to the
 // client how an axis event was physically generated; a client may
@@ -4026,17 +4026,17 @@ const (
 // wheel but the scroll event is not caused by a rotation but a
 // (usually sideways) tilt of the wheel.
 const (
-	// WlPointerAxisSourceWheel : a physical wheel rotation
-	WlPointerAxisSourceWheel = 0
-	// WlPointerAxisSourceFinger : finger on a touch surface
-	WlPointerAxisSourceFinger = 1
-	// WlPointerAxisSourceContinuous : continuous coordinate space
-	WlPointerAxisSourceContinuous = 2
-	// WlPointerAxisSourceWheelTilt : a physical wheel tilt
-	WlPointerAxisSourceWheelTilt = 3
+	// PointerAxisSourceWheel : a physical wheel rotation
+	PointerAxisSourceWheel = 0
+	// PointerAxisSourceFinger : finger on a touch surface
+	PointerAxisSourceFinger = 1
+	// PointerAxisSourceContinuous : continuous coordinate space
+	PointerAxisSourceContinuous = 2
+	// PointerAxisSourceWheelTilt : a physical wheel tilt
+	PointerAxisSourceWheelTilt = 3
 )
 
-// WlPointerEnterEvent : enter event
+// PointerEnterEvent : enter event
 //
 // Notification that this seat's pointer is focused on a certain
 // surface.
@@ -4044,19 +4044,19 @@ const (
 // When a seat's focus enters a surface, the pointer image
 // is undefined and a client should respond to this event by setting
 // an appropriate pointer image with the set_cursor request.
-type WlPointerEnterEvent struct {
+type PointerEnterEvent struct {
 	Serial   uint32
-	Surface  *WlSurface
+	Surface  *Surface
 	SurfaceX float32
 	SurfaceY float32
 }
 
-type WlPointerEnterHandler interface {
-	HandleWlPointerEnter(WlPointerEnterEvent)
+type PointerEnterHandler interface {
+	HandlePointerEnter(PointerEnterEvent)
 }
 
-// AddEnterHandler : adds handler for WlPointerEnterEvent
-func (i *WlPointer) AddEnterHandler(h WlPointerEnterHandler) {
+// AddEnterHandler : adds handler for PointerEnterEvent
+func (i *Pointer) AddEnterHandler(h PointerEnterHandler) {
 	if h == nil {
 		return
 	}
@@ -4066,7 +4066,7 @@ func (i *WlPointer) AddEnterHandler(h WlPointerEnterHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveEnterHandler(h WlPointerEnterHandler) {
+func (i *Pointer) RemoveEnterHandler(h PointerEnterHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4078,24 +4078,24 @@ func (i *WlPointer) RemoveEnterHandler(h WlPointerEnterHandler) {
 	}
 }
 
-// WlPointerLeaveEvent : leave event
+// PointerLeaveEvent : leave event
 //
 // Notification that this seat's pointer is no longer focused on
 // a certain surface.
 //
 // The leave notification is sent before the enter notification
 // for the new focus.
-type WlPointerLeaveEvent struct {
+type PointerLeaveEvent struct {
 	Serial  uint32
-	Surface *WlSurface
+	Surface *Surface
 }
 
-type WlPointerLeaveHandler interface {
-	HandleWlPointerLeave(WlPointerLeaveEvent)
+type PointerLeaveHandler interface {
+	HandlePointerLeave(PointerLeaveEvent)
 }
 
-// AddLeaveHandler : adds handler for WlPointerLeaveEvent
-func (i *WlPointer) AddLeaveHandler(h WlPointerLeaveHandler) {
+// AddLeaveHandler : adds handler for PointerLeaveEvent
+func (i *Pointer) AddLeaveHandler(h PointerLeaveHandler) {
 	if h == nil {
 		return
 	}
@@ -4105,7 +4105,7 @@ func (i *WlPointer) AddLeaveHandler(h WlPointerLeaveHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveLeaveHandler(h WlPointerLeaveHandler) {
+func (i *Pointer) RemoveLeaveHandler(h PointerLeaveHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4117,23 +4117,23 @@ func (i *WlPointer) RemoveLeaveHandler(h WlPointerLeaveHandler) {
 	}
 }
 
-// WlPointerMotionEvent : pointer motion event
+// PointerMotionEvent : pointer motion event
 //
 // Notification of pointer location change. The arguments
 // surface_x and surface_y are the location relative to the
 // focused surface.
-type WlPointerMotionEvent struct {
+type PointerMotionEvent struct {
 	Time     uint32
 	SurfaceX float32
 	SurfaceY float32
 }
 
-type WlPointerMotionHandler interface {
-	HandleWlPointerMotion(WlPointerMotionEvent)
+type PointerMotionHandler interface {
+	HandlePointerMotion(PointerMotionEvent)
 }
 
-// AddMotionHandler : adds handler for WlPointerMotionEvent
-func (i *WlPointer) AddMotionHandler(h WlPointerMotionHandler) {
+// AddMotionHandler : adds handler for PointerMotionEvent
+func (i *Pointer) AddMotionHandler(h PointerMotionHandler) {
 	if h == nil {
 		return
 	}
@@ -4143,7 +4143,7 @@ func (i *WlPointer) AddMotionHandler(h WlPointerMotionHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveMotionHandler(h WlPointerMotionHandler) {
+func (i *Pointer) RemoveMotionHandler(h PointerMotionHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4155,7 +4155,7 @@ func (i *WlPointer) RemoveMotionHandler(h WlPointerMotionHandler) {
 	}
 }
 
-// WlPointerButtonEvent : pointer button event
+// PointerButtonEvent : pointer button event
 //
 // Mouse button click and release notifications.
 //
@@ -4171,19 +4171,19 @@ func (i *WlPointer) RemoveMotionHandler(h WlPointerMotionHandler) {
 // kernel's event code list. All other button codes above 0xFFFF are
 // currently undefined but may be used in future versions of this
 // protocol.
-type WlPointerButtonEvent struct {
+type PointerButtonEvent struct {
 	Serial uint32
 	Time   uint32
 	Button uint32
 	State  uint32
 }
 
-type WlPointerButtonHandler interface {
-	HandleWlPointerButton(WlPointerButtonEvent)
+type PointerButtonHandler interface {
+	HandlePointerButton(PointerButtonEvent)
 }
 
-// AddButtonHandler : adds handler for WlPointerButtonEvent
-func (i *WlPointer) AddButtonHandler(h WlPointerButtonHandler) {
+// AddButtonHandler : adds handler for PointerButtonEvent
+func (i *Pointer) AddButtonHandler(h PointerButtonHandler) {
 	if h == nil {
 		return
 	}
@@ -4193,7 +4193,7 @@ func (i *WlPointer) AddButtonHandler(h WlPointerButtonHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveButtonHandler(h WlPointerButtonHandler) {
+func (i *Pointer) RemoveButtonHandler(h PointerButtonHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4205,7 +4205,7 @@ func (i *WlPointer) RemoveButtonHandler(h WlPointerButtonHandler) {
 	}
 }
 
-// WlPointerAxisEvent : axis event
+// PointerAxisEvent : axis event
 //
 // Scroll and other axis notifications.
 //
@@ -4223,18 +4223,18 @@ func (i *WlPointer) RemoveButtonHandler(h WlPointerButtonHandler) {
 //
 // When applicable, a client can transform its content relative to the
 // scroll distance.
-type WlPointerAxisEvent struct {
+type PointerAxisEvent struct {
 	Time  uint32
 	Axis  uint32
 	Value float32
 }
 
-type WlPointerAxisHandler interface {
-	HandleWlPointerAxis(WlPointerAxisEvent)
+type PointerAxisHandler interface {
+	HandlePointerAxis(PointerAxisEvent)
 }
 
-// AddAxisHandler : adds handler for WlPointerAxisEvent
-func (i *WlPointer) AddAxisHandler(h WlPointerAxisHandler) {
+// AddAxisHandler : adds handler for PointerAxisEvent
+func (i *Pointer) AddAxisHandler(h PointerAxisHandler) {
 	if h == nil {
 		return
 	}
@@ -4244,7 +4244,7 @@ func (i *WlPointer) AddAxisHandler(h WlPointerAxisHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveAxisHandler(h WlPointerAxisHandler) {
+func (i *Pointer) RemoveAxisHandler(h PointerAxisHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4256,7 +4256,7 @@ func (i *WlPointer) RemoveAxisHandler(h WlPointerAxisHandler) {
 	}
 }
 
-// WlPointerFrameEvent : end of a pointer event sequence
+// PointerFrameEvent : end of a pointer event sequence
 //
 // Indicates the end of a set of events that logically belong together.
 // A client is expected to accumulate the data in all events within the
@@ -4292,13 +4292,13 @@ func (i *WlPointer) RemoveAxisHandler(h WlPointerAxisHandler) {
 // Compositor-specific policies may require the wl_pointer.leave and
 // wl_pointer.enter event being split across multiple wl_pointer.frame
 // groups.
-type WlPointerFrameEvent struct{}
-type WlPointerFrameHandler interface {
-	HandleWlPointerFrame(WlPointerFrameEvent)
+type PointerFrameEvent struct{}
+type PointerFrameHandler interface {
+	HandlePointerFrame(PointerFrameEvent)
 }
 
-// AddFrameHandler : adds handler for WlPointerFrameEvent
-func (i *WlPointer) AddFrameHandler(h WlPointerFrameHandler) {
+// AddFrameHandler : adds handler for PointerFrameEvent
+func (i *Pointer) AddFrameHandler(h PointerFrameHandler) {
 	if h == nil {
 		return
 	}
@@ -4308,7 +4308,7 @@ func (i *WlPointer) AddFrameHandler(h WlPointerFrameHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveFrameHandler(h WlPointerFrameHandler) {
+func (i *Pointer) RemoveFrameHandler(h PointerFrameHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4320,7 +4320,7 @@ func (i *WlPointer) RemoveFrameHandler(h WlPointerFrameHandler) {
 	}
 }
 
-// WlPointerAxisSourceEvent : axis source event
+// PointerAxisSourceEvent : axis source event
 //
 // Source information for scroll and other axes.
 //
@@ -4347,16 +4347,16 @@ func (i *WlPointer) RemoveFrameHandler(h WlPointerFrameHandler) {
 //
 // The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
 // not guaranteed.
-type WlPointerAxisSourceEvent struct {
+type PointerAxisSourceEvent struct {
 	AxisSource uint32
 }
 
-type WlPointerAxisSourceHandler interface {
-	HandleWlPointerAxisSource(WlPointerAxisSourceEvent)
+type PointerAxisSourceHandler interface {
+	HandlePointerAxisSource(PointerAxisSourceEvent)
 }
 
-// AddAxisSourceHandler : adds handler for WlPointerAxisSourceEvent
-func (i *WlPointer) AddAxisSourceHandler(h WlPointerAxisSourceHandler) {
+// AddAxisSourceHandler : adds handler for PointerAxisSourceEvent
+func (i *Pointer) AddAxisSourceHandler(h PointerAxisSourceHandler) {
 	if h == nil {
 		return
 	}
@@ -4366,7 +4366,7 @@ func (i *WlPointer) AddAxisSourceHandler(h WlPointerAxisSourceHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveAxisSourceHandler(h WlPointerAxisSourceHandler) {
+func (i *Pointer) RemoveAxisSourceHandler(h PointerAxisSourceHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4378,7 +4378,7 @@ func (i *WlPointer) RemoveAxisSourceHandler(h WlPointerAxisSourceHandler) {
 	}
 }
 
-// WlPointerAxisStopEvent : axis stop event
+// PointerAxisStopEvent : axis stop event
 //
 // Stop notification for scroll and other axes.
 //
@@ -4394,17 +4394,17 @@ func (i *WlPointer) RemoveAxisSourceHandler(h WlPointerAxisSourceHandler) {
 // The timestamp is to be interpreted identical to the timestamp in the
 // wl_pointer.axis event. The timestamp value may be the same as a
 // preceding wl_pointer.axis event.
-type WlPointerAxisStopEvent struct {
+type PointerAxisStopEvent struct {
 	Time uint32
 	Axis uint32
 }
 
-type WlPointerAxisStopHandler interface {
-	HandleWlPointerAxisStop(WlPointerAxisStopEvent)
+type PointerAxisStopHandler interface {
+	HandlePointerAxisStop(PointerAxisStopEvent)
 }
 
-// AddAxisStopHandler : adds handler for WlPointerAxisStopEvent
-func (i *WlPointer) AddAxisStopHandler(h WlPointerAxisStopHandler) {
+// AddAxisStopHandler : adds handler for PointerAxisStopEvent
+func (i *Pointer) AddAxisStopHandler(h PointerAxisStopHandler) {
 	if h == nil {
 		return
 	}
@@ -4414,7 +4414,7 @@ func (i *WlPointer) AddAxisStopHandler(h WlPointerAxisStopHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveAxisStopHandler(h WlPointerAxisStopHandler) {
+func (i *Pointer) RemoveAxisStopHandler(h PointerAxisStopHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4426,7 +4426,7 @@ func (i *WlPointer) RemoveAxisStopHandler(h WlPointerAxisStopHandler) {
 	}
 }
 
-// WlPointerAxisDiscreteEvent : axis click event
+// PointerAxisDiscreteEvent : axis click event
 //
 // Discrete step information for scroll and other axes.
 //
@@ -4454,17 +4454,17 @@ func (i *WlPointer) RemoveAxisStopHandler(h WlPointerAxisStopHandler) {
 //
 // The order of wl_pointer.axis_discrete and wl_pointer.axis_source is
 // not guaranteed.
-type WlPointerAxisDiscreteEvent struct {
+type PointerAxisDiscreteEvent struct {
 	Axis     uint32
 	Discrete int32
 }
 
-type WlPointerAxisDiscreteHandler interface {
-	HandleWlPointerAxisDiscrete(WlPointerAxisDiscreteEvent)
+type PointerAxisDiscreteHandler interface {
+	HandlePointerAxisDiscrete(PointerAxisDiscreteEvent)
 }
 
-// AddAxisDiscreteHandler : adds handler for WlPointerAxisDiscreteEvent
-func (i *WlPointer) AddAxisDiscreteHandler(h WlPointerAxisDiscreteHandler) {
+// AddAxisDiscreteHandler : adds handler for PointerAxisDiscreteEvent
+func (i *Pointer) AddAxisDiscreteHandler(h PointerAxisDiscreteHandler) {
 	if h == nil {
 		return
 	}
@@ -4474,7 +4474,7 @@ func (i *WlPointer) AddAxisDiscreteHandler(h WlPointerAxisDiscreteHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlPointer) RemoveAxisDiscreteHandler(h WlPointerAxisDiscreteHandler) {
+func (i *Pointer) RemoveAxisDiscreteHandler(h PointerAxisDiscreteHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4486,7 +4486,7 @@ func (i *WlPointer) RemoveAxisDiscreteHandler(h WlPointerAxisDiscreteHandler) {
 	}
 }
 
-func (i *WlPointer) Dispatch(event *Event) {
+func (i *Pointer) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -4496,9 +4496,9 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerEnterEvent{
+		e := PointerEnterEvent{
 			Serial:   event.Uint32(),
-			Surface:  event.Proxy(i.Context()).(*WlSurface),
+			Surface:  event.Proxy(i.Context()).(*Surface),
 			SurfaceX: event.Float32(),
 			SurfaceY: event.Float32(),
 		}
@@ -4507,7 +4507,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		for _, h := range i.enterHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerEnter(e)
+			h.HandlePointerEnter(e)
 
 			i.mu.RLock()
 		}
@@ -4520,16 +4520,16 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerLeaveEvent{
+		e := PointerLeaveEvent{
 			Serial:  event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*WlSurface),
+			Surface: event.Proxy(i.Context()).(*Surface),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerLeave(e)
+			h.HandlePointerLeave(e)
 
 			i.mu.RLock()
 		}
@@ -4542,7 +4542,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerMotionEvent{
+		e := PointerMotionEvent{
 			Time:     event.Uint32(),
 			SurfaceX: event.Float32(),
 			SurfaceY: event.Float32(),
@@ -4552,7 +4552,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		for _, h := range i.motionHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerMotion(e)
+			h.HandlePointerMotion(e)
 
 			i.mu.RLock()
 		}
@@ -4565,7 +4565,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerButtonEvent{
+		e := PointerButtonEvent{
 			Serial: event.Uint32(),
 			Time:   event.Uint32(),
 			Button: event.Uint32(),
@@ -4576,7 +4576,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		for _, h := range i.buttonHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerButton(e)
+			h.HandlePointerButton(e)
 
 			i.mu.RLock()
 		}
@@ -4589,7 +4589,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerAxisEvent{
+		e := PointerAxisEvent{
 			Time:  event.Uint32(),
 			Axis:  event.Uint32(),
 			Value: event.Float32(),
@@ -4599,7 +4599,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		for _, h := range i.axisHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerAxis(e)
+			h.HandlePointerAxis(e)
 
 			i.mu.RLock()
 		}
@@ -4612,13 +4612,13 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerFrameEvent{}
+		e := PointerFrameEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.frameHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerFrame(e)
+			h.HandlePointerFrame(e)
 
 			i.mu.RLock()
 		}
@@ -4631,7 +4631,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerAxisSourceEvent{
+		e := PointerAxisSourceEvent{
 			AxisSource: event.Uint32(),
 		}
 
@@ -4639,7 +4639,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		for _, h := range i.axisSourceHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerAxisSource(e)
+			h.HandlePointerAxisSource(e)
 
 			i.mu.RLock()
 		}
@@ -4652,7 +4652,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerAxisStopEvent{
+		e := PointerAxisStopEvent{
 			Time: event.Uint32(),
 			Axis: event.Uint32(),
 		}
@@ -4661,7 +4661,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		for _, h := range i.axisStopHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerAxisStop(e)
+			h.HandlePointerAxisStop(e)
 
 			i.mu.RLock()
 		}
@@ -4674,7 +4674,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlPointerAxisDiscreteEvent{
+		e := PointerAxisDiscreteEvent{
 			Axis:     event.Uint32(),
 			Discrete: event.Int32(),
 		}
@@ -4683,7 +4683,7 @@ func (i *WlPointer) Dispatch(event *Event) {
 		for _, h := range i.axisDiscreteHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlPointerAxisDiscrete(e)
+			h.HandlePointerAxisDiscrete(e)
 
 			i.mu.RLock()
 		}
@@ -4691,79 +4691,79 @@ func (i *WlPointer) Dispatch(event *Event) {
 	}
 }
 
-// WlKeyboard : keyboard input device
+// Keyboard : keyboard input device
 //
 // The wl_keyboard interface represents one or more keyboards
 // associated with a seat.
-type WlKeyboard struct {
+type Keyboard struct {
 	BaseProxy
 	mu                 sync.RWMutex
-	keymapHandlers     []WlKeyboardKeymapHandler
-	enterHandlers      []WlKeyboardEnterHandler
-	leaveHandlers      []WlKeyboardLeaveHandler
-	keyHandlers        []WlKeyboardKeyHandler
-	modifiersHandlers  []WlKeyboardModifiersHandler
-	repeatInfoHandlers []WlKeyboardRepeatInfoHandler
+	keymapHandlers     []KeyboardKeymapHandler
+	enterHandlers      []KeyboardEnterHandler
+	leaveHandlers      []KeyboardLeaveHandler
+	keyHandlers        []KeyboardKeyHandler
+	modifiersHandlers  []KeyboardModifiersHandler
+	repeatInfoHandlers []KeyboardRepeatInfoHandler
 }
 
-// NewWlKeyboard : keyboard input device
+// NewKeyboard : keyboard input device
 //
 // The wl_keyboard interface represents one or more keyboards
 // associated with a seat.
-func NewWlKeyboard(ctx *Context) *WlKeyboard {
-	wlKeyboard := &WlKeyboard{}
+func NewKeyboard(ctx *Context) *Keyboard {
+	wlKeyboard := &Keyboard{}
 	ctx.Register(wlKeyboard)
 	return wlKeyboard
 }
 
 // Release : release the keyboard object
 //
-func (i *WlKeyboard) Release() error {
+func (i *Keyboard) Release() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
 
-// WlKeyboardKeymapFormat : keyboard mapping format
+// KeyboardKeymapFormat : keyboard mapping format
 //
 // This specifies the format of the keymap provided to the
 // client with the wl_keyboard.keymap event.
 const (
-	// WlKeyboardKeymapFormatNoKeymap : no keymap; client must understand how to interpret the raw keycode
-	WlKeyboardKeymapFormatNoKeymap = 0
-	// WlKeyboardKeymapFormatXkbV1 : libxkbcommon compatible; to determine the xkb keycode, clients must add 8 to the key event keycode
-	WlKeyboardKeymapFormatXkbV1 = 1
+	// KeyboardKeymapFormatNoKeymap : no keymap; client must understand how to interpret the raw keycode
+	KeyboardKeymapFormatNoKeymap = 0
+	// KeyboardKeymapFormatXkbV1 : libxkbcommon compatible; to determine the xkb keycode, clients must add 8 to the key event keycode
+	KeyboardKeymapFormatXkbV1 = 1
 )
 
-// WlKeyboardKeyState : physical key state
+// KeyboardKeyState : physical key state
 //
 // Describes the physical state of a key that produced the key event.
 const (
-	// WlKeyboardKeyStateReleased : key is not pressed
-	WlKeyboardKeyStateReleased = 0
-	// WlKeyboardKeyStatePressed : key is pressed
-	WlKeyboardKeyStatePressed = 1
+	// KeyboardKeyStateReleased : key is not pressed
+	KeyboardKeyStateReleased = 0
+	// KeyboardKeyStatePressed : key is pressed
+	KeyboardKeyStatePressed = 1
 )
 
-// WlKeyboardKeymapEvent : keyboard mapping
+// KeyboardKeymapEvent : keyboard mapping
 //
 // This event provides a file descriptor to the client which can be
 // memory-mapped to provide a keyboard mapping description.
 //
 // From version 7 onwards, the fd must be mapped with MAP_PRIVATE by
 // the recipient, as MAP_SHARED may fail.
-type WlKeyboardKeymapEvent struct {
+type KeyboardKeymapEvent struct {
 	Format uint32
 	Fd     uintptr
 	Size   uint32
 }
 
-type WlKeyboardKeymapHandler interface {
-	HandleWlKeyboardKeymap(WlKeyboardKeymapEvent)
+type KeyboardKeymapHandler interface {
+	HandleKeyboardKeymap(KeyboardKeymapEvent)
 }
 
-// AddKeymapHandler : adds handler for WlKeyboardKeymapEvent
-func (i *WlKeyboard) AddKeymapHandler(h WlKeyboardKeymapHandler) {
+// AddKeymapHandler : adds handler for KeyboardKeymapEvent
+func (i *Keyboard) AddKeymapHandler(h KeyboardKeymapHandler) {
 	if h == nil {
 		return
 	}
@@ -4773,7 +4773,7 @@ func (i *WlKeyboard) AddKeymapHandler(h WlKeyboardKeymapHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlKeyboard) RemoveKeymapHandler(h WlKeyboardKeymapHandler) {
+func (i *Keyboard) RemoveKeymapHandler(h KeyboardKeymapHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4785,25 +4785,25 @@ func (i *WlKeyboard) RemoveKeymapHandler(h WlKeyboardKeymapHandler) {
 	}
 }
 
-// WlKeyboardEnterEvent : enter event
+// KeyboardEnterEvent : enter event
 //
 // Notification that this seat's keyboard focus is on a certain
 // surface.
 //
 // The compositor must send the wl_keyboard.modifiers event after this
 // event.
-type WlKeyboardEnterEvent struct {
+type KeyboardEnterEvent struct {
 	Serial  uint32
-	Surface *WlSurface
+	Surface *Surface
 	Keys    []int32
 }
 
-type WlKeyboardEnterHandler interface {
-	HandleWlKeyboardEnter(WlKeyboardEnterEvent)
+type KeyboardEnterHandler interface {
+	HandleKeyboardEnter(KeyboardEnterEvent)
 }
 
-// AddEnterHandler : adds handler for WlKeyboardEnterEvent
-func (i *WlKeyboard) AddEnterHandler(h WlKeyboardEnterHandler) {
+// AddEnterHandler : adds handler for KeyboardEnterEvent
+func (i *Keyboard) AddEnterHandler(h KeyboardEnterHandler) {
 	if h == nil {
 		return
 	}
@@ -4813,7 +4813,7 @@ func (i *WlKeyboard) AddEnterHandler(h WlKeyboardEnterHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlKeyboard) RemoveEnterHandler(h WlKeyboardEnterHandler) {
+func (i *Keyboard) RemoveEnterHandler(h KeyboardEnterHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4825,7 +4825,7 @@ func (i *WlKeyboard) RemoveEnterHandler(h WlKeyboardEnterHandler) {
 	}
 }
 
-// WlKeyboardLeaveEvent : leave event
+// KeyboardLeaveEvent : leave event
 //
 // Notification that this seat's keyboard focus is no longer on
 // a certain surface.
@@ -4835,17 +4835,17 @@ func (i *WlKeyboard) RemoveEnterHandler(h WlKeyboardEnterHandler) {
 //
 // After this event client must assume that all keys, including modifiers,
 // are lifted and also it must stop key repeating if there's some going on.
-type WlKeyboardLeaveEvent struct {
+type KeyboardLeaveEvent struct {
 	Serial  uint32
-	Surface *WlSurface
+	Surface *Surface
 }
 
-type WlKeyboardLeaveHandler interface {
-	HandleWlKeyboardLeave(WlKeyboardLeaveEvent)
+type KeyboardLeaveHandler interface {
+	HandleKeyboardLeave(KeyboardLeaveEvent)
 }
 
-// AddLeaveHandler : adds handler for WlKeyboardLeaveEvent
-func (i *WlKeyboard) AddLeaveHandler(h WlKeyboardLeaveHandler) {
+// AddLeaveHandler : adds handler for KeyboardLeaveEvent
+func (i *Keyboard) AddLeaveHandler(h KeyboardLeaveHandler) {
 	if h == nil {
 		return
 	}
@@ -4855,7 +4855,7 @@ func (i *WlKeyboard) AddLeaveHandler(h WlKeyboardLeaveHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlKeyboard) RemoveLeaveHandler(h WlKeyboardLeaveHandler) {
+func (i *Keyboard) RemoveLeaveHandler(h KeyboardLeaveHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4867,7 +4867,7 @@ func (i *WlKeyboard) RemoveLeaveHandler(h WlKeyboardLeaveHandler) {
 	}
 }
 
-// WlKeyboardKeyEvent : key event
+// KeyboardKeyEvent : key event
 //
 // A key was pressed or released.
 // The time argument is a timestamp with millisecond
@@ -4878,19 +4878,19 @@ func (i *WlKeyboard) RemoveLeaveHandler(h WlKeyboardLeaveHandler) {
 //
 // If this event produces a change in modifiers, then the resulting
 // wl_keyboard.modifiers event must be sent after this event.
-type WlKeyboardKeyEvent struct {
+type KeyboardKeyEvent struct {
 	Serial uint32
 	Time   uint32
 	Key    uint32
 	State  uint32
 }
 
-type WlKeyboardKeyHandler interface {
-	HandleWlKeyboardKey(WlKeyboardKeyEvent)
+type KeyboardKeyHandler interface {
+	HandleKeyboardKey(KeyboardKeyEvent)
 }
 
-// AddKeyHandler : adds handler for WlKeyboardKeyEvent
-func (i *WlKeyboard) AddKeyHandler(h WlKeyboardKeyHandler) {
+// AddKeyHandler : adds handler for KeyboardKeyEvent
+func (i *Keyboard) AddKeyHandler(h KeyboardKeyHandler) {
 	if h == nil {
 		return
 	}
@@ -4900,7 +4900,7 @@ func (i *WlKeyboard) AddKeyHandler(h WlKeyboardKeyHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlKeyboard) RemoveKeyHandler(h WlKeyboardKeyHandler) {
+func (i *Keyboard) RemoveKeyHandler(h KeyboardKeyHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4912,11 +4912,11 @@ func (i *WlKeyboard) RemoveKeyHandler(h WlKeyboardKeyHandler) {
 	}
 }
 
-// WlKeyboardModifiersEvent : modifier and group state
+// KeyboardModifiersEvent : modifier and group state
 //
 // Notifies clients that the modifier and/or group state has
 // changed, and it should update its local state.
-type WlKeyboardModifiersEvent struct {
+type KeyboardModifiersEvent struct {
 	Serial        uint32
 	ModsDepressed uint32
 	ModsLatched   uint32
@@ -4924,12 +4924,12 @@ type WlKeyboardModifiersEvent struct {
 	Group         uint32
 }
 
-type WlKeyboardModifiersHandler interface {
-	HandleWlKeyboardModifiers(WlKeyboardModifiersEvent)
+type KeyboardModifiersHandler interface {
+	HandleKeyboardModifiers(KeyboardModifiersEvent)
 }
 
-// AddModifiersHandler : adds handler for WlKeyboardModifiersEvent
-func (i *WlKeyboard) AddModifiersHandler(h WlKeyboardModifiersHandler) {
+// AddModifiersHandler : adds handler for KeyboardModifiersEvent
+func (i *Keyboard) AddModifiersHandler(h KeyboardModifiersHandler) {
 	if h == nil {
 		return
 	}
@@ -4939,7 +4939,7 @@ func (i *WlKeyboard) AddModifiersHandler(h WlKeyboardModifiersHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlKeyboard) RemoveModifiersHandler(h WlKeyboardModifiersHandler) {
+func (i *Keyboard) RemoveModifiersHandler(h KeyboardModifiersHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4951,7 +4951,7 @@ func (i *WlKeyboard) RemoveModifiersHandler(h WlKeyboardModifiersHandler) {
 	}
 }
 
-// WlKeyboardRepeatInfoEvent : repeat rate and delay
+// KeyboardRepeatInfoEvent : repeat rate and delay
 //
 // Informs the client about the keyboard's repeat rate and delay.
 //
@@ -4965,17 +4965,17 @@ func (i *WlKeyboard) RemoveModifiersHandler(h WlKeyboardModifiersHandler) {
 // This event can be sent later on as well with a new value if necessary,
 // so clients should continue listening for the event past the creation
 // of wl_keyboard.
-type WlKeyboardRepeatInfoEvent struct {
+type KeyboardRepeatInfoEvent struct {
 	Rate  int32
 	Delay int32
 }
 
-type WlKeyboardRepeatInfoHandler interface {
-	HandleWlKeyboardRepeatInfo(WlKeyboardRepeatInfoEvent)
+type KeyboardRepeatInfoHandler interface {
+	HandleKeyboardRepeatInfo(KeyboardRepeatInfoEvent)
 }
 
-// AddRepeatInfoHandler : adds handler for WlKeyboardRepeatInfoEvent
-func (i *WlKeyboard) AddRepeatInfoHandler(h WlKeyboardRepeatInfoHandler) {
+// AddRepeatInfoHandler : adds handler for KeyboardRepeatInfoEvent
+func (i *Keyboard) AddRepeatInfoHandler(h KeyboardRepeatInfoHandler) {
 	if h == nil {
 		return
 	}
@@ -4985,7 +4985,7 @@ func (i *WlKeyboard) AddRepeatInfoHandler(h WlKeyboardRepeatInfoHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlKeyboard) RemoveRepeatInfoHandler(h WlKeyboardRepeatInfoHandler) {
+func (i *Keyboard) RemoveRepeatInfoHandler(h KeyboardRepeatInfoHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -4997,7 +4997,7 @@ func (i *WlKeyboard) RemoveRepeatInfoHandler(h WlKeyboardRepeatInfoHandler) {
 	}
 }
 
-func (i *WlKeyboard) Dispatch(event *Event) {
+func (i *Keyboard) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -5007,7 +5007,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlKeyboardKeymapEvent{
+		e := KeyboardKeymapEvent{
 			Format: event.Uint32(),
 			Fd:     event.FD(),
 			Size:   event.Uint32(),
@@ -5017,7 +5017,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		for _, h := range i.keymapHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlKeyboardKeymap(e)
+			h.HandleKeyboardKeymap(e)
 
 			i.mu.RLock()
 		}
@@ -5030,9 +5030,9 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlKeyboardEnterEvent{
+		e := KeyboardEnterEvent{
 			Serial:  event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*WlSurface),
+			Surface: event.Proxy(i.Context()).(*Surface),
 			Keys:    event.Array(),
 		}
 
@@ -5040,7 +5040,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		for _, h := range i.enterHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlKeyboardEnter(e)
+			h.HandleKeyboardEnter(e)
 
 			i.mu.RLock()
 		}
@@ -5053,16 +5053,16 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlKeyboardLeaveEvent{
+		e := KeyboardLeaveEvent{
 			Serial:  event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*WlSurface),
+			Surface: event.Proxy(i.Context()).(*Surface),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlKeyboardLeave(e)
+			h.HandleKeyboardLeave(e)
 
 			i.mu.RLock()
 		}
@@ -5075,7 +5075,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlKeyboardKeyEvent{
+		e := KeyboardKeyEvent{
 			Serial: event.Uint32(),
 			Time:   event.Uint32(),
 			Key:    event.Uint32(),
@@ -5086,7 +5086,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		for _, h := range i.keyHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlKeyboardKey(e)
+			h.HandleKeyboardKey(e)
 
 			i.mu.RLock()
 		}
@@ -5099,7 +5099,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlKeyboardModifiersEvent{
+		e := KeyboardModifiersEvent{
 			Serial:        event.Uint32(),
 			ModsDepressed: event.Uint32(),
 			ModsLatched:   event.Uint32(),
@@ -5111,7 +5111,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		for _, h := range i.modifiersHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlKeyboardModifiers(e)
+			h.HandleKeyboardModifiers(e)
 
 			i.mu.RLock()
 		}
@@ -5124,7 +5124,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlKeyboardRepeatInfoEvent{
+		e := KeyboardRepeatInfoEvent{
 			Rate:  event.Int32(),
 			Delay: event.Int32(),
 		}
@@ -5133,7 +5133,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 		for _, h := range i.repeatInfoHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlKeyboardRepeatInfo(e)
+			h.HandleKeyboardRepeatInfo(e)
 
 			i.mu.RLock()
 		}
@@ -5141,7 +5141,7 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 	}
 }
 
-// WlTouch : touchscreen input device
+// Touch : touchscreen input device
 //
 // The wl_touch interface represents a touchscreen
 // associated with a seat.
@@ -5151,19 +5151,19 @@ func (i *WlKeyboard) Dispatch(event *Event) {
 // with a down event, followed by zero or more motion events,
 // and ending with an up event. Events relating to the same
 // contact point can be identified by the ID of the sequence.
-type WlTouch struct {
+type Touch struct {
 	BaseProxy
 	mu                  sync.RWMutex
-	downHandlers        []WlTouchDownHandler
-	upHandlers          []WlTouchUpHandler
-	motionHandlers      []WlTouchMotionHandler
-	frameHandlers       []WlTouchFrameHandler
-	cancelHandlers      []WlTouchCancelHandler
-	shapeHandlers       []WlTouchShapeHandler
-	orientationHandlers []WlTouchOrientationHandler
+	downHandlers        []TouchDownHandler
+	upHandlers          []TouchUpHandler
+	motionHandlers      []TouchMotionHandler
+	frameHandlers       []TouchFrameHandler
+	cancelHandlers      []TouchCancelHandler
+	shapeHandlers       []TouchShapeHandler
+	orientationHandlers []TouchOrientationHandler
 }
 
-// NewWlTouch : touchscreen input device
+// NewTouch : touchscreen input device
 //
 // The wl_touch interface represents a touchscreen
 // associated with a seat.
@@ -5173,41 +5173,41 @@ type WlTouch struct {
 // with a down event, followed by zero or more motion events,
 // and ending with an up event. Events relating to the same
 // contact point can be identified by the ID of the sequence.
-func NewWlTouch(ctx *Context) *WlTouch {
-	wlTouch := &WlTouch{}
+func NewTouch(ctx *Context) *Touch {
+	wlTouch := &Touch{}
 	ctx.Register(wlTouch)
 	return wlTouch
 }
 
 // Release : release the touch object
 //
-func (i *WlTouch) Release() error {
+func (i *Touch) Release() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
 
-// WlTouchDownEvent : touch down event and beginning of a touch sequence
+// TouchDownEvent : touch down event and beginning of a touch sequence
 //
 // A new touch point has appeared on the surface. This touch point is
 // assigned a unique ID. Future events from this touch point reference
 // this ID. The ID ceases to be valid after a touch up event and may be
 // reused in the future.
-type WlTouchDownEvent struct {
+type TouchDownEvent struct {
 	Serial  uint32
 	Time    uint32
-	Surface *WlSurface
+	Surface *Surface
 	ID      int32
 	X       float32
 	Y       float32
 }
 
-type WlTouchDownHandler interface {
-	HandleWlTouchDown(WlTouchDownEvent)
+type TouchDownHandler interface {
+	HandleTouchDown(TouchDownEvent)
 }
 
-// AddDownHandler : adds handler for WlTouchDownEvent
-func (i *WlTouch) AddDownHandler(h WlTouchDownHandler) {
+// AddDownHandler : adds handler for TouchDownEvent
+func (i *Touch) AddDownHandler(h TouchDownHandler) {
 	if h == nil {
 		return
 	}
@@ -5217,7 +5217,7 @@ func (i *WlTouch) AddDownHandler(h WlTouchDownHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlTouch) RemoveDownHandler(h WlTouchDownHandler) {
+func (i *Touch) RemoveDownHandler(h TouchDownHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5229,23 +5229,23 @@ func (i *WlTouch) RemoveDownHandler(h WlTouchDownHandler) {
 	}
 }
 
-// WlTouchUpEvent : end of a touch event sequence
+// TouchUpEvent : end of a touch event sequence
 //
 // The touch point has disappeared. No further events will be sent for
 // this touch point and the touch point's ID is released and may be
 // reused in a future touch down event.
-type WlTouchUpEvent struct {
+type TouchUpEvent struct {
 	Serial uint32
 	Time   uint32
 	ID     int32
 }
 
-type WlTouchUpHandler interface {
-	HandleWlTouchUp(WlTouchUpEvent)
+type TouchUpHandler interface {
+	HandleTouchUp(TouchUpEvent)
 }
 
-// AddUpHandler : adds handler for WlTouchUpEvent
-func (i *WlTouch) AddUpHandler(h WlTouchUpHandler) {
+// AddUpHandler : adds handler for TouchUpEvent
+func (i *Touch) AddUpHandler(h TouchUpHandler) {
 	if h == nil {
 		return
 	}
@@ -5255,7 +5255,7 @@ func (i *WlTouch) AddUpHandler(h WlTouchUpHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlTouch) RemoveUpHandler(h WlTouchUpHandler) {
+func (i *Touch) RemoveUpHandler(h TouchUpHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5267,22 +5267,22 @@ func (i *WlTouch) RemoveUpHandler(h WlTouchUpHandler) {
 	}
 }
 
-// WlTouchMotionEvent : update of touch point coordinates
+// TouchMotionEvent : update of touch point coordinates
 //
 // A touch point has changed coordinates.
-type WlTouchMotionEvent struct {
+type TouchMotionEvent struct {
 	Time uint32
 	ID   int32
 	X    float32
 	Y    float32
 }
 
-type WlTouchMotionHandler interface {
-	HandleWlTouchMotion(WlTouchMotionEvent)
+type TouchMotionHandler interface {
+	HandleTouchMotion(TouchMotionEvent)
 }
 
-// AddMotionHandler : adds handler for WlTouchMotionEvent
-func (i *WlTouch) AddMotionHandler(h WlTouchMotionHandler) {
+// AddMotionHandler : adds handler for TouchMotionEvent
+func (i *Touch) AddMotionHandler(h TouchMotionHandler) {
 	if h == nil {
 		return
 	}
@@ -5292,7 +5292,7 @@ func (i *WlTouch) AddMotionHandler(h WlTouchMotionHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlTouch) RemoveMotionHandler(h WlTouchMotionHandler) {
+func (i *Touch) RemoveMotionHandler(h TouchMotionHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5304,7 +5304,7 @@ func (i *WlTouch) RemoveMotionHandler(h WlTouchMotionHandler) {
 	}
 }
 
-// WlTouchFrameEvent : end of touch frame event
+// TouchFrameEvent : end of touch frame event
 //
 // Indicates the end of a set of events that logically belong together.
 // A client is expected to accumulate the data in all events within the
@@ -5314,13 +5314,13 @@ func (i *WlTouch) RemoveMotionHandler(h WlTouchMotionHandler) {
 // guarantee is provided about the set of events within a frame. A client
 // must assume that any state not updated in a frame is unchanged from the
 // previously known state.
-type WlTouchFrameEvent struct{}
-type WlTouchFrameHandler interface {
-	HandleWlTouchFrame(WlTouchFrameEvent)
+type TouchFrameEvent struct{}
+type TouchFrameHandler interface {
+	HandleTouchFrame(TouchFrameEvent)
 }
 
-// AddFrameHandler : adds handler for WlTouchFrameEvent
-func (i *WlTouch) AddFrameHandler(h WlTouchFrameHandler) {
+// AddFrameHandler : adds handler for TouchFrameEvent
+func (i *Touch) AddFrameHandler(h TouchFrameHandler) {
 	if h == nil {
 		return
 	}
@@ -5330,7 +5330,7 @@ func (i *WlTouch) AddFrameHandler(h WlTouchFrameHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlTouch) RemoveFrameHandler(h WlTouchFrameHandler) {
+func (i *Touch) RemoveFrameHandler(h TouchFrameHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5342,7 +5342,7 @@ func (i *WlTouch) RemoveFrameHandler(h WlTouchFrameHandler) {
 	}
 }
 
-// WlTouchCancelEvent : touch session cancelled
+// TouchCancelEvent : touch session cancelled
 //
 // Sent if the compositor decides the touch stream is a global
 // gesture. No further events are sent to the clients from that
@@ -5350,13 +5350,13 @@ func (i *WlTouch) RemoveFrameHandler(h WlTouchFrameHandler) {
 // currently active on this client's surface. The client is
 // responsible for finalizing the touch points, future touch points on
 // this surface may reuse the touch point ID.
-type WlTouchCancelEvent struct{}
-type WlTouchCancelHandler interface {
-	HandleWlTouchCancel(WlTouchCancelEvent)
+type TouchCancelEvent struct{}
+type TouchCancelHandler interface {
+	HandleTouchCancel(TouchCancelEvent)
 }
 
-// AddCancelHandler : adds handler for WlTouchCancelEvent
-func (i *WlTouch) AddCancelHandler(h WlTouchCancelHandler) {
+// AddCancelHandler : adds handler for TouchCancelEvent
+func (i *Touch) AddCancelHandler(h TouchCancelHandler) {
 	if h == nil {
 		return
 	}
@@ -5366,7 +5366,7 @@ func (i *WlTouch) AddCancelHandler(h WlTouchCancelHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlTouch) RemoveCancelHandler(h WlTouchCancelHandler) {
+func (i *Touch) RemoveCancelHandler(h TouchCancelHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5378,7 +5378,7 @@ func (i *WlTouch) RemoveCancelHandler(h WlTouchCancelHandler) {
 	}
 }
 
-// WlTouchShapeEvent : update shape of touch point
+// TouchShapeEvent : update shape of touch point
 //
 // Sent when a touchpoint has changed its shape.
 //
@@ -5405,18 +5405,18 @@ func (i *WlTouch) RemoveCancelHandler(h WlTouchCancelHandler) {
 // This event is only sent by the compositor if the touch device supports
 // shape reports. The client has to make reasonable assumptions about the
 // shape if it did not receive this event.
-type WlTouchShapeEvent struct {
+type TouchShapeEvent struct {
 	ID    int32
 	Major float32
 	Minor float32
 }
 
-type WlTouchShapeHandler interface {
-	HandleWlTouchShape(WlTouchShapeEvent)
+type TouchShapeHandler interface {
+	HandleTouchShape(TouchShapeEvent)
 }
 
-// AddShapeHandler : adds handler for WlTouchShapeEvent
-func (i *WlTouch) AddShapeHandler(h WlTouchShapeHandler) {
+// AddShapeHandler : adds handler for TouchShapeEvent
+func (i *Touch) AddShapeHandler(h TouchShapeHandler) {
 	if h == nil {
 		return
 	}
@@ -5426,7 +5426,7 @@ func (i *WlTouch) AddShapeHandler(h WlTouchShapeHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlTouch) RemoveShapeHandler(h WlTouchShapeHandler) {
+func (i *Touch) RemoveShapeHandler(h TouchShapeHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5438,7 +5438,7 @@ func (i *WlTouch) RemoveShapeHandler(h WlTouchShapeHandler) {
 	}
 }
 
-// WlTouchOrientationEvent : update orientation of touch point
+// TouchOrientationEvent : update orientation of touch point
 //
 // Sent when a touchpoint has changed its orientation.
 //
@@ -5463,17 +5463,17 @@ func (i *WlTouch) RemoveShapeHandler(h WlTouchShapeHandler) {
 //
 // This event is only sent by the compositor if the touch device supports
 // orientation reports.
-type WlTouchOrientationEvent struct {
+type TouchOrientationEvent struct {
 	ID          int32
 	Orientation float32
 }
 
-type WlTouchOrientationHandler interface {
-	HandleWlTouchOrientation(WlTouchOrientationEvent)
+type TouchOrientationHandler interface {
+	HandleTouchOrientation(TouchOrientationEvent)
 }
 
-// AddOrientationHandler : adds handler for WlTouchOrientationEvent
-func (i *WlTouch) AddOrientationHandler(h WlTouchOrientationHandler) {
+// AddOrientationHandler : adds handler for TouchOrientationEvent
+func (i *Touch) AddOrientationHandler(h TouchOrientationHandler) {
 	if h == nil {
 		return
 	}
@@ -5483,7 +5483,7 @@ func (i *WlTouch) AddOrientationHandler(h WlTouchOrientationHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlTouch) RemoveOrientationHandler(h WlTouchOrientationHandler) {
+func (i *Touch) RemoveOrientationHandler(h TouchOrientationHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5495,7 +5495,7 @@ func (i *WlTouch) RemoveOrientationHandler(h WlTouchOrientationHandler) {
 	}
 }
 
-func (i *WlTouch) Dispatch(event *Event) {
+func (i *Touch) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -5505,10 +5505,10 @@ func (i *WlTouch) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlTouchDownEvent{
+		e := TouchDownEvent{
 			Serial:  event.Uint32(),
 			Time:    event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*WlSurface),
+			Surface: event.Proxy(i.Context()).(*Surface),
 			ID:      event.Int32(),
 			X:       event.Float32(),
 			Y:       event.Float32(),
@@ -5518,7 +5518,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		for _, h := range i.downHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlTouchDown(e)
+			h.HandleTouchDown(e)
 
 			i.mu.RLock()
 		}
@@ -5531,7 +5531,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlTouchUpEvent{
+		e := TouchUpEvent{
 			Serial: event.Uint32(),
 			Time:   event.Uint32(),
 			ID:     event.Int32(),
@@ -5541,7 +5541,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		for _, h := range i.upHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlTouchUp(e)
+			h.HandleTouchUp(e)
 
 			i.mu.RLock()
 		}
@@ -5554,7 +5554,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlTouchMotionEvent{
+		e := TouchMotionEvent{
 			Time: event.Uint32(),
 			ID:   event.Int32(),
 			X:    event.Float32(),
@@ -5565,7 +5565,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		for _, h := range i.motionHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlTouchMotion(e)
+			h.HandleTouchMotion(e)
 
 			i.mu.RLock()
 		}
@@ -5578,13 +5578,13 @@ func (i *WlTouch) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlTouchFrameEvent{}
+		e := TouchFrameEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.frameHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlTouchFrame(e)
+			h.HandleTouchFrame(e)
 
 			i.mu.RLock()
 		}
@@ -5597,13 +5597,13 @@ func (i *WlTouch) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlTouchCancelEvent{}
+		e := TouchCancelEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.cancelHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlTouchCancel(e)
+			h.HandleTouchCancel(e)
 
 			i.mu.RLock()
 		}
@@ -5616,7 +5616,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlTouchShapeEvent{
+		e := TouchShapeEvent{
 			ID:    event.Int32(),
 			Major: event.Float32(),
 			Minor: event.Float32(),
@@ -5626,7 +5626,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		for _, h := range i.shapeHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlTouchShape(e)
+			h.HandleTouchShape(e)
 
 			i.mu.RLock()
 		}
@@ -5639,7 +5639,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlTouchOrientationEvent{
+		e := TouchOrientationEvent{
 			ID:          event.Int32(),
 			Orientation: event.Float32(),
 		}
@@ -5648,7 +5648,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 		for _, h := range i.orientationHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlTouchOrientation(e)
+			h.HandleTouchOrientation(e)
 
 			i.mu.RLock()
 		}
@@ -5656,7 +5656,7 @@ func (i *WlTouch) Dispatch(event *Event) {
 	}
 }
 
-// WlOutput : compositor output region
+// Output : compositor output region
 //
 // An output describes part of the compositor geometry.  The
 // compositor works in the 'compositor coordinate system' and an
@@ -5664,16 +5664,16 @@ func (i *WlTouch) Dispatch(event *Event) {
 // actually visible.  This typically corresponds to a monitor that
 // displays part of the compositor space.  This object is published
 // as global during start up, or when a monitor is hotplugged.
-type WlOutput struct {
+type Output struct {
 	BaseProxy
 	mu               sync.RWMutex
-	geometryHandlers []WlOutputGeometryHandler
-	modeHandlers     []WlOutputModeHandler
-	doneHandlers     []WlOutputDoneHandler
-	scaleHandlers    []WlOutputScaleHandler
+	geometryHandlers []OutputGeometryHandler
+	modeHandlers     []OutputModeHandler
+	doneHandlers     []OutputDoneHandler
+	scaleHandlers    []OutputScaleHandler
 }
 
-// NewWlOutput : compositor output region
+// NewOutput : compositor output region
 //
 // An output describes part of the compositor geometry.  The
 // compositor works in the 'compositor coordinate system' and an
@@ -5681,8 +5681,8 @@ type WlOutput struct {
 // actually visible.  This typically corresponds to a monitor that
 // displays part of the compositor space.  This object is published
 // as global during start up, or when a monitor is hotplugged.
-func NewWlOutput(ctx *Context) *WlOutput {
-	wlOutput := &WlOutput{}
+func NewOutput(ctx *Context) *Output {
+	wlOutput := &Output{}
 	ctx.Register(wlOutput)
 	return wlOutput
 }
@@ -5692,32 +5692,32 @@ func NewWlOutput(ctx *Context) *WlOutput {
 // Using this request a client can tell the server that it is not going to
 // use the output object anymore.
 //
-func (i *WlOutput) Release() error {
+func (i *Output) Release() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
 }
 
-// WlOutputSubpixel : subpixel geometry information
+// OutputSubpixel : subpixel geometry information
 //
 // This enumeration describes how the physical
 // pixels on an output are laid out.
 const (
-	// WlOutputSubpixelUnknown : unknown geometry
-	WlOutputSubpixelUnknown = 0
-	// WlOutputSubpixelNone : no geometry
-	WlOutputSubpixelNone = 1
-	// WlOutputSubpixelHorizontalRgb : horizontal RGB
-	WlOutputSubpixelHorizontalRgb = 2
-	// WlOutputSubpixelHorizontalBgr : horizontal BGR
-	WlOutputSubpixelHorizontalBgr = 3
-	// WlOutputSubpixelVerticalRgb : vertical RGB
-	WlOutputSubpixelVerticalRgb = 4
-	// WlOutputSubpixelVerticalBgr : vertical BGR
-	WlOutputSubpixelVerticalBgr = 5
+	// OutputSubpixelUnknown : unknown geometry
+	OutputSubpixelUnknown = 0
+	// OutputSubpixelNone : no geometry
+	OutputSubpixelNone = 1
+	// OutputSubpixelHorizontalRgb : horizontal RGB
+	OutputSubpixelHorizontalRgb = 2
+	// OutputSubpixelHorizontalBgr : horizontal BGR
+	OutputSubpixelHorizontalBgr = 3
+	// OutputSubpixelVerticalRgb : vertical RGB
+	OutputSubpixelVerticalRgb = 4
+	// OutputSubpixelVerticalBgr : vertical BGR
+	OutputSubpixelVerticalBgr = 5
 )
 
-// WlOutputTransform : transform from framebuffer to output
+// OutputTransform : transform from framebuffer to output
 //
 // This describes the transform that a compositor will apply to a
 // surface to compensate for the rotation or mirroring of an
@@ -5731,36 +5731,36 @@ const (
 // compositor will still be able to scan out directly from client
 // surfaces.
 const (
-	// WlOutputTransformNormal : no transform
-	WlOutputTransformNormal = 0
-	// WlOutputTransform90 : 90 degrees counter-clockwise
-	WlOutputTransform90 = 1
-	// WlOutputTransform180 : 180 degrees counter-clockwise
-	WlOutputTransform180 = 2
-	// WlOutputTransform270 : 270 degrees counter-clockwise
-	WlOutputTransform270 = 3
-	// WlOutputTransformFlipped : 180 degree flip around a vertical axis
-	WlOutputTransformFlipped = 4
-	// WlOutputTransformFlipped90 : flip and rotate 90 degrees counter-clockwise
-	WlOutputTransformFlipped90 = 5
-	// WlOutputTransformFlipped180 : flip and rotate 180 degrees counter-clockwise
-	WlOutputTransformFlipped180 = 6
-	// WlOutputTransformFlipped270 : flip and rotate 270 degrees counter-clockwise
-	WlOutputTransformFlipped270 = 7
+	// OutputTransformNormal : no transform
+	OutputTransformNormal = 0
+	// OutputTransform90 : 90 degrees counter-clockwise
+	OutputTransform90 = 1
+	// OutputTransform180 : 180 degrees counter-clockwise
+	OutputTransform180 = 2
+	// OutputTransform270 : 270 degrees counter-clockwise
+	OutputTransform270 = 3
+	// OutputTransformFlipped : 180 degree flip around a vertical axis
+	OutputTransformFlipped = 4
+	// OutputTransformFlipped90 : flip and rotate 90 degrees counter-clockwise
+	OutputTransformFlipped90 = 5
+	// OutputTransformFlipped180 : flip and rotate 180 degrees counter-clockwise
+	OutputTransformFlipped180 = 6
+	// OutputTransformFlipped270 : flip and rotate 270 degrees counter-clockwise
+	OutputTransformFlipped270 = 7
 )
 
-// WlOutputMode : mode information
+// OutputMode : mode information
 //
 // These flags describe properties of an output mode.
 // They are used in the flags bitfield of the mode event.
 const (
-	// WlOutputModeCurrent : indicates this is the current mode
-	WlOutputModeCurrent = 0x1
-	// WlOutputModePreferred : indicates this is the preferred mode
-	WlOutputModePreferred = 0x2
+	// OutputModeCurrent : indicates this is the current mode
+	OutputModeCurrent = 0x1
+	// OutputModePreferred : indicates this is the preferred mode
+	OutputModePreferred = 0x2
 )
 
-// WlOutputGeometryEvent : properties of the output
+// OutputGeometryEvent : properties of the output
 //
 // The geometry event describes geometric properties of the output.
 // The event is sent when binding to the output object and whenever
@@ -5775,7 +5775,7 @@ const (
 // outputs, might fake this information. Instead of using x and y, clients
 // should use xdg_output.logical_position. Instead of using make and model,
 // clients should use xdg_output.name and xdg_output.description.
-type WlOutputGeometryEvent struct {
+type OutputGeometryEvent struct {
 	X              int32
 	Y              int32
 	PhysicalWidth  int32
@@ -5786,12 +5786,12 @@ type WlOutputGeometryEvent struct {
 	Transform      int32
 }
 
-type WlOutputGeometryHandler interface {
-	HandleWlOutputGeometry(WlOutputGeometryEvent)
+type OutputGeometryHandler interface {
+	HandleOutputGeometry(OutputGeometryEvent)
 }
 
-// AddGeometryHandler : adds handler for WlOutputGeometryEvent
-func (i *WlOutput) AddGeometryHandler(h WlOutputGeometryHandler) {
+// AddGeometryHandler : adds handler for OutputGeometryEvent
+func (i *Output) AddGeometryHandler(h OutputGeometryHandler) {
 	if h == nil {
 		return
 	}
@@ -5801,7 +5801,7 @@ func (i *WlOutput) AddGeometryHandler(h WlOutputGeometryHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlOutput) RemoveGeometryHandler(h WlOutputGeometryHandler) {
+func (i *Output) RemoveGeometryHandler(h OutputGeometryHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5813,7 +5813,7 @@ func (i *WlOutput) RemoveGeometryHandler(h WlOutputGeometryHandler) {
 	}
 }
 
-// WlOutputModeEvent : advertise available modes for the output
+// OutputModeEvent : advertise available modes for the output
 //
 // The mode event describes an available mode for the output.
 //
@@ -5845,19 +5845,19 @@ func (i *WlOutput) RemoveGeometryHandler(h WlOutputGeometryHandler) {
 // Note: this information is not always meaningful for all outputs. Some
 // compositors, such as those exposing virtual outputs, might fake the
 // refresh rate or the size.
-type WlOutputModeEvent struct {
+type OutputModeEvent struct {
 	Flags   uint32
 	Width   int32
 	Height  int32
 	Refresh int32
 }
 
-type WlOutputModeHandler interface {
-	HandleWlOutputMode(WlOutputModeEvent)
+type OutputModeHandler interface {
+	HandleOutputMode(OutputModeEvent)
 }
 
-// AddModeHandler : adds handler for WlOutputModeEvent
-func (i *WlOutput) AddModeHandler(h WlOutputModeHandler) {
+// AddModeHandler : adds handler for OutputModeEvent
+func (i *Output) AddModeHandler(h OutputModeHandler) {
 	if h == nil {
 		return
 	}
@@ -5867,7 +5867,7 @@ func (i *WlOutput) AddModeHandler(h WlOutputModeHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlOutput) RemoveModeHandler(h WlOutputModeHandler) {
+func (i *Output) RemoveModeHandler(h OutputModeHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5879,20 +5879,20 @@ func (i *WlOutput) RemoveModeHandler(h WlOutputModeHandler) {
 	}
 }
 
-// WlOutputDoneEvent : sent all information about output
+// OutputDoneEvent : sent all information about output
 //
 // This event is sent after all other properties have been
 // sent after binding to the output object and after any
 // other property changes done after that. This allows
 // changes to the output properties to be seen as
 // atomic, even if they happen via multiple events.
-type WlOutputDoneEvent struct{}
-type WlOutputDoneHandler interface {
-	HandleWlOutputDone(WlOutputDoneEvent)
+type OutputDoneEvent struct{}
+type OutputDoneHandler interface {
+	HandleOutputDone(OutputDoneEvent)
 }
 
-// AddDoneHandler : adds handler for WlOutputDoneEvent
-func (i *WlOutput) AddDoneHandler(h WlOutputDoneHandler) {
+// AddDoneHandler : adds handler for OutputDoneEvent
+func (i *Output) AddDoneHandler(h OutputDoneHandler) {
 	if h == nil {
 		return
 	}
@@ -5902,7 +5902,7 @@ func (i *WlOutput) AddDoneHandler(h WlOutputDoneHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlOutput) RemoveDoneHandler(h WlOutputDoneHandler) {
+func (i *Output) RemoveDoneHandler(h OutputDoneHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5914,7 +5914,7 @@ func (i *WlOutput) RemoveDoneHandler(h WlOutputDoneHandler) {
 	}
 }
 
-// WlOutputScaleEvent : output scaling properties
+// OutputScaleEvent : output scaling properties
 //
 // This event contains scaling geometry information
 // that is not in the geometry event. It may be sent after
@@ -5934,16 +5934,16 @@ func (i *WlOutput) RemoveDoneHandler(h WlOutputDoneHandler) {
 // the scale of the output. That way the compositor can
 // avoid scaling the surface, and the client can supply
 // a higher detail image.
-type WlOutputScaleEvent struct {
+type OutputScaleEvent struct {
 	Factor int32
 }
 
-type WlOutputScaleHandler interface {
-	HandleWlOutputScale(WlOutputScaleEvent)
+type OutputScaleHandler interface {
+	HandleOutputScale(OutputScaleEvent)
 }
 
-// AddScaleHandler : adds handler for WlOutputScaleEvent
-func (i *WlOutput) AddScaleHandler(h WlOutputScaleHandler) {
+// AddScaleHandler : adds handler for OutputScaleEvent
+func (i *Output) AddScaleHandler(h OutputScaleHandler) {
 	if h == nil {
 		return
 	}
@@ -5953,7 +5953,7 @@ func (i *WlOutput) AddScaleHandler(h WlOutputScaleHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WlOutput) RemoveScaleHandler(h WlOutputScaleHandler) {
+func (i *Output) RemoveScaleHandler(h OutputScaleHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -5965,7 +5965,7 @@ func (i *WlOutput) RemoveScaleHandler(h WlOutputScaleHandler) {
 	}
 }
 
-func (i *WlOutput) Dispatch(event *Event) {
+func (i *Output) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -5975,7 +5975,7 @@ func (i *WlOutput) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlOutputGeometryEvent{
+		e := OutputGeometryEvent{
 			X:              event.Int32(),
 			Y:              event.Int32(),
 			PhysicalWidth:  event.Int32(),
@@ -5990,7 +5990,7 @@ func (i *WlOutput) Dispatch(event *Event) {
 		for _, h := range i.geometryHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlOutputGeometry(e)
+			h.HandleOutputGeometry(e)
 
 			i.mu.RLock()
 		}
@@ -6003,7 +6003,7 @@ func (i *WlOutput) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlOutputModeEvent{
+		e := OutputModeEvent{
 			Flags:   event.Uint32(),
 			Width:   event.Int32(),
 			Height:  event.Int32(),
@@ -6014,7 +6014,7 @@ func (i *WlOutput) Dispatch(event *Event) {
 		for _, h := range i.modeHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlOutputMode(e)
+			h.HandleOutputMode(e)
 
 			i.mu.RLock()
 		}
@@ -6027,13 +6027,13 @@ func (i *WlOutput) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlOutputDoneEvent{}
+		e := OutputDoneEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.doneHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlOutputDone(e)
+			h.HandleOutputDone(e)
 
 			i.mu.RLock()
 		}
@@ -6046,7 +6046,7 @@ func (i *WlOutput) Dispatch(event *Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WlOutputScaleEvent{
+		e := OutputScaleEvent{
 			Factor: event.Int32(),
 		}
 
@@ -6054,7 +6054,7 @@ func (i *WlOutput) Dispatch(event *Event) {
 		for _, h := range i.scaleHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWlOutputScale(e)
+			h.HandleOutputScale(e)
 
 			i.mu.RLock()
 		}
@@ -6062,24 +6062,24 @@ func (i *WlOutput) Dispatch(event *Event) {
 	}
 }
 
-// WlRegion : region interface
+// Region : region interface
 //
 // A region object describes an area.
 //
 // Region objects are used to describe the opaque and input
 // regions of a surface.
-type WlRegion struct {
+type Region struct {
 	BaseProxy
 }
 
-// NewWlRegion : region interface
+// NewRegion : region interface
 //
 // A region object describes an area.
 //
 // Region objects are used to describe the opaque and input
 // regions of a surface.
-func NewWlRegion(ctx *Context) *WlRegion {
-	wlRegion := &WlRegion{}
+func NewRegion(ctx *Context) *Region {
+	wlRegion := &Region{}
 	ctx.Register(wlRegion)
 	return wlRegion
 }
@@ -6088,7 +6088,7 @@ func NewWlRegion(ctx *Context) *WlRegion {
 //
 // Destroy the region.  This will invalidate the object ID.
 //
-func (i *WlRegion) Destroy() error {
+func (i *Region) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -6102,7 +6102,7 @@ func (i *WlRegion) Destroy() error {
 //  y: region-local y coordinate
 //  width: rectangle width
 //  height: rectangle height
-func (i *WlRegion) Add(x, y, width, height int32) error {
+func (i *Region) Add(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 1, x, y, width, height)
 	return err
 }
@@ -6115,12 +6115,12 @@ func (i *WlRegion) Add(x, y, width, height int32) error {
 //  y: region-local y coordinate
 //  width: rectangle width
 //  height: rectangle height
-func (i *WlRegion) Subtract(x, y, width, height int32) error {
+func (i *Region) Subtract(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 2, x, y, width, height)
 	return err
 }
 
-// WlSubcompositor : sub-surface compositing
+// Subcompositor : sub-surface compositing
 //
 // The global interface exposing sub-surface compositing capabilities.
 // A wl_surface, that has sub-surfaces associated, is called the
@@ -6141,11 +6141,11 @@ func (i *WlRegion) Subtract(x, y, width, height int32) error {
 // a video player with decorations and video in separate wl_surface
 // objects. This should allow the compositor to pass YUV video buffer
 // processing to dedicated overlay hardware when possible.
-type WlSubcompositor struct {
+type Subcompositor struct {
 	BaseProxy
 }
 
-// NewWlSubcompositor : sub-surface compositing
+// NewSubcompositor : sub-surface compositing
 //
 // The global interface exposing sub-surface compositing capabilities.
 // A wl_surface, that has sub-surfaces associated, is called the
@@ -6166,8 +6166,8 @@ type WlSubcompositor struct {
 // a video player with decorations and video in separate wl_surface
 // objects. This should allow the compositor to pass YUV video buffer
 // processing to dedicated overlay hardware when possible.
-func NewWlSubcompositor(ctx *Context) *WlSubcompositor {
-	wlSubcompositor := &WlSubcompositor{}
+func NewSubcompositor(ctx *Context) *Subcompositor {
+	wlSubcompositor := &Subcompositor{}
 	ctx.Register(wlSubcompositor)
 	return wlSubcompositor
 }
@@ -6178,7 +6178,7 @@ func NewWlSubcompositor(ctx *Context) *WlSubcompositor {
 // protocol object anymore. This does not affect any other
 // objects, wl_subsurface objects included.
 //
-func (i *WlSubcompositor) Destroy() error {
+func (i *Subcompositor) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -6204,19 +6204,19 @@ func (i *WlSubcompositor) Destroy() error {
 //
 //  surface: the surface to be turned into a sub-surface
 //  parent: the parent surface
-func (i *WlSubcompositor) GetSubsurface(surface, parent *WlSurface) (*WlSubsurface, error) {
-	id := NewWlSubsurface(i.Context())
+func (i *Subcompositor) GetSubsurface(surface, parent *Surface) (*Subsurface, error) {
+	id := NewSubsurface(i.Context())
 	err := i.Context().SendRequest(i, 1, id, surface, parent)
 	return id, err
 }
 
-// WlSubcompositorError :
+// SubcompositorError :
 const (
-	// WlSubcompositorErrorBadSurface : the to-be sub-surface is invalid
-	WlSubcompositorErrorBadSurface = 0
+	// SubcompositorErrorBadSurface : the to-be sub-surface is invalid
+	SubcompositorErrorBadSurface = 0
 )
 
-// WlSubsurface : sub-surface interface to a wl_surface
+// Subsurface : sub-surface interface to a wl_surface
 //
 // An additional interface to a wl_surface object, which has been
 // made a sub-surface. A sub-surface has one parent surface. A
@@ -6267,11 +6267,11 @@ const (
 //
 // If the parent wl_surface object is destroyed, the sub-surface is
 // unmapped.
-type WlSubsurface struct {
+type Subsurface struct {
 	BaseProxy
 }
 
-// NewWlSubsurface : sub-surface interface to a wl_surface
+// NewSubsurface : sub-surface interface to a wl_surface
 //
 // An additional interface to a wl_surface object, which has been
 // made a sub-surface. A sub-surface has one parent surface. A
@@ -6322,8 +6322,8 @@ type WlSubsurface struct {
 //
 // If the parent wl_surface object is destroyed, the sub-surface is
 // unmapped.
-func NewWlSubsurface(ctx *Context) *WlSubsurface {
-	wlSubsurface := &WlSubsurface{}
+func NewSubsurface(ctx *Context) *Subsurface {
+	wlSubsurface := &Subsurface{}
 	ctx.Register(wlSubsurface)
 	return wlSubsurface
 }
@@ -6336,7 +6336,7 @@ func NewWlSubsurface(ctx *Context) *WlSubsurface {
 // to the parent is deleted, and the wl_surface loses its role as
 // a sub-surface. The wl_surface is unmapped immediately.
 //
-func (i *WlSubsurface) Destroy() error {
+func (i *Subsurface) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -6363,7 +6363,7 @@ func (i *WlSubsurface) Destroy() error {
 //
 //  x: x coordinate in the parent surface
 //  y: y coordinate in the parent surface
-func (i *WlSubsurface) SetPosition(x, y int32) error {
+func (i *Subsurface) SetPosition(x, y int32) error {
 	err := i.Context().SendRequest(i, 1, x, y)
 	return err
 }
@@ -6387,7 +6387,7 @@ func (i *WlSubsurface) SetPosition(x, y int32) error {
 // of its siblings and parent.
 //
 //  sibling: the reference surface
-func (i *WlSubsurface) PlaceAbove(sibling *WlSurface) error {
+func (i *Subsurface) PlaceAbove(sibling *Surface) error {
 	err := i.Context().SendRequest(i, 2, sibling)
 	return err
 }
@@ -6398,7 +6398,7 @@ func (i *WlSubsurface) PlaceAbove(sibling *WlSurface) error {
 // See wl_subsurface.place_above.
 //
 //  sibling: the reference surface
-func (i *WlSubsurface) PlaceBelow(sibling *WlSurface) error {
+func (i *Subsurface) PlaceBelow(sibling *Surface) error {
 	err := i.Context().SendRequest(i, 3, sibling)
 	return err
 }
@@ -6419,7 +6419,7 @@ func (i *WlSubsurface) PlaceBelow(sibling *WlSurface) error {
 //
 // See wl_subsurface for the recursive effect of this mode.
 //
-func (i *WlSubsurface) SetSync() error {
+func (i *Subsurface) SetSync() error {
 	err := i.Context().SendRequest(i, 4)
 	return err
 }
@@ -6446,13 +6446,13 @@ func (i *WlSubsurface) SetSync() error {
 // If a surface's parent surface behaves as desynchronized, then
 // the cached state is applied on set_desync.
 //
-func (i *WlSubsurface) SetDesync() error {
+func (i *Subsurface) SetDesync() error {
 	err := i.Context().SendRequest(i, 5)
 	return err
 }
 
-// WlSubsurfaceError :
+// SubsurfaceError :
 const (
-	// WlSubsurfaceErrorBadSurface : wl_surface is not a sibling or the parent
-	WlSubsurfaceErrorBadSurface = 0
+	// SubsurfaceErrorBadSurface : wl_surface is not a sibling or the parent
+	SubsurfaceErrorBadSurface = 0
 )

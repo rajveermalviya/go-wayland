@@ -2,7 +2,7 @@
 // https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 // XML file : https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/d10d18f3d49374d2e3eb96d63511f32795aab5f7/stable/viewporter/viewporter.xml
 //
-// Viewporter Protocol Copyright:
+// viewporter Protocol Copyright:
 //
 // Copyright © 2013-2016 Collabora, Ltd.
 //
@@ -29,7 +29,7 @@ package viewporter
 
 import "github.com/rajveermalviya/go-wayland/client"
 
-// WpViewporter : surface cropping and scaling
+// Viewporter : surface cropping and scaling
 //
 // The global interface exposing surface cropping and scaling
 // capabilities is used to instantiate an interface extension for a
@@ -37,11 +37,11 @@ import "github.com/rajveermalviya/go-wayland/client"
 // cropping and scaling the surface contents, effectively
 // disconnecting the direct relationship between the buffer and the
 // surface size.
-type WpViewporter struct {
+type Viewporter struct {
 	client.BaseProxy
 }
 
-// NewWpViewporter : surface cropping and scaling
+// NewViewporter : surface cropping and scaling
 //
 // The global interface exposing surface cropping and scaling
 // capabilities is used to instantiate an interface extension for a
@@ -49,8 +49,8 @@ type WpViewporter struct {
 // cropping and scaling the surface contents, effectively
 // disconnecting the direct relationship between the buffer and the
 // surface size.
-func NewWpViewporter(ctx *client.Context) *WpViewporter {
-	wpViewporter := &WpViewporter{}
+func NewViewporter(ctx *client.Context) *Viewporter {
+	wpViewporter := &Viewporter{}
 	ctx.Register(wpViewporter)
 	return wpViewporter
 }
@@ -61,7 +61,7 @@ func NewWpViewporter(ctx *client.Context) *WpViewporter {
 // protocol object anymore. This does not affect any other objects,
 // wp_viewport objects included.
 //
-func (i *WpViewporter) Destroy() error {
+func (i *Viewporter) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -75,19 +75,19 @@ func (i *WpViewporter) Destroy() error {
 // protocol error is raised.
 //
 //  surface: the surface
-func (i *WpViewporter) GetViewport(surface *client.WlSurface) (*WpViewport, error) {
-	id := NewWpViewport(i.Context())
+func (i *Viewporter) GetViewport(surface *client.Surface) (*Viewport, error) {
+	id := NewViewport(i.Context())
 	err := i.Context().SendRequest(i, 1, id, surface)
 	return id, err
 }
 
-// WpViewporterError :
+// ViewporterError :
 const (
-	// WpViewporterErrorViewportExists : the surface already has a viewport object associated
-	WpViewporterErrorViewportExists = 0
+	// ViewporterErrorViewportExists : the surface already has a viewport object associated
+	ViewporterErrorViewportExists = 0
 )
 
-// WpViewport : crop and scale interface to a wl_surface
+// Viewport : crop and scale interface to a wl_surface
 //
 // An additional interface to a wl_surface object, which allows the
 // client to specify the cropping and scaling of the surface
@@ -150,11 +150,11 @@ const (
 // If the wp_viewport object is destroyed, the crop and scale
 // state is removed from the wl_surface. The change will be applied
 // on the next wl_surface.commit.
-type WpViewport struct {
+type Viewport struct {
 	client.BaseProxy
 }
 
-// NewWpViewport : crop and scale interface to a wl_surface
+// NewViewport : crop and scale interface to a wl_surface
 //
 // An additional interface to a wl_surface object, which allows the
 // client to specify the cropping and scaling of the surface
@@ -217,8 +217,8 @@ type WpViewport struct {
 // If the wp_viewport object is destroyed, the crop and scale
 // state is removed from the wl_surface. The change will be applied
 // on the next wl_surface.commit.
-func NewWpViewport(ctx *client.Context) *WpViewport {
-	wpViewport := &WpViewport{}
+func NewViewport(ctx *client.Context) *Viewport {
+	wpViewport := &Viewport{}
 	ctx.Register(wpViewport)
 	return wpViewport
 }
@@ -228,7 +228,7 @@ func NewWpViewport(ctx *client.Context) *WpViewport {
 // The associated wl_surface's crop and scale state is removed.
 // The change is applied on the next wl_surface.commit.
 //
-func (i *WpViewport) Destroy() error {
+func (i *Viewport) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -252,7 +252,7 @@ func (i *WpViewport) Destroy() error {
 //  y: source rectangle y
 //  width: source rectangle width
 //  height: source rectangle height
-func (i *WpViewport) SetSource(x, y, width, height float32) error {
+func (i *Viewport) SetSource(x, y, width, height float32) error {
 	err := i.Context().SendRequest(i, 1, x, y, width, height)
 	return err
 }
@@ -273,19 +273,19 @@ func (i *WpViewport) SetSource(x, y, width, height float32) error {
 //
 //  width: surface width
 //  height: surface height
-func (i *WpViewport) SetDestination(width, height int32) error {
+func (i *Viewport) SetDestination(width, height int32) error {
 	err := i.Context().SendRequest(i, 2, width, height)
 	return err
 }
 
-// WpViewportError :
+// ViewportError :
 const (
-	// WpViewportErrorBadValue : negative or zero values in width or height
-	WpViewportErrorBadValue = 0
-	// WpViewportErrorBadSize : destination size is not integer
-	WpViewportErrorBadSize = 1
-	// WpViewportErrorOutOfBuffer : source rectangle extends outside of the content area
-	WpViewportErrorOutOfBuffer = 2
-	// WpViewportErrorNoSurface : the wl_surface was destroyed
-	WpViewportErrorNoSurface = 3
+	// ViewportErrorBadValue : negative or zero values in width or height
+	ViewportErrorBadValue = 0
+	// ViewportErrorBadSize : destination size is not integer
+	ViewportErrorBadSize = 1
+	// ViewportErrorOutOfBuffer : source rectangle extends outside of the content area
+	ViewportErrorOutOfBuffer = 2
+	// ViewportErrorNoSurface : the wl_surface was destroyed
+	ViewportErrorNoSurface = 3
 )

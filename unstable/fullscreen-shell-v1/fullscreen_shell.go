@@ -2,7 +2,7 @@
 // https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 // XML file : https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/d10d18f3d49374d2e3eb96d63511f32795aab5f7/unstable/fullscreen-shell/fullscreen-shell-unstable-v1.xml
 //
-// FullscreenShellUnstableV1 Protocol Copyright:
+// fullscreen_shell_unstable_v1 Protocol Copyright:
 //
 // Copyright © 2016 Yong Bakos
 // Copyright © 2015 Jason Ekstrand
@@ -35,7 +35,7 @@ import (
 	"github.com/rajveermalviya/go-wayland/client"
 )
 
-// ZwpFullscreenShellV1 : displays a single surface per output
+// FullscreenShell : displays a single surface per output
 //
 // Displays a single surface per output.
 //
@@ -70,13 +70,13 @@ import (
 // Once the protocol is to be declared stable, the 'z' prefix and the
 // version number in the protocol and interface names are removed and the
 // interface version number is reset.
-type ZwpFullscreenShellV1 struct {
+type FullscreenShell struct {
 	client.BaseProxy
 	mu                 sync.RWMutex
-	capabilityHandlers []ZwpFullscreenShellV1CapabilityHandler
+	capabilityHandlers []FullscreenShellCapabilityHandler
 }
 
-// NewZwpFullscreenShellV1 : displays a single surface per output
+// NewFullscreenShell : displays a single surface per output
 //
 // Displays a single surface per output.
 //
@@ -111,8 +111,8 @@ type ZwpFullscreenShellV1 struct {
 // Once the protocol is to be declared stable, the 'z' prefix and the
 // version number in the protocol and interface names are removed and the
 // interface version number is reset.
-func NewZwpFullscreenShellV1(ctx *client.Context) *ZwpFullscreenShellV1 {
-	zwpFullscreenShellV1 := &ZwpFullscreenShellV1{}
+func NewFullscreenShell(ctx *client.Context) *FullscreenShell {
+	zwpFullscreenShellV1 := &FullscreenShell{}
 	ctx.Register(zwpFullscreenShellV1)
 	return zwpFullscreenShellV1
 }
@@ -125,7 +125,7 @@ func NewZwpFullscreenShellV1(ctx *client.Context) *ZwpFullscreenShellV1 {
 // the client binds to wl_fullscreen_shell multiple times, it may wish
 // to free some of those bindings.
 //
-func (i *ZwpFullscreenShellV1) Release() error {
+func (i *FullscreenShell) Release() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -151,7 +151,7 @@ func (i *ZwpFullscreenShellV1) Release() error {
 // scaling, so the buffer_scale property of the surface is effectively
 // ignored.
 //
-func (i *ZwpFullscreenShellV1) PresentSurface(surface *client.WlSurface, method uint32, output *client.WlOutput) error {
+func (i *FullscreenShell) PresentSurface(surface *client.Surface, method uint32, output *client.Output) error {
 	err := i.Context().SendRequest(i, 1, surface, method, output)
 	return err
 }
@@ -196,13 +196,13 @@ func (i *ZwpFullscreenShellV1) PresentSurface(surface *client.WlSurface, method 
 // size or the surface size.  In either case, the surface will fill the
 // output.
 //
-func (i *ZwpFullscreenShellV1) PresentSurfaceForMode(surface *client.WlSurface, output *client.WlOutput, framerate int32) (*ZwpFullscreenShellModeFeedbackV1, error) {
-	feedback := NewZwpFullscreenShellModeFeedbackV1(i.Context())
+func (i *FullscreenShell) PresentSurfaceForMode(surface *client.Surface, output *client.Output, framerate int32) (*FullscreenShellModeFeedback, error) {
+	feedback := NewFullscreenShellModeFeedback(i.Context())
 	err := i.Context().SendRequest(i, 2, surface, output, framerate, feedback)
 	return feedback, err
 }
 
-// ZwpFullscreenShellV1Capability : capabilities advertised by the compositor
+// FullscreenShellCapability : capabilities advertised by the compositor
 //
 // Various capabilities that can be advertised by the compositor.  They
 // are advertised one-at-a-time when the wl_fullscreen_shell interface is
@@ -226,39 +226,39 @@ func (i *ZwpFullscreenShellV1) PresentSurfaceForMode(surface *client.WlSurface, 
 // CURSOR_PLANE is not advertised, it is recommended that the client draw
 // its own cursor and set wl_pointer.cursor(NULL).
 const (
-	// ZwpFullscreenShellV1CapabilityArbitraryModes : compositor is capable of almost any output mode
-	ZwpFullscreenShellV1CapabilityArbitraryModes = 1
-	// ZwpFullscreenShellV1CapabilityCursorPlane : compositor has a separate cursor plane
-	ZwpFullscreenShellV1CapabilityCursorPlane = 2
+	// FullscreenShellCapabilityArbitraryModes : compositor is capable of almost any output mode
+	FullscreenShellCapabilityArbitraryModes = 1
+	// FullscreenShellCapabilityCursorPlane : compositor has a separate cursor plane
+	FullscreenShellCapabilityCursorPlane = 2
 )
 
-// ZwpFullscreenShellV1PresentMethod : different method to set the surface fullscreen
+// FullscreenShellPresentMethod : different method to set the surface fullscreen
 //
 // Hints to indicate to the compositor how to deal with a conflict
 // between the dimensions of the surface and the dimensions of the
 // output. The compositor is free to ignore this parameter.
 const (
-	// ZwpFullscreenShellV1PresentMethodDefault : no preference, apply default policy
-	ZwpFullscreenShellV1PresentMethodDefault = 0
-	// ZwpFullscreenShellV1PresentMethodCenter : center the surface on the output
-	ZwpFullscreenShellV1PresentMethodCenter = 1
-	// ZwpFullscreenShellV1PresentMethodZoom : scale the surface, preserving aspect ratio, to the largest size that will fit on the output
-	ZwpFullscreenShellV1PresentMethodZoom = 2
-	// ZwpFullscreenShellV1PresentMethodZoomCrop : scale the surface, preserving aspect ratio, to fully fill the output cropping if needed
-	ZwpFullscreenShellV1PresentMethodZoomCrop = 3
-	// ZwpFullscreenShellV1PresentMethodStretch : scale the surface to the size of the output ignoring aspect ratio
-	ZwpFullscreenShellV1PresentMethodStretch = 4
+	// FullscreenShellPresentMethodDefault : no preference, apply default policy
+	FullscreenShellPresentMethodDefault = 0
+	// FullscreenShellPresentMethodCenter : center the surface on the output
+	FullscreenShellPresentMethodCenter = 1
+	// FullscreenShellPresentMethodZoom : scale the surface, preserving aspect ratio, to the largest size that will fit on the output
+	FullscreenShellPresentMethodZoom = 2
+	// FullscreenShellPresentMethodZoomCrop : scale the surface, preserving aspect ratio, to fully fill the output cropping if needed
+	FullscreenShellPresentMethodZoomCrop = 3
+	// FullscreenShellPresentMethodStretch : scale the surface to the size of the output ignoring aspect ratio
+	FullscreenShellPresentMethodStretch = 4
 )
 
-// ZwpFullscreenShellV1Error : wl_fullscreen_shell error values
+// FullscreenShellError : wl_fullscreen_shell error values
 //
 // These errors can be emitted in response to wl_fullscreen_shell requests.
 const (
-	// ZwpFullscreenShellV1ErrorInvalidMethod : present_method is not known
-	ZwpFullscreenShellV1ErrorInvalidMethod = 0
+	// FullscreenShellErrorInvalidMethod : present_method is not known
+	FullscreenShellErrorInvalidMethod = 0
 )
 
-// ZwpFullscreenShellV1CapabilityEvent : advertises a capability of the compositor
+// FullscreenShellCapabilityEvent : advertises a capability of the compositor
 //
 // Advertises a single capability of the compositor.
 //
@@ -268,16 +268,16 @@ const (
 // advantage of any of these capabilities, they should use a
 // wl_display.sync request immediately after binding to ensure that they
 // receive all the capability events.
-type ZwpFullscreenShellV1CapabilityEvent struct {
+type FullscreenShellCapabilityEvent struct {
 	Capability uint32
 }
 
-type ZwpFullscreenShellV1CapabilityHandler interface {
-	HandleZwpFullscreenShellV1Capability(ZwpFullscreenShellV1CapabilityEvent)
+type FullscreenShellCapabilityHandler interface {
+	HandleFullscreenShellCapability(FullscreenShellCapabilityEvent)
 }
 
-// AddCapabilityHandler : adds handler for ZwpFullscreenShellV1CapabilityEvent
-func (i *ZwpFullscreenShellV1) AddCapabilityHandler(h ZwpFullscreenShellV1CapabilityHandler) {
+// AddCapabilityHandler : adds handler for FullscreenShellCapabilityEvent
+func (i *FullscreenShell) AddCapabilityHandler(h FullscreenShellCapabilityHandler) {
 	if h == nil {
 		return
 	}
@@ -287,7 +287,7 @@ func (i *ZwpFullscreenShellV1) AddCapabilityHandler(h ZwpFullscreenShellV1Capabi
 	i.mu.Unlock()
 }
 
-func (i *ZwpFullscreenShellV1) RemoveCapabilityHandler(h ZwpFullscreenShellV1CapabilityHandler) {
+func (i *FullscreenShell) RemoveCapabilityHandler(h FullscreenShellCapabilityHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -299,7 +299,7 @@ func (i *ZwpFullscreenShellV1) RemoveCapabilityHandler(h ZwpFullscreenShellV1Cap
 	}
 }
 
-func (i *ZwpFullscreenShellV1) Dispatch(event *client.Event) {
+func (i *FullscreenShell) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -309,7 +309,7 @@ func (i *ZwpFullscreenShellV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpFullscreenShellV1CapabilityEvent{
+		e := FullscreenShellCapabilityEvent{
 			Capability: event.Uint32(),
 		}
 
@@ -317,7 +317,7 @@ func (i *ZwpFullscreenShellV1) Dispatch(event *client.Event) {
 		for _, h := range i.capabilityHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpFullscreenShellV1Capability(e)
+			h.HandleFullscreenShellCapability(e)
 
 			i.mu.RLock()
 		}
@@ -325,28 +325,28 @@ func (i *ZwpFullscreenShellV1) Dispatch(event *client.Event) {
 	}
 }
 
-// ZwpFullscreenShellModeFeedbackV1 :
-type ZwpFullscreenShellModeFeedbackV1 struct {
+// FullscreenShellModeFeedback :
+type FullscreenShellModeFeedback struct {
 	client.BaseProxy
 	mu                       sync.RWMutex
-	modeSuccessfulHandlers   []ZwpFullscreenShellModeFeedbackV1ModeSuccessfulHandler
-	modeFailedHandlers       []ZwpFullscreenShellModeFeedbackV1ModeFailedHandler
-	presentCancelledHandlers []ZwpFullscreenShellModeFeedbackV1PresentCancelledHandler
+	modeSuccessfulHandlers   []FullscreenShellModeFeedbackModeSuccessfulHandler
+	modeFailedHandlers       []FullscreenShellModeFeedbackModeFailedHandler
+	presentCancelledHandlers []FullscreenShellModeFeedbackPresentCancelledHandler
 }
 
-// NewZwpFullscreenShellModeFeedbackV1 :
-func NewZwpFullscreenShellModeFeedbackV1(ctx *client.Context) *ZwpFullscreenShellModeFeedbackV1 {
-	zwpFullscreenShellModeFeedbackV1 := &ZwpFullscreenShellModeFeedbackV1{}
+// NewFullscreenShellModeFeedback :
+func NewFullscreenShellModeFeedback(ctx *client.Context) *FullscreenShellModeFeedback {
+	zwpFullscreenShellModeFeedbackV1 := &FullscreenShellModeFeedback{}
 	ctx.Register(zwpFullscreenShellModeFeedbackV1)
 	return zwpFullscreenShellModeFeedbackV1
 }
 
-func (i *ZwpFullscreenShellModeFeedbackV1) Destroy() error {
+func (i *FullscreenShellModeFeedback) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// ZwpFullscreenShellModeFeedbackV1ModeSuccessfulEvent : mode switch succeeded
+// FullscreenShellModeFeedbackModeSuccessfulEvent : mode switch succeeded
 //
 // This event indicates that the attempted mode switch operation was
 // successful.  A surface of the size requested in the mode switch
@@ -354,13 +354,13 @@ func (i *ZwpFullscreenShellModeFeedbackV1) Destroy() error {
 //
 // Upon receiving this event, the client should destroy the
 // wl_fullscreen_shell_mode_feedback object.
-type ZwpFullscreenShellModeFeedbackV1ModeSuccessfulEvent struct{}
-type ZwpFullscreenShellModeFeedbackV1ModeSuccessfulHandler interface {
-	HandleZwpFullscreenShellModeFeedbackV1ModeSuccessful(ZwpFullscreenShellModeFeedbackV1ModeSuccessfulEvent)
+type FullscreenShellModeFeedbackModeSuccessfulEvent struct{}
+type FullscreenShellModeFeedbackModeSuccessfulHandler interface {
+	HandleFullscreenShellModeFeedbackModeSuccessful(FullscreenShellModeFeedbackModeSuccessfulEvent)
 }
 
-// AddModeSuccessfulHandler : adds handler for ZwpFullscreenShellModeFeedbackV1ModeSuccessfulEvent
-func (i *ZwpFullscreenShellModeFeedbackV1) AddModeSuccessfulHandler(h ZwpFullscreenShellModeFeedbackV1ModeSuccessfulHandler) {
+// AddModeSuccessfulHandler : adds handler for FullscreenShellModeFeedbackModeSuccessfulEvent
+func (i *FullscreenShellModeFeedback) AddModeSuccessfulHandler(h FullscreenShellModeFeedbackModeSuccessfulHandler) {
 	if h == nil {
 		return
 	}
@@ -370,7 +370,7 @@ func (i *ZwpFullscreenShellModeFeedbackV1) AddModeSuccessfulHandler(h ZwpFullscr
 	i.mu.Unlock()
 }
 
-func (i *ZwpFullscreenShellModeFeedbackV1) RemoveModeSuccessfulHandler(h ZwpFullscreenShellModeFeedbackV1ModeSuccessfulHandler) {
+func (i *FullscreenShellModeFeedback) RemoveModeSuccessfulHandler(h FullscreenShellModeFeedbackModeSuccessfulHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -382,7 +382,7 @@ func (i *ZwpFullscreenShellModeFeedbackV1) RemoveModeSuccessfulHandler(h ZwpFull
 	}
 }
 
-// ZwpFullscreenShellModeFeedbackV1ModeFailedEvent : mode switch failed
+// FullscreenShellModeFeedbackModeFailedEvent : mode switch failed
 //
 // This event indicates that the attempted mode switch operation
 // failed.  This may be because the requested output mode is not
@@ -390,13 +390,13 @@ func (i *ZwpFullscreenShellModeFeedbackV1) RemoveModeSuccessfulHandler(h ZwpFull
 //
 // Upon receiving this event, the client should destroy the
 // wl_fullscreen_shell_mode_feedback object.
-type ZwpFullscreenShellModeFeedbackV1ModeFailedEvent struct{}
-type ZwpFullscreenShellModeFeedbackV1ModeFailedHandler interface {
-	HandleZwpFullscreenShellModeFeedbackV1ModeFailed(ZwpFullscreenShellModeFeedbackV1ModeFailedEvent)
+type FullscreenShellModeFeedbackModeFailedEvent struct{}
+type FullscreenShellModeFeedbackModeFailedHandler interface {
+	HandleFullscreenShellModeFeedbackModeFailed(FullscreenShellModeFeedbackModeFailedEvent)
 }
 
-// AddModeFailedHandler : adds handler for ZwpFullscreenShellModeFeedbackV1ModeFailedEvent
-func (i *ZwpFullscreenShellModeFeedbackV1) AddModeFailedHandler(h ZwpFullscreenShellModeFeedbackV1ModeFailedHandler) {
+// AddModeFailedHandler : adds handler for FullscreenShellModeFeedbackModeFailedEvent
+func (i *FullscreenShellModeFeedback) AddModeFailedHandler(h FullscreenShellModeFeedbackModeFailedHandler) {
 	if h == nil {
 		return
 	}
@@ -406,7 +406,7 @@ func (i *ZwpFullscreenShellModeFeedbackV1) AddModeFailedHandler(h ZwpFullscreenS
 	i.mu.Unlock()
 }
 
-func (i *ZwpFullscreenShellModeFeedbackV1) RemoveModeFailedHandler(h ZwpFullscreenShellModeFeedbackV1ModeFailedHandler) {
+func (i *FullscreenShellModeFeedback) RemoveModeFailedHandler(h FullscreenShellModeFeedbackModeFailedHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -418,7 +418,7 @@ func (i *ZwpFullscreenShellModeFeedbackV1) RemoveModeFailedHandler(h ZwpFullscre
 	}
 }
 
-// ZwpFullscreenShellModeFeedbackV1PresentCancelledEvent : mode switch cancelled
+// FullscreenShellModeFeedbackPresentCancelledEvent : mode switch cancelled
 //
 // This event indicates that the attempted mode switch operation was
 // cancelled.  Most likely this is because the client requested a
@@ -426,13 +426,13 @@ func (i *ZwpFullscreenShellModeFeedbackV1) RemoveModeFailedHandler(h ZwpFullscre
 //
 // Upon receiving this event, the client should destroy the
 // wl_fullscreen_shell_mode_feedback object.
-type ZwpFullscreenShellModeFeedbackV1PresentCancelledEvent struct{}
-type ZwpFullscreenShellModeFeedbackV1PresentCancelledHandler interface {
-	HandleZwpFullscreenShellModeFeedbackV1PresentCancelled(ZwpFullscreenShellModeFeedbackV1PresentCancelledEvent)
+type FullscreenShellModeFeedbackPresentCancelledEvent struct{}
+type FullscreenShellModeFeedbackPresentCancelledHandler interface {
+	HandleFullscreenShellModeFeedbackPresentCancelled(FullscreenShellModeFeedbackPresentCancelledEvent)
 }
 
-// AddPresentCancelledHandler : adds handler for ZwpFullscreenShellModeFeedbackV1PresentCancelledEvent
-func (i *ZwpFullscreenShellModeFeedbackV1) AddPresentCancelledHandler(h ZwpFullscreenShellModeFeedbackV1PresentCancelledHandler) {
+// AddPresentCancelledHandler : adds handler for FullscreenShellModeFeedbackPresentCancelledEvent
+func (i *FullscreenShellModeFeedback) AddPresentCancelledHandler(h FullscreenShellModeFeedbackPresentCancelledHandler) {
 	if h == nil {
 		return
 	}
@@ -442,7 +442,7 @@ func (i *ZwpFullscreenShellModeFeedbackV1) AddPresentCancelledHandler(h ZwpFulls
 	i.mu.Unlock()
 }
 
-func (i *ZwpFullscreenShellModeFeedbackV1) RemovePresentCancelledHandler(h ZwpFullscreenShellModeFeedbackV1PresentCancelledHandler) {
+func (i *FullscreenShellModeFeedback) RemovePresentCancelledHandler(h FullscreenShellModeFeedbackPresentCancelledHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -454,7 +454,7 @@ func (i *ZwpFullscreenShellModeFeedbackV1) RemovePresentCancelledHandler(h ZwpFu
 	}
 }
 
-func (i *ZwpFullscreenShellModeFeedbackV1) Dispatch(event *client.Event) {
+func (i *FullscreenShellModeFeedback) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -464,13 +464,13 @@ func (i *ZwpFullscreenShellModeFeedbackV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpFullscreenShellModeFeedbackV1ModeSuccessfulEvent{}
+		e := FullscreenShellModeFeedbackModeSuccessfulEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.modeSuccessfulHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpFullscreenShellModeFeedbackV1ModeSuccessful(e)
+			h.HandleFullscreenShellModeFeedbackModeSuccessful(e)
 
 			i.mu.RLock()
 		}
@@ -483,13 +483,13 @@ func (i *ZwpFullscreenShellModeFeedbackV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpFullscreenShellModeFeedbackV1ModeFailedEvent{}
+		e := FullscreenShellModeFeedbackModeFailedEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.modeFailedHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpFullscreenShellModeFeedbackV1ModeFailed(e)
+			h.HandleFullscreenShellModeFeedbackModeFailed(e)
 
 			i.mu.RLock()
 		}
@@ -502,13 +502,13 @@ func (i *ZwpFullscreenShellModeFeedbackV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpFullscreenShellModeFeedbackV1PresentCancelledEvent{}
+		e := FullscreenShellModeFeedbackPresentCancelledEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.presentCancelledHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpFullscreenShellModeFeedbackV1PresentCancelled(e)
+			h.HandleFullscreenShellModeFeedbackPresentCancelled(e)
 
 			i.mu.RLock()
 		}

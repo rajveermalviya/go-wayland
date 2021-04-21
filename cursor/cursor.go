@@ -31,13 +31,13 @@ const (
 type shmPool struct {
 	Data []byte
 
-	pool *client.WlShmPool
+	pool *client.ShmPool
 	f    *os.File
 	size uint32
 	used uint32
 }
 
-func createShmPool(shm *client.WlShm, size int) (*shmPool, error) {
+func createShmPool(shm *client.Shm, size int) (*shmPool, error) {
 	f, err := tempfile.Create(int64(size))
 	if err != nil {
 		return nil, err
@@ -138,17 +138,17 @@ type Image struct {
 	Delay uint32
 
 	theme  *Theme
-	buffer *client.WlBuffer
+	buffer *client.Buffer
 	offset int // data offset of this image in the shm pool
 }
 
-func (image *Image) GetBuffer() (*client.WlBuffer, error) {
+func (image *Image) GetBuffer() (*client.Buffer, error) {
 	theme := image.theme
 
 	if image.buffer == nil {
 		buffer, err := theme.pool.pool.CreateBuffer(
 			int32(image.offset), int32(image.Width), int32(image.Height),
-			int32(image.Width)*4, client.WlShmFormatArgb8888,
+			int32(image.Width)*4, client.ShmFormatArgb8888,
 		)
 		if err != nil {
 			return nil, err
@@ -310,7 +310,7 @@ func (theme *Theme) loadCallback(name string, images []xcursor.Image) {
 //
 // Returns an object representing the theme that should be destroyed with
 // Theme.Destroy().
-func LoadTheme(name string, size int, shm *client.WlShm) (*Theme, error) {
+func LoadTheme(name string, size int, shm *client.Shm) (*Theme, error) {
 	if name == "" {
 		name = "default"
 	}

@@ -2,7 +2,7 @@
 // https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 // XML file : https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/d10d18f3d49374d2e3eb96d63511f32795aab5f7/stable/xdg-shell/xdg-shell.xml
 //
-// XdgShell Protocol Copyright:
+// xdg_shell Protocol Copyright:
 //
 // Copyright © 2008-2013 Kristian Høgsberg
 // Copyright © 2013      Rafael Antognolli
@@ -38,28 +38,28 @@ import (
 	"github.com/rajveermalviya/go-wayland/client"
 )
 
-// XdgWmBase : create desktop-style surfaces
+// WmBase : create desktop-style surfaces
 //
 // The xdg_wm_base interface is exposed as a global object enabling clients
 // to turn their wl_surfaces into windows in a desktop environment. It
 // defines the basic functionality needed for clients and the compositor to
 // create windows that can be dragged, resized, maximized, etc, as well as
 // creating transient windows such as popup menus.
-type XdgWmBase struct {
+type WmBase struct {
 	client.BaseProxy
 	mu           sync.RWMutex
-	pingHandlers []XdgWmBasePingHandler
+	pingHandlers []WmBasePingHandler
 }
 
-// NewXdgWmBase : create desktop-style surfaces
+// NewWmBase : create desktop-style surfaces
 //
 // The xdg_wm_base interface is exposed as a global object enabling clients
 // to turn their wl_surfaces into windows in a desktop environment. It
 // defines the basic functionality needed for clients and the compositor to
 // create windows that can be dragged, resized, maximized, etc, as well as
 // creating transient windows such as popup menus.
-func NewXdgWmBase(ctx *client.Context) *XdgWmBase {
-	xdgWmBase := &XdgWmBase{}
+func NewWmBase(ctx *client.Context) *WmBase {
+	xdgWmBase := &WmBase{}
 	ctx.Register(xdgWmBase)
 	return xdgWmBase
 }
@@ -72,7 +72,7 @@ func NewXdgWmBase(ctx *client.Context) *XdgWmBase {
 // still alive created by this xdg_wm_base object instance is illegal
 // and will result in a protocol error.
 //
-func (i *XdgWmBase) Destroy() error {
+func (i *WmBase) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -84,8 +84,8 @@ func (i *XdgWmBase) Destroy() error {
 // surfaces relative to some parent surface. See the interface description
 // and xdg_surface.get_popup for details.
 //
-func (i *XdgWmBase) CreatePositioner() (*XdgPositioner, error) {
-	id := NewXdgPositioner(i.Context())
+func (i *WmBase) CreatePositioner() (*Positioner, error) {
+	id := NewPositioner(i.Context())
 	err := i.Context().SendRequest(i, 1, id)
 	return id, err
 }
@@ -104,8 +104,8 @@ func (i *XdgWmBase) CreatePositioner() (*XdgPositioner, error) {
 // See the documentation of xdg_surface for more details about what an
 // xdg_surface is and how it is used.
 //
-func (i *XdgWmBase) GetXdgSurface(surface *client.WlSurface) (*XdgSurface, error) {
-	id := NewXdgSurface(i.Context())
+func (i *WmBase) GetXdgSurface(surface *client.Surface) (*Surface, error) {
+	id := NewSurface(i.Context())
 	err := i.Context().SendRequest(i, 2, id, surface)
 	return id, err
 }
@@ -116,28 +116,28 @@ func (i *XdgWmBase) GetXdgSurface(surface *client.WlSurface) (*XdgSurface, error
 // the client may be deemed unresponsive. See xdg_wm_base.ping.
 //
 //  serial: serial of the ping event
-func (i *XdgWmBase) Pong(serial uint32) error {
+func (i *WmBase) Pong(serial uint32) error {
 	err := i.Context().SendRequest(i, 3, serial)
 	return err
 }
 
-// XdgWmBaseError :
+// WmBaseError :
 const (
-	// XdgWmBaseErrorRole : given wl_surface has another role
-	XdgWmBaseErrorRole = 0
-	// XdgWmBaseErrorDefunctSurfaces : xdg_wm_base was destroyed before children
-	XdgWmBaseErrorDefunctSurfaces = 1
-	// XdgWmBaseErrorNotTheTopmostPopup : the client tried to map or destroy a non-topmost popup
-	XdgWmBaseErrorNotTheTopmostPopup = 2
-	// XdgWmBaseErrorInvalidPopupParent : the client specified an invalid popup parent surface
-	XdgWmBaseErrorInvalidPopupParent = 3
-	// XdgWmBaseErrorInvalidSurfaceState : the client provided an invalid surface state
-	XdgWmBaseErrorInvalidSurfaceState = 4
-	// XdgWmBaseErrorInvalidPositioner : the client provided an invalid positioner
-	XdgWmBaseErrorInvalidPositioner = 5
+	// WmBaseErrorRole : given wl_surface has another role
+	WmBaseErrorRole = 0
+	// WmBaseErrorDefunctSurfaces : xdg_wm_base was destroyed before children
+	WmBaseErrorDefunctSurfaces = 1
+	// WmBaseErrorNotTheTopmostPopup : the client tried to map or destroy a non-topmost popup
+	WmBaseErrorNotTheTopmostPopup = 2
+	// WmBaseErrorInvalidPopupParent : the client specified an invalid popup parent surface
+	WmBaseErrorInvalidPopupParent = 3
+	// WmBaseErrorInvalidSurfaceState : the client provided an invalid surface state
+	WmBaseErrorInvalidSurfaceState = 4
+	// WmBaseErrorInvalidPositioner : the client provided an invalid positioner
+	WmBaseErrorInvalidPositioner = 5
 )
 
-// XdgWmBasePingEvent : check if the client is alive
+// WmBasePingEvent : check if the client is alive
 //
 // The ping event asks the client if it's still alive. Pass the
 // serial specified in the event back to the compositor by sending
@@ -150,16 +150,16 @@ const (
 //
 // A compositor is free to ping in any way it wants, but a client must
 // always respond to any xdg_wm_base object it created.
-type XdgWmBasePingEvent struct {
+type WmBasePingEvent struct {
 	Serial uint32
 }
 
-type XdgWmBasePingHandler interface {
-	HandleXdgWmBasePing(XdgWmBasePingEvent)
+type WmBasePingHandler interface {
+	HandleWmBasePing(WmBasePingEvent)
 }
 
-// AddPingHandler : adds handler for XdgWmBasePingEvent
-func (i *XdgWmBase) AddPingHandler(h XdgWmBasePingHandler) {
+// AddPingHandler : adds handler for WmBasePingEvent
+func (i *WmBase) AddPingHandler(h WmBasePingHandler) {
 	if h == nil {
 		return
 	}
@@ -169,7 +169,7 @@ func (i *XdgWmBase) AddPingHandler(h XdgWmBasePingHandler) {
 	i.mu.Unlock()
 }
 
-func (i *XdgWmBase) RemovePingHandler(h XdgWmBasePingHandler) {
+func (i *WmBase) RemovePingHandler(h WmBasePingHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -181,7 +181,7 @@ func (i *XdgWmBase) RemovePingHandler(h XdgWmBasePingHandler) {
 	}
 }
 
-func (i *XdgWmBase) Dispatch(event *client.Event) {
+func (i *WmBase) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -191,7 +191,7 @@ func (i *XdgWmBase) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := XdgWmBasePingEvent{
+		e := WmBasePingEvent{
 			Serial: event.Uint32(),
 		}
 
@@ -199,7 +199,7 @@ func (i *XdgWmBase) Dispatch(event *client.Event) {
 		for _, h := range i.pingHandlers {
 			i.mu.RUnlock()
 
-			h.HandleXdgWmBasePing(e)
+			h.HandleWmBasePing(e)
 
 			i.mu.RLock()
 		}
@@ -207,7 +207,7 @@ func (i *XdgWmBase) Dispatch(event *client.Event) {
 	}
 }
 
-// XdgPositioner : child surface positioner
+// Positioner : child surface positioner
 //
 // The xdg_positioner provides a collection of rules for the placement of a
 // child surface relative to a parent surface. Rules can be defined to ensure
@@ -228,11 +228,11 @@ func (i *XdgWmBase) Dispatch(event *client.Event) {
 // non-zero size set by set_size, and a non-zero anchor rectangle set by
 // set_anchor_rect. Passing an incomplete xdg_positioner object when
 // positioning a surface raises an error.
-type XdgPositioner struct {
+type Positioner struct {
 	client.BaseProxy
 }
 
-// NewXdgPositioner : child surface positioner
+// NewPositioner : child surface positioner
 //
 // The xdg_positioner provides a collection of rules for the placement of a
 // child surface relative to a parent surface. Rules can be defined to ensure
@@ -253,8 +253,8 @@ type XdgPositioner struct {
 // non-zero size set by set_size, and a non-zero anchor rectangle set by
 // set_anchor_rect. Passing an incomplete xdg_positioner object when
 // positioning a surface raises an error.
-func NewXdgPositioner(ctx *client.Context) *XdgPositioner {
-	xdgPositioner := &XdgPositioner{}
+func NewPositioner(ctx *client.Context) *Positioner {
+	xdgPositioner := &Positioner{}
 	ctx.Register(xdgPositioner)
 	return xdgPositioner
 }
@@ -263,7 +263,7 @@ func NewXdgPositioner(ctx *client.Context) *XdgPositioner {
 //
 // Notify the compositor that the xdg_positioner will no longer be used.
 //
-func (i *XdgPositioner) Destroy() error {
+func (i *Positioner) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -279,7 +279,7 @@ func (i *XdgPositioner) Destroy() error {
 //
 //  width: width of positioned rectangle
 //  height: height of positioned rectangle
-func (i *XdgPositioner) SetSize(width, height int32) error {
+func (i *Positioner) SetSize(width, height int32) error {
 	err := i.Context().SendRequest(i, 1, width, height)
 	return err
 }
@@ -301,7 +301,7 @@ func (i *XdgPositioner) SetSize(width, height int32) error {
 //  y: y position of anchor rectangle
 //  width: width of anchor rectangle
 //  height: height of anchor rectangle
-func (i *XdgPositioner) SetAnchorRect(x, y, width, height int32) error {
+func (i *Positioner) SetAnchorRect(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 2, x, y, width, height)
 	return err
 }
@@ -316,7 +316,7 @@ func (i *XdgPositioner) SetAnchorRect(x, y, width, height int32) error {
 // edge, or in the center of the anchor rectangle if no edge is specified.
 //
 //  anchor: anchor
-func (i *XdgPositioner) SetAnchor(anchor uint32) error {
+func (i *Positioner) SetAnchor(anchor uint32) error {
 	err := i.Context().SendRequest(i, 3, anchor)
 	return err
 }
@@ -331,7 +331,7 @@ func (i *XdgPositioner) SetAnchor(anchor uint32) error {
 // gravity specified.
 //
 //  gravity: gravity direction
-func (i *XdgPositioner) SetGravity(gravity uint32) error {
+func (i *Positioner) SetGravity(gravity uint32) error {
 	err := i.Context().SendRequest(i, 4, gravity)
 	return err
 }
@@ -353,7 +353,7 @@ func (i *XdgPositioner) SetGravity(gravity uint32) error {
 // The default adjustment is none.
 //
 //  constraintAdjustment: bit mask of constraint adjustments
-func (i *XdgPositioner) SetConstraintAdjustment(constraintAdjustment uint32) error {
+func (i *Positioner) SetConstraintAdjustment(constraintAdjustment uint32) error {
 	err := i.Context().SendRequest(i, 5, constraintAdjustment)
 	return err
 }
@@ -374,7 +374,7 @@ func (i *XdgPositioner) SetConstraintAdjustment(constraintAdjustment uint32) err
 //
 //  x: surface position x offset
 //  y: surface position y offset
-func (i *XdgPositioner) SetOffset(x, y int32) error {
+func (i *Positioner) SetOffset(x, y int32) error {
 	err := i.Context().SendRequest(i, 6, x, y)
 	return err
 }
@@ -388,7 +388,7 @@ func (i *XdgPositioner) SetOffset(x, y int32) error {
 // xdg_popup.configure event is sent with updated geometry, followed by an
 // xdg_surface.configure event.
 //
-func (i *XdgPositioner) SetReactive() error {
+func (i *Positioner) SetReactive() error {
 	err := i.Context().SendRequest(i, 7)
 	return err
 }
@@ -405,7 +405,7 @@ func (i *XdgPositioner) SetReactive() error {
 //
 //  parentWidth: future window geometry width of parent
 //  parentHeight: future window geometry height of parent
-func (i *XdgPositioner) SetParentSize(parentWidth, parentHeight int32) error {
+func (i *Positioner) SetParentSize(parentWidth, parentHeight int32) error {
 	err := i.Context().SendRequest(i, 8, parentWidth, parentHeight)
 	return err
 }
@@ -418,44 +418,44 @@ func (i *XdgPositioner) SetParentSize(parentWidth, parentHeight int32) error {
 // constrained using.
 //
 //  serial: serial of parent configure event
-func (i *XdgPositioner) SetParentConfigure(serial uint32) error {
+func (i *Positioner) SetParentConfigure(serial uint32) error {
 	err := i.Context().SendRequest(i, 9, serial)
 	return err
 }
 
-// XdgPositionerError :
+// PositionerError :
 const (
-	// XdgPositionerErrorInvalidInput : invalid input provided
-	XdgPositionerErrorInvalidInput = 0
+	// PositionerErrorInvalidInput : invalid input provided
+	PositionerErrorInvalidInput = 0
 )
 
-// XdgPositionerAnchor :
+// PositionerAnchor :
 const (
-	XdgPositionerAnchorNone        = 0
-	XdgPositionerAnchorTop         = 1
-	XdgPositionerAnchorBottom      = 2
-	XdgPositionerAnchorLeft        = 3
-	XdgPositionerAnchorRight       = 4
-	XdgPositionerAnchorTopLeft     = 5
-	XdgPositionerAnchorBottomLeft  = 6
-	XdgPositionerAnchorTopRight    = 7
-	XdgPositionerAnchorBottomRight = 8
+	PositionerAnchorNone        = 0
+	PositionerAnchorTop         = 1
+	PositionerAnchorBottom      = 2
+	PositionerAnchorLeft        = 3
+	PositionerAnchorRight       = 4
+	PositionerAnchorTopLeft     = 5
+	PositionerAnchorBottomLeft  = 6
+	PositionerAnchorTopRight    = 7
+	PositionerAnchorBottomRight = 8
 )
 
-// XdgPositionerGravity :
+// PositionerGravity :
 const (
-	XdgPositionerGravityNone        = 0
-	XdgPositionerGravityTop         = 1
-	XdgPositionerGravityBottom      = 2
-	XdgPositionerGravityLeft        = 3
-	XdgPositionerGravityRight       = 4
-	XdgPositionerGravityTopLeft     = 5
-	XdgPositionerGravityBottomLeft  = 6
-	XdgPositionerGravityTopRight    = 7
-	XdgPositionerGravityBottomRight = 8
+	PositionerGravityNone        = 0
+	PositionerGravityTop         = 1
+	PositionerGravityBottom      = 2
+	PositionerGravityLeft        = 3
+	PositionerGravityRight       = 4
+	PositionerGravityTopLeft     = 5
+	PositionerGravityBottomLeft  = 6
+	PositionerGravityTopRight    = 7
+	PositionerGravityBottomRight = 8
 )
 
-// XdgPositionerConstraintAdjustment : constraint adjustments
+// PositionerConstraintAdjustment : constraint adjustments
 //
 // The constraint adjustment value define ways the compositor will adjust
 // the position of the surface, if the unadjusted position would result
@@ -469,16 +469,16 @@ const (
 // The adjustments can be combined, according to a defined precedence: 1)
 // Flip, 2) Slide, 3) Resize.
 const (
-	XdgPositionerConstraintAdjustmentNone    = 0
-	XdgPositionerConstraintAdjustmentSlideX  = 1
-	XdgPositionerConstraintAdjustmentSlideY  = 2
-	XdgPositionerConstraintAdjustmentFlipX   = 4
-	XdgPositionerConstraintAdjustmentFlipY   = 8
-	XdgPositionerConstraintAdjustmentResizeX = 16
-	XdgPositionerConstraintAdjustmentResizeY = 32
+	PositionerConstraintAdjustmentNone    = 0
+	PositionerConstraintAdjustmentSlideX  = 1
+	PositionerConstraintAdjustmentSlideY  = 2
+	PositionerConstraintAdjustmentFlipX   = 4
+	PositionerConstraintAdjustmentFlipY   = 8
+	PositionerConstraintAdjustmentResizeX = 16
+	PositionerConstraintAdjustmentResizeY = 32
 )
 
-// XdgSurface : desktop user interface surface base interface
+// Surface : desktop user interface surface base interface
 //
 // An interface that may be implemented by a wl_surface, for
 // implementations that provide a desktop-style user interface.
@@ -524,13 +524,13 @@ const (
 // A newly-unmapped surface is considered to have met condition (1) out
 // of the 3 required conditions for mapping a surface if its role surface
 // has not been destroyed.
-type XdgSurface struct {
+type Surface struct {
 	client.BaseProxy
 	mu                sync.RWMutex
-	configureHandlers []XdgSurfaceConfigureHandler
+	configureHandlers []SurfaceConfigureHandler
 }
 
-// NewXdgSurface : desktop user interface surface base interface
+// NewSurface : desktop user interface surface base interface
 //
 // An interface that may be implemented by a wl_surface, for
 // implementations that provide a desktop-style user interface.
@@ -576,8 +576,8 @@ type XdgSurface struct {
 // A newly-unmapped surface is considered to have met condition (1) out
 // of the 3 required conditions for mapping a surface if its role surface
 // has not been destroyed.
-func NewXdgSurface(ctx *client.Context) *XdgSurface {
-	xdgSurface := &XdgSurface{}
+func NewSurface(ctx *client.Context) *Surface {
+	xdgSurface := &Surface{}
 	ctx.Register(xdgSurface)
 	return xdgSurface
 }
@@ -587,7 +587,7 @@ func NewXdgSurface(ctx *client.Context) *XdgSurface {
 // Destroy the xdg_surface object. An xdg_surface must only be destroyed
 // after its role object has been destroyed.
 //
-func (i *XdgSurface) Destroy() error {
+func (i *Surface) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -601,8 +601,8 @@ func (i *XdgSurface) Destroy() error {
 // See the documentation of xdg_toplevel for more details about what an
 // xdg_toplevel is and how it is used.
 //
-func (i *XdgSurface) GetToplevel() (*XdgToplevel, error) {
-	id := NewXdgToplevel(i.Context())
+func (i *Surface) GetToplevel() (*Toplevel, error) {
+	id := NewToplevel(i.Context())
 	err := i.Context().SendRequest(i, 1, id)
 	return id, err
 }
@@ -618,8 +618,8 @@ func (i *XdgSurface) GetToplevel() (*XdgToplevel, error) {
 // See the documentation of xdg_popup for more details about what an
 // xdg_popup is and how it is used.
 //
-func (i *XdgSurface) GetPopup(parent *XdgSurface, positioner *XdgPositioner) (*XdgPopup, error) {
-	id := NewXdgPopup(i.Context())
+func (i *Surface) GetPopup(parent *Surface, positioner *Positioner) (*Popup, error) {
+	id := NewPopup(i.Context())
 	err := i.Context().SendRequest(i, 2, id, parent, positioner)
 	return id, err
 }
@@ -656,7 +656,7 @@ func (i *XdgSurface) GetPopup(parent *XdgSurface, positioner *XdgPositioner) (*X
 // combined geometry of the surface of the xdg_surface and the associated
 // subsurfaces.
 //
-func (i *XdgSurface) SetWindowGeometry(x, y, width, height int32) error {
+func (i *Surface) SetWindowGeometry(x, y, width, height int32) error {
 	err := i.Context().SendRequest(i, 3, x, y, width, height)
 	return err
 }
@@ -684,19 +684,19 @@ func (i *XdgSurface) SetWindowGeometry(x, y, width, height int32) error {
 // event the client really is responding to.
 //
 //  serial: the serial from the configure event
-func (i *XdgSurface) AckConfigure(serial uint32) error {
+func (i *Surface) AckConfigure(serial uint32) error {
 	err := i.Context().SendRequest(i, 4, serial)
 	return err
 }
 
-// XdgSurfaceError :
+// SurfaceError :
 const (
-	XdgSurfaceErrorNotConstructed     = 1
-	XdgSurfaceErrorAlreadyConstructed = 2
-	XdgSurfaceErrorUnconfiguredBuffer = 3
+	SurfaceErrorNotConstructed     = 1
+	SurfaceErrorAlreadyConstructed = 2
+	SurfaceErrorUnconfiguredBuffer = 3
 )
 
-// XdgSurfaceConfigureEvent : suggest a surface change
+// SurfaceConfigureEvent : suggest a surface change
 //
 // The configure event marks the end of a configure sequence. A configure
 // sequence is a set of one or more events configuring the state of the
@@ -714,16 +714,16 @@ const (
 //
 // If the client receives multiple configure events before it can respond
 // to one, it is free to discard all but the last event it received.
-type XdgSurfaceConfigureEvent struct {
+type SurfaceConfigureEvent struct {
 	Serial uint32
 }
 
-type XdgSurfaceConfigureHandler interface {
-	HandleXdgSurfaceConfigure(XdgSurfaceConfigureEvent)
+type SurfaceConfigureHandler interface {
+	HandleSurfaceConfigure(SurfaceConfigureEvent)
 }
 
-// AddConfigureHandler : adds handler for XdgSurfaceConfigureEvent
-func (i *XdgSurface) AddConfigureHandler(h XdgSurfaceConfigureHandler) {
+// AddConfigureHandler : adds handler for SurfaceConfigureEvent
+func (i *Surface) AddConfigureHandler(h SurfaceConfigureHandler) {
 	if h == nil {
 		return
 	}
@@ -733,7 +733,7 @@ func (i *XdgSurface) AddConfigureHandler(h XdgSurfaceConfigureHandler) {
 	i.mu.Unlock()
 }
 
-func (i *XdgSurface) RemoveConfigureHandler(h XdgSurfaceConfigureHandler) {
+func (i *Surface) RemoveConfigureHandler(h SurfaceConfigureHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -745,7 +745,7 @@ func (i *XdgSurface) RemoveConfigureHandler(h XdgSurfaceConfigureHandler) {
 	}
 }
 
-func (i *XdgSurface) Dispatch(event *client.Event) {
+func (i *Surface) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -755,7 +755,7 @@ func (i *XdgSurface) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := XdgSurfaceConfigureEvent{
+		e := SurfaceConfigureEvent{
 			Serial: event.Uint32(),
 		}
 
@@ -763,7 +763,7 @@ func (i *XdgSurface) Dispatch(event *client.Event) {
 		for _, h := range i.configureHandlers {
 			i.mu.RUnlock()
 
-			h.HandleXdgSurfaceConfigure(e)
+			h.HandleSurfaceConfigure(e)
 
 			i.mu.RLock()
 		}
@@ -771,7 +771,7 @@ func (i *XdgSurface) Dispatch(event *client.Event) {
 	}
 }
 
-// XdgToplevel : toplevel surface
+// Toplevel : toplevel surface
 //
 // This interface defines an xdg_surface role which allows a surface to,
 // among other things, set window-like properties such as maximize,
@@ -790,14 +790,14 @@ func (i *XdgSurface) Dispatch(event *client.Event) {
 // xdg_surface description).
 //
 // Attaching a null buffer to a toplevel unmaps the surface.
-type XdgToplevel struct {
+type Toplevel struct {
 	client.BaseProxy
 	mu                sync.RWMutex
-	configureHandlers []XdgToplevelConfigureHandler
-	closeHandlers     []XdgToplevelCloseHandler
+	configureHandlers []ToplevelConfigureHandler
+	closeHandlers     []ToplevelCloseHandler
 }
 
-// NewXdgToplevel : toplevel surface
+// NewToplevel : toplevel surface
 //
 // This interface defines an xdg_surface role which allows a surface to,
 // among other things, set window-like properties such as maximize,
@@ -816,8 +816,8 @@ type XdgToplevel struct {
 // xdg_surface description).
 //
 // Attaching a null buffer to a toplevel unmaps the surface.
-func NewXdgToplevel(ctx *client.Context) *XdgToplevel {
-	xdgToplevel := &XdgToplevel{}
+func NewToplevel(ctx *client.Context) *Toplevel {
+	xdgToplevel := &Toplevel{}
 	ctx.Register(xdgToplevel)
 	return xdgToplevel
 }
@@ -827,7 +827,7 @@ func NewXdgToplevel(ctx *client.Context) *XdgToplevel {
 // This request destroys the role surface and unmaps the surface;
 // see "Unmapping" behavior in interface section for details.
 //
-func (i *XdgToplevel) Destroy() error {
+func (i *Toplevel) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -852,7 +852,7 @@ func (i *XdgToplevel) Destroy() error {
 // parent then the children are managed as though they have no
 // parent surface.
 //
-func (i *XdgToplevel) SetParent(parent *XdgToplevel) error {
+func (i *Toplevel) SetParent(parent *Toplevel) error {
 	err := i.Context().SendRequest(i, 1, parent)
 	return err
 }
@@ -867,7 +867,7 @@ func (i *XdgToplevel) SetParent(parent *XdgToplevel) error {
 //
 // The string must be encoded in UTF-8.
 //
-func (i *XdgToplevel) SetTitle(title string) error {
+func (i *Toplevel) SetTitle(title string) error {
 	err := i.Context().SendRequest(i, 2, title)
 	return err
 }
@@ -898,7 +898,7 @@ func (i *XdgToplevel) SetTitle(title string) error {
 //
 // [0] http://standards.freedesktop.org/desktop-entry-spec/
 //
-func (i *XdgToplevel) SetAppID(appID string) error {
+func (i *Toplevel) SetAppID(appID string) error {
 	err := i.Context().SendRequest(i, 3, appID)
 	return err
 }
@@ -921,7 +921,7 @@ func (i *XdgToplevel) SetAppID(appID string) error {
 //  serial: the serial of the user event
 //  x: the x position to pop up the window menu at
 //  y: the y position to pop up the window menu at
-func (i *XdgToplevel) ShowWindowMenu(seat *client.WlSeat, serial uint32, x, y int32) error {
+func (i *Toplevel) ShowWindowMenu(seat *client.Seat, serial uint32, x, y int32) error {
 	err := i.Context().SendRequest(i, 4, seat, serial, x, y)
 	return err
 }
@@ -947,7 +947,7 @@ func (i *XdgToplevel) ShowWindowMenu(seat *client.WlSeat, serial uint32, x, y in
 //
 //  seat: the wl_seat of the user event
 //  serial: the serial of the user event
-func (i *XdgToplevel) Move(seat *client.WlSeat, serial uint32) error {
+func (i *Toplevel) Move(seat *client.Seat, serial uint32) error {
 	err := i.Context().SendRequest(i, 5, seat, serial)
 	return err
 }
@@ -988,7 +988,7 @@ func (i *XdgToplevel) Move(seat *client.WlSeat, serial uint32) error {
 //  seat: the wl_seat of the user event
 //  serial: the serial of the user event
 //  edges: which edge or corner is being dragged
-func (i *XdgToplevel) Resize(seat *client.WlSeat, serial, edges uint32) error {
+func (i *Toplevel) Resize(seat *client.Seat, serial, edges uint32) error {
 	err := i.Context().SendRequest(i, 6, seat, serial, edges)
 	return err
 }
@@ -1030,7 +1030,7 @@ func (i *XdgToplevel) Resize(seat *client.WlSeat, serial, edges uint32) error {
 // strictly negative values for width and height will result in a
 // protocol error.
 //
-func (i *XdgToplevel) SetMaxSize(width, height int32) error {
+func (i *Toplevel) SetMaxSize(width, height int32) error {
 	err := i.Context().SendRequest(i, 7, width, height)
 	return err
 }
@@ -1072,7 +1072,7 @@ func (i *XdgToplevel) SetMaxSize(width, height int32) error {
 // strictly negative values for width and height will result in a
 // protocol error.
 //
-func (i *XdgToplevel) SetMinSize(width, height int32) error {
+func (i *Toplevel) SetMinSize(width, height int32) error {
 	err := i.Context().SendRequest(i, 8, width, height)
 	return err
 }
@@ -1099,7 +1099,7 @@ func (i *XdgToplevel) SetMinSize(width, height int32) error {
 // effect. It may alter the state the surface is returned to when
 // unmaximized unless overridden by the compositor.
 //
-func (i *XdgToplevel) SetMaximized() error {
+func (i *Toplevel) SetMaximized() error {
 	err := i.Context().SendRequest(i, 9)
 	return err
 }
@@ -1128,7 +1128,7 @@ func (i *XdgToplevel) SetMaximized() error {
 // effect. It may alter the state the surface is returned to when
 // unmaximized unless overridden by the compositor.
 //
-func (i *XdgToplevel) UnsetMaximized() error {
+func (i *Toplevel) UnsetMaximized() error {
 	err := i.Context().SendRequest(i, 10)
 	return err
 }
@@ -1159,7 +1159,7 @@ func (i *XdgToplevel) UnsetMaximized() error {
 // up of subsurfaces, popups or similarly coupled surfaces) are not
 // visible below the fullscreened surface.
 //
-func (i *XdgToplevel) SetFullscreen(output *client.WlOutput) error {
+func (i *Toplevel) SetFullscreen(output *client.Output) error {
 	err := i.Context().SendRequest(i, 11, output)
 	return err
 }
@@ -1184,7 +1184,7 @@ func (i *XdgToplevel) SetFullscreen(output *client.WlOutput) error {
 // The client must also acknowledge the configure when committing the new
 // content (see ack_configure).
 //
-func (i *XdgToplevel) UnsetFullscreen() error {
+func (i *Toplevel) UnsetFullscreen() error {
 	err := i.Context().SendRequest(i, 12)
 	return err
 }
@@ -1200,28 +1200,28 @@ func (i *XdgToplevel) UnsetFullscreen() error {
 // also work with live previews on windows in Alt-Tab, Expose or
 // similar compositor features.
 //
-func (i *XdgToplevel) SetMinimized() error {
+func (i *Toplevel) SetMinimized() error {
 	err := i.Context().SendRequest(i, 13)
 	return err
 }
 
-// XdgToplevelResizeEdge : edge values for resizing
+// ToplevelResizeEdge : edge values for resizing
 //
 // These values are used to indicate which edge of a surface
 // is being dragged in a resize operation.
 const (
-	XdgToplevelResizeEdgeNone        = 0
-	XdgToplevelResizeEdgeTop         = 1
-	XdgToplevelResizeEdgeBottom      = 2
-	XdgToplevelResizeEdgeLeft        = 4
-	XdgToplevelResizeEdgeTopLeft     = 5
-	XdgToplevelResizeEdgeBottomLeft  = 6
-	XdgToplevelResizeEdgeRight       = 8
-	XdgToplevelResizeEdgeTopRight    = 9
-	XdgToplevelResizeEdgeBottomRight = 10
+	ToplevelResizeEdgeNone        = 0
+	ToplevelResizeEdgeTop         = 1
+	ToplevelResizeEdgeBottom      = 2
+	ToplevelResizeEdgeLeft        = 4
+	ToplevelResizeEdgeTopLeft     = 5
+	ToplevelResizeEdgeBottomLeft  = 6
+	ToplevelResizeEdgeRight       = 8
+	ToplevelResizeEdgeTopRight    = 9
+	ToplevelResizeEdgeBottomRight = 10
 )
 
-// XdgToplevelState : types of state on the surface
+// ToplevelState : types of state on the surface
 //
 // The different state values used on the surface. This is designed for
 // state values like maximized, fullscreen. It is paired with the
@@ -1231,21 +1231,21 @@ const (
 // States set in this way are double-buffered. They will get applied on
 // the next commit.
 const (
-	// XdgToplevelStateMaximized : the surface is maximized
-	XdgToplevelStateMaximized = 1
-	// XdgToplevelStateFullscreen : the surface is fullscreen
-	XdgToplevelStateFullscreen = 2
-	// XdgToplevelStateResizing : the surface is being resized
-	XdgToplevelStateResizing = 3
-	// XdgToplevelStateActivated : the surface is now activated
-	XdgToplevelStateActivated   = 4
-	XdgToplevelStateTiledLeft   = 5
-	XdgToplevelStateTiledRight  = 6
-	XdgToplevelStateTiledTop    = 7
-	XdgToplevelStateTiledBottom = 8
+	// ToplevelStateMaximized : the surface is maximized
+	ToplevelStateMaximized = 1
+	// ToplevelStateFullscreen : the surface is fullscreen
+	ToplevelStateFullscreen = 2
+	// ToplevelStateResizing : the surface is being resized
+	ToplevelStateResizing = 3
+	// ToplevelStateActivated : the surface is now activated
+	ToplevelStateActivated   = 4
+	ToplevelStateTiledLeft   = 5
+	ToplevelStateTiledRight  = 6
+	ToplevelStateTiledTop    = 7
+	ToplevelStateTiledBottom = 8
 )
 
-// XdgToplevelConfigureEvent : suggest a surface change
+// ToplevelConfigureEvent : suggest a surface change
 //
 // This configure event asks the client to resize its toplevel surface or
 // to change its state. The configured state should not be applied
@@ -1266,18 +1266,18 @@ const (
 //
 // Clients must send an ack_configure in response to this event. See
 // xdg_surface.configure and xdg_surface.ack_configure for details.
-type XdgToplevelConfigureEvent struct {
+type ToplevelConfigureEvent struct {
 	Width  int32
 	Height int32
 	States []int32
 }
 
-type XdgToplevelConfigureHandler interface {
-	HandleXdgToplevelConfigure(XdgToplevelConfigureEvent)
+type ToplevelConfigureHandler interface {
+	HandleToplevelConfigure(ToplevelConfigureEvent)
 }
 
-// AddConfigureHandler : adds handler for XdgToplevelConfigureEvent
-func (i *XdgToplevel) AddConfigureHandler(h XdgToplevelConfigureHandler) {
+// AddConfigureHandler : adds handler for ToplevelConfigureEvent
+func (i *Toplevel) AddConfigureHandler(h ToplevelConfigureHandler) {
 	if h == nil {
 		return
 	}
@@ -1287,7 +1287,7 @@ func (i *XdgToplevel) AddConfigureHandler(h XdgToplevelConfigureHandler) {
 	i.mu.Unlock()
 }
 
-func (i *XdgToplevel) RemoveConfigureHandler(h XdgToplevelConfigureHandler) {
+func (i *Toplevel) RemoveConfigureHandler(h ToplevelConfigureHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1299,7 +1299,7 @@ func (i *XdgToplevel) RemoveConfigureHandler(h XdgToplevelConfigureHandler) {
 	}
 }
 
-// XdgToplevelCloseEvent : surface wants to be closed
+// ToplevelCloseEvent : surface wants to be closed
 //
 // The close event is sent by the compositor when the user
 // wants the surface to be closed. This should be equivalent to
@@ -1309,13 +1309,13 @@ func (i *XdgToplevel) RemoveConfigureHandler(h XdgToplevelConfigureHandler) {
 // This is only a request that the user intends to close the
 // window. The client may choose to ignore this request, or show
 // a dialog to ask the user to save their data, etc.
-type XdgToplevelCloseEvent struct{}
-type XdgToplevelCloseHandler interface {
-	HandleXdgToplevelClose(XdgToplevelCloseEvent)
+type ToplevelCloseEvent struct{}
+type ToplevelCloseHandler interface {
+	HandleToplevelClose(ToplevelCloseEvent)
 }
 
-// AddCloseHandler : adds handler for XdgToplevelCloseEvent
-func (i *XdgToplevel) AddCloseHandler(h XdgToplevelCloseHandler) {
+// AddCloseHandler : adds handler for ToplevelCloseEvent
+func (i *Toplevel) AddCloseHandler(h ToplevelCloseHandler) {
 	if h == nil {
 		return
 	}
@@ -1325,7 +1325,7 @@ func (i *XdgToplevel) AddCloseHandler(h XdgToplevelCloseHandler) {
 	i.mu.Unlock()
 }
 
-func (i *XdgToplevel) RemoveCloseHandler(h XdgToplevelCloseHandler) {
+func (i *Toplevel) RemoveCloseHandler(h ToplevelCloseHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1337,7 +1337,7 @@ func (i *XdgToplevel) RemoveCloseHandler(h XdgToplevelCloseHandler) {
 	}
 }
 
-func (i *XdgToplevel) Dispatch(event *client.Event) {
+func (i *Toplevel) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -1347,7 +1347,7 @@ func (i *XdgToplevel) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := XdgToplevelConfigureEvent{
+		e := ToplevelConfigureEvent{
 			Width:  event.Int32(),
 			Height: event.Int32(),
 			States: event.Array(),
@@ -1357,7 +1357,7 @@ func (i *XdgToplevel) Dispatch(event *client.Event) {
 		for _, h := range i.configureHandlers {
 			i.mu.RUnlock()
 
-			h.HandleXdgToplevelConfigure(e)
+			h.HandleToplevelConfigure(e)
 
 			i.mu.RLock()
 		}
@@ -1370,13 +1370,13 @@ func (i *XdgToplevel) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := XdgToplevelCloseEvent{}
+		e := ToplevelCloseEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.closeHandlers {
 			i.mu.RUnlock()
 
-			h.HandleXdgToplevelClose(e)
+			h.HandleToplevelClose(e)
 
 			i.mu.RLock()
 		}
@@ -1384,7 +1384,7 @@ func (i *XdgToplevel) Dispatch(event *client.Event) {
 	}
 }
 
-// XdgPopup : short-lived, popup surfaces for menus
+// Popup : short-lived, popup surfaces for menus
 //
 // A popup surface is a short-lived, temporary surface. It can be used to
 // implement for example menus, popovers, tooltips and other similar user
@@ -1410,15 +1410,15 @@ func (i *XdgToplevel) Dispatch(event *client.Event) {
 //
 // The client must call wl_surface.commit on the corresponding wl_surface
 // for the xdg_popup state to take effect.
-type XdgPopup struct {
+type Popup struct {
 	client.BaseProxy
 	mu                   sync.RWMutex
-	configureHandlers    []XdgPopupConfigureHandler
-	popupDoneHandlers    []XdgPopupPopupDoneHandler
-	repositionedHandlers []XdgPopupRepositionedHandler
+	configureHandlers    []PopupConfigureHandler
+	popupDoneHandlers    []PopupPopupDoneHandler
+	repositionedHandlers []PopupRepositionedHandler
 }
 
-// NewXdgPopup : short-lived, popup surfaces for menus
+// NewPopup : short-lived, popup surfaces for menus
 //
 // A popup surface is a short-lived, temporary surface. It can be used to
 // implement for example menus, popovers, tooltips and other similar user
@@ -1444,8 +1444,8 @@ type XdgPopup struct {
 //
 // The client must call wl_surface.commit on the corresponding wl_surface
 // for the xdg_popup state to take effect.
-func NewXdgPopup(ctx *client.Context) *XdgPopup {
-	xdgPopup := &XdgPopup{}
+func NewPopup(ctx *client.Context) *Popup {
+	xdgPopup := &Popup{}
 	ctx.Register(xdgPopup)
 	return xdgPopup
 }
@@ -1458,7 +1458,7 @@ func NewXdgPopup(ctx *client.Context) *XdgPopup {
 // If this xdg_popup is not the "topmost" popup, a protocol error
 // will be sent.
 //
-func (i *XdgPopup) Destroy() error {
+func (i *Popup) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -1510,7 +1510,7 @@ func (i *XdgPopup) Destroy() error {
 //
 //  seat: the wl_seat of the user event
 //  serial: the serial of the user event
-func (i *XdgPopup) Grab(seat *client.WlSeat, serial uint32) error {
+func (i *Popup) Grab(seat *client.Seat, serial uint32) error {
 	err := i.Context().SendRequest(i, 1, seat, serial)
 	return err
 }
@@ -1542,18 +1542,18 @@ func (i *XdgPopup) Grab(seat *client.WlSeat, serial uint32) error {
 // send an xdg_positioner.set_parent_size request.
 //
 //  token: reposition request token
-func (i *XdgPopup) Reposition(positioner *XdgPositioner, token uint32) error {
+func (i *Popup) Reposition(positioner *Positioner, token uint32) error {
 	err := i.Context().SendRequest(i, 2, positioner, token)
 	return err
 }
 
-// XdgPopupError :
+// PopupError :
 const (
-	// XdgPopupErrorInvalidGrab : tried to grab after being mapped
-	XdgPopupErrorInvalidGrab = 0
+	// PopupErrorInvalidGrab : tried to grab after being mapped
+	PopupErrorInvalidGrab = 0
 )
 
-// XdgPopupConfigureEvent : configure the popup surface
+// PopupConfigureEvent : configure the popup surface
 //
 // This event asks the popup surface to configure itself given the
 // configuration. The configured state should not be applied immediately.
@@ -1567,19 +1567,19 @@ const (
 // ever sent once for the initial configuration. Starting with version 3,
 // it may be sent again if the popup is setup with an xdg_positioner with
 // set_reactive requested, or in response to xdg_popup.reposition requests.
-type XdgPopupConfigureEvent struct {
+type PopupConfigureEvent struct {
 	X      int32
 	Y      int32
 	Width  int32
 	Height int32
 }
 
-type XdgPopupConfigureHandler interface {
-	HandleXdgPopupConfigure(XdgPopupConfigureEvent)
+type PopupConfigureHandler interface {
+	HandlePopupConfigure(PopupConfigureEvent)
 }
 
-// AddConfigureHandler : adds handler for XdgPopupConfigureEvent
-func (i *XdgPopup) AddConfigureHandler(h XdgPopupConfigureHandler) {
+// AddConfigureHandler : adds handler for PopupConfigureEvent
+func (i *Popup) AddConfigureHandler(h PopupConfigureHandler) {
 	if h == nil {
 		return
 	}
@@ -1589,7 +1589,7 @@ func (i *XdgPopup) AddConfigureHandler(h XdgPopupConfigureHandler) {
 	i.mu.Unlock()
 }
 
-func (i *XdgPopup) RemoveConfigureHandler(h XdgPopupConfigureHandler) {
+func (i *Popup) RemoveConfigureHandler(h PopupConfigureHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1601,18 +1601,18 @@ func (i *XdgPopup) RemoveConfigureHandler(h XdgPopupConfigureHandler) {
 	}
 }
 
-// XdgPopupPopupDoneEvent : popup interaction is done
+// PopupPopupDoneEvent : popup interaction is done
 //
 // The popup_done event is sent out when a popup is dismissed by the
 // compositor. The client should destroy the xdg_popup object at this
 // point.
-type XdgPopupPopupDoneEvent struct{}
-type XdgPopupPopupDoneHandler interface {
-	HandleXdgPopupPopupDone(XdgPopupPopupDoneEvent)
+type PopupPopupDoneEvent struct{}
+type PopupPopupDoneHandler interface {
+	HandlePopupPopupDone(PopupPopupDoneEvent)
 }
 
-// AddPopupDoneHandler : adds handler for XdgPopupPopupDoneEvent
-func (i *XdgPopup) AddPopupDoneHandler(h XdgPopupPopupDoneHandler) {
+// AddPopupDoneHandler : adds handler for PopupPopupDoneEvent
+func (i *Popup) AddPopupDoneHandler(h PopupPopupDoneHandler) {
 	if h == nil {
 		return
 	}
@@ -1622,7 +1622,7 @@ func (i *XdgPopup) AddPopupDoneHandler(h XdgPopupPopupDoneHandler) {
 	i.mu.Unlock()
 }
 
-func (i *XdgPopup) RemovePopupDoneHandler(h XdgPopupPopupDoneHandler) {
+func (i *Popup) RemovePopupDoneHandler(h PopupPopupDoneHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1634,7 +1634,7 @@ func (i *XdgPopup) RemovePopupDoneHandler(h XdgPopupPopupDoneHandler) {
 	}
 }
 
-// XdgPopupRepositionedEvent : signal the completion of a repositioned request
+// PopupRepositionedEvent : signal the completion of a repositioned request
 //
 // The repositioned event is sent as part of a popup configuration
 // sequence, together with xdg_popup.configure and lastly
@@ -1651,16 +1651,16 @@ func (i *XdgPopup) RemovePopupDoneHandler(h XdgPopupPopupDoneHandler) {
 // The client should optionally update the content of the popup, but must
 // acknowledge the new popup configuration for the new position to take
 // effect. See xdg_surface.ack_configure for details.
-type XdgPopupRepositionedEvent struct {
+type PopupRepositionedEvent struct {
 	Token uint32
 }
 
-type XdgPopupRepositionedHandler interface {
-	HandleXdgPopupRepositioned(XdgPopupRepositionedEvent)
+type PopupRepositionedHandler interface {
+	HandlePopupRepositioned(PopupRepositionedEvent)
 }
 
-// AddRepositionedHandler : adds handler for XdgPopupRepositionedEvent
-func (i *XdgPopup) AddRepositionedHandler(h XdgPopupRepositionedHandler) {
+// AddRepositionedHandler : adds handler for PopupRepositionedEvent
+func (i *Popup) AddRepositionedHandler(h PopupRepositionedHandler) {
 	if h == nil {
 		return
 	}
@@ -1670,7 +1670,7 @@ func (i *XdgPopup) AddRepositionedHandler(h XdgPopupRepositionedHandler) {
 	i.mu.Unlock()
 }
 
-func (i *XdgPopup) RemoveRepositionedHandler(h XdgPopupRepositionedHandler) {
+func (i *Popup) RemoveRepositionedHandler(h PopupRepositionedHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -1682,7 +1682,7 @@ func (i *XdgPopup) RemoveRepositionedHandler(h XdgPopupRepositionedHandler) {
 	}
 }
 
-func (i *XdgPopup) Dispatch(event *client.Event) {
+func (i *Popup) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -1692,7 +1692,7 @@ func (i *XdgPopup) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := XdgPopupConfigureEvent{
+		e := PopupConfigureEvent{
 			X:      event.Int32(),
 			Y:      event.Int32(),
 			Width:  event.Int32(),
@@ -1703,7 +1703,7 @@ func (i *XdgPopup) Dispatch(event *client.Event) {
 		for _, h := range i.configureHandlers {
 			i.mu.RUnlock()
 
-			h.HandleXdgPopupConfigure(e)
+			h.HandlePopupConfigure(e)
 
 			i.mu.RLock()
 		}
@@ -1716,13 +1716,13 @@ func (i *XdgPopup) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := XdgPopupPopupDoneEvent{}
+		e := PopupPopupDoneEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.popupDoneHandlers {
 			i.mu.RUnlock()
 
-			h.HandleXdgPopupPopupDone(e)
+			h.HandlePopupPopupDone(e)
 
 			i.mu.RLock()
 		}
@@ -1735,7 +1735,7 @@ func (i *XdgPopup) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := XdgPopupRepositionedEvent{
+		e := PopupRepositionedEvent{
 			Token: event.Uint32(),
 		}
 
@@ -1743,7 +1743,7 @@ func (i *XdgPopup) Dispatch(event *client.Event) {
 		for _, h := range i.repositionedHandlers {
 			i.mu.RUnlock()
 
-			h.HandleXdgPopupRepositioned(e)
+			h.HandlePopupRepositioned(e)
 
 			i.mu.RLock()
 		}

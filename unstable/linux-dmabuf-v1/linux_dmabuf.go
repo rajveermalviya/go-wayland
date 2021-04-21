@@ -2,7 +2,7 @@
 // https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 // XML file : https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/d10d18f3d49374d2e3eb96d63511f32795aab5f7/unstable/linux-dmabuf/linux-dmabuf-unstable-v1.xml
 //
-// LinuxDmabufUnstableV1 Protocol Copyright:
+// linux_dmabuf_unstable_v1 Protocol Copyright:
 //
 // Copyright © 2014, 2015 Collabora, Ltd.
 //
@@ -33,7 +33,7 @@ import (
 	"github.com/rajveermalviya/go-wayland/client"
 )
 
-// ZwpLinuxDmabufV1 : factory for creating dmabuf-based wl_buffers
+// LinuxDmabuf : factory for creating dmabuf-based wl_buffers
 //
 // Following the interfaces from:
 // https://www.khronos.org/registry/egl/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
@@ -93,14 +93,14 @@ import (
 // Once the protocol is to be declared stable, the 'z' prefix and the
 // version number in the protocol and interface names are removed and the
 // interface version number is reset.
-type ZwpLinuxDmabufV1 struct {
+type LinuxDmabuf struct {
 	client.BaseProxy
 	mu               sync.RWMutex
-	formatHandlers   []ZwpLinuxDmabufV1FormatHandler
-	modifierHandlers []ZwpLinuxDmabufV1ModifierHandler
+	formatHandlers   []LinuxDmabufFormatHandler
+	modifierHandlers []LinuxDmabufModifierHandler
 }
 
-// NewZwpLinuxDmabufV1 : factory for creating dmabuf-based wl_buffers
+// NewLinuxDmabuf : factory for creating dmabuf-based wl_buffers
 //
 // Following the interfaces from:
 // https://www.khronos.org/registry/egl/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
@@ -160,8 +160,8 @@ type ZwpLinuxDmabufV1 struct {
 // Once the protocol is to be declared stable, the 'z' prefix and the
 // version number in the protocol and interface names are removed and the
 // interface version number is reset.
-func NewZwpLinuxDmabufV1(ctx *client.Context) *ZwpLinuxDmabufV1 {
-	zwpLinuxDmabufV1 := &ZwpLinuxDmabufV1{}
+func NewLinuxDmabuf(ctx *client.Context) *LinuxDmabuf {
+	zwpLinuxDmabufV1 := &LinuxDmabuf{}
 	ctx.Register(zwpLinuxDmabufV1)
 	return zwpLinuxDmabufV1
 }
@@ -171,7 +171,7 @@ func NewZwpLinuxDmabufV1(ctx *client.Context) *ZwpLinuxDmabufV1 {
 // Objects created through this interface, especially wl_buffers, will
 // remain valid.
 //
-func (i *ZwpLinuxDmabufV1) Destroy() error {
+func (i *LinuxDmabuf) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -184,13 +184,13 @@ func (i *ZwpLinuxDmabufV1) Destroy() error {
 // should be destroyed after a 'created' or 'failed' event has been
 // received.
 //
-func (i *ZwpLinuxDmabufV1) CreateParams() (*ZwpLinuxBufferParamsV1, error) {
-	paramsID := NewZwpLinuxBufferParamsV1(i.Context())
+func (i *LinuxDmabuf) CreateParams() (*LinuxBufferParams, error) {
+	paramsID := NewLinuxBufferParams(i.Context())
 	err := i.Context().SendRequest(i, 1, paramsID)
 	return paramsID, err
 }
 
-// ZwpLinuxDmabufV1FormatEvent : supported buffer format
+// LinuxDmabufFormatEvent : supported buffer format
 //
 // This event advertises one buffer format that the server supports.
 // All the supported formats are advertised once when the client
@@ -204,16 +204,16 @@ func (i *ZwpLinuxDmabufV1) CreateParams() (*ZwpLinuxBufferParamsV1, error) {
 // with the 'modifier' event introduced in zwp_linux_dmabuf_v1
 // version 3, described below. Please refrain from using the information
 // received from this event.
-type ZwpLinuxDmabufV1FormatEvent struct {
+type LinuxDmabufFormatEvent struct {
 	Format uint32
 }
 
-type ZwpLinuxDmabufV1FormatHandler interface {
-	HandleZwpLinuxDmabufV1Format(ZwpLinuxDmabufV1FormatEvent)
+type LinuxDmabufFormatHandler interface {
+	HandleLinuxDmabufFormat(LinuxDmabufFormatEvent)
 }
 
-// AddFormatHandler : adds handler for ZwpLinuxDmabufV1FormatEvent
-func (i *ZwpLinuxDmabufV1) AddFormatHandler(h ZwpLinuxDmabufV1FormatHandler) {
+// AddFormatHandler : adds handler for LinuxDmabufFormatEvent
+func (i *LinuxDmabuf) AddFormatHandler(h LinuxDmabufFormatHandler) {
 	if h == nil {
 		return
 	}
@@ -223,7 +223,7 @@ func (i *ZwpLinuxDmabufV1) AddFormatHandler(h ZwpLinuxDmabufV1FormatHandler) {
 	i.mu.Unlock()
 }
 
-func (i *ZwpLinuxDmabufV1) RemoveFormatHandler(h ZwpLinuxDmabufV1FormatHandler) {
+func (i *LinuxDmabuf) RemoveFormatHandler(h LinuxDmabufFormatHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -235,7 +235,7 @@ func (i *ZwpLinuxDmabufV1) RemoveFormatHandler(h ZwpLinuxDmabufV1FormatHandler) 
 	}
 }
 
-// ZwpLinuxDmabufV1ModifierEvent : supported buffer format modifier
+// LinuxDmabufModifierEvent : supported buffer format modifier
 //
 // This event advertises the formats that the server supports, along with
 // the modifiers supported for each format. All the supported modifiers
@@ -253,18 +253,18 @@ func (i *ZwpLinuxDmabufV1) RemoveFormatHandler(h ZwpLinuxDmabufV1FormatHandler) 
 // For the definition of the format and modifier codes, see the
 // zwp_linux_buffer_params_v1::create and zwp_linux_buffer_params_v1::add
 // requests.
-type ZwpLinuxDmabufV1ModifierEvent struct {
+type LinuxDmabufModifierEvent struct {
 	Format     uint32
 	ModifierHi uint32
 	ModifierLo uint32
 }
 
-type ZwpLinuxDmabufV1ModifierHandler interface {
-	HandleZwpLinuxDmabufV1Modifier(ZwpLinuxDmabufV1ModifierEvent)
+type LinuxDmabufModifierHandler interface {
+	HandleLinuxDmabufModifier(LinuxDmabufModifierEvent)
 }
 
-// AddModifierHandler : adds handler for ZwpLinuxDmabufV1ModifierEvent
-func (i *ZwpLinuxDmabufV1) AddModifierHandler(h ZwpLinuxDmabufV1ModifierHandler) {
+// AddModifierHandler : adds handler for LinuxDmabufModifierEvent
+func (i *LinuxDmabuf) AddModifierHandler(h LinuxDmabufModifierHandler) {
 	if h == nil {
 		return
 	}
@@ -274,7 +274,7 @@ func (i *ZwpLinuxDmabufV1) AddModifierHandler(h ZwpLinuxDmabufV1ModifierHandler)
 	i.mu.Unlock()
 }
 
-func (i *ZwpLinuxDmabufV1) RemoveModifierHandler(h ZwpLinuxDmabufV1ModifierHandler) {
+func (i *LinuxDmabuf) RemoveModifierHandler(h LinuxDmabufModifierHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -286,7 +286,7 @@ func (i *ZwpLinuxDmabufV1) RemoveModifierHandler(h ZwpLinuxDmabufV1ModifierHandl
 	}
 }
 
-func (i *ZwpLinuxDmabufV1) Dispatch(event *client.Event) {
+func (i *LinuxDmabuf) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -296,7 +296,7 @@ func (i *ZwpLinuxDmabufV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpLinuxDmabufV1FormatEvent{
+		e := LinuxDmabufFormatEvent{
 			Format: event.Uint32(),
 		}
 
@@ -304,7 +304,7 @@ func (i *ZwpLinuxDmabufV1) Dispatch(event *client.Event) {
 		for _, h := range i.formatHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpLinuxDmabufV1Format(e)
+			h.HandleLinuxDmabufFormat(e)
 
 			i.mu.RLock()
 		}
@@ -317,7 +317,7 @@ func (i *ZwpLinuxDmabufV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpLinuxDmabufV1ModifierEvent{
+		e := LinuxDmabufModifierEvent{
 			Format:     event.Uint32(),
 			ModifierHi: event.Uint32(),
 			ModifierLo: event.Uint32(),
@@ -327,7 +327,7 @@ func (i *ZwpLinuxDmabufV1) Dispatch(event *client.Event) {
 		for _, h := range i.modifierHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpLinuxDmabufV1Modifier(e)
+			h.HandleLinuxDmabufModifier(e)
 
 			i.mu.RLock()
 		}
@@ -335,7 +335,7 @@ func (i *ZwpLinuxDmabufV1) Dispatch(event *client.Event) {
 	}
 }
 
-// ZwpLinuxBufferParamsV1 : parameters for creating a dmabuf-based wl_buffer
+// LinuxBufferParams : parameters for creating a dmabuf-based wl_buffer
 //
 // This temporary object is a collection of dmabufs and other
 // parameters that together form a single logical buffer. The temporary
@@ -351,14 +351,14 @@ func (i *ZwpLinuxDmabufV1) Dispatch(event *client.Event) {
 // from zero to the number of planes used by the drm_fourcc format code.
 // All planes required by the format must be given exactly once, but can
 // be given in any order. Each plane index can be set only once.
-type ZwpLinuxBufferParamsV1 struct {
+type LinuxBufferParams struct {
 	client.BaseProxy
 	mu              sync.RWMutex
-	createdHandlers []ZwpLinuxBufferParamsV1CreatedHandler
-	failedHandlers  []ZwpLinuxBufferParamsV1FailedHandler
+	createdHandlers []LinuxBufferParamsCreatedHandler
+	failedHandlers  []LinuxBufferParamsFailedHandler
 }
 
-// NewZwpLinuxBufferParamsV1 : parameters for creating a dmabuf-based wl_buffer
+// NewLinuxBufferParams : parameters for creating a dmabuf-based wl_buffer
 //
 // This temporary object is a collection of dmabufs and other
 // parameters that together form a single logical buffer. The temporary
@@ -374,8 +374,8 @@ type ZwpLinuxBufferParamsV1 struct {
 // from zero to the number of planes used by the drm_fourcc format code.
 // All planes required by the format must be given exactly once, but can
 // be given in any order. Each plane index can be set only once.
-func NewZwpLinuxBufferParamsV1(ctx *client.Context) *ZwpLinuxBufferParamsV1 {
-	zwpLinuxBufferParamsV1 := &ZwpLinuxBufferParamsV1{}
+func NewLinuxBufferParams(ctx *client.Context) *LinuxBufferParams {
+	zwpLinuxBufferParamsV1 := &LinuxBufferParams{}
 	ctx.Register(zwpLinuxBufferParamsV1)
 	return zwpLinuxBufferParamsV1
 }
@@ -385,7 +385,7 @@ func NewZwpLinuxBufferParamsV1(ctx *client.Context) *ZwpLinuxBufferParamsV1 {
 // Cleans up the temporary data sent to the server for dmabuf-based
 // wl_buffer creation.
 //
-func (i *ZwpLinuxBufferParamsV1) Destroy() error {
+func (i *LinuxBufferParams) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -418,7 +418,7 @@ func (i *ZwpLinuxBufferParamsV1) Destroy() error {
 //  stride: stride in bytes
 //  modifierHi: high 32 bits of layout modifier
 //  modifierLo: low 32 bits of layout modifier
-func (i *ZwpLinuxBufferParamsV1) Add(fd uintptr, planeIDx, offset, stride, modifierHi, modifierLo uint32) error {
+func (i *LinuxBufferParams) Add(fd uintptr, planeIDx, offset, stride, modifierHi, modifierLo uint32) error {
 	err := i.Context().SendRequest(i, 1, fd, planeIDx, offset, stride, modifierHi, modifierLo)
 	return err
 }
@@ -489,7 +489,7 @@ func (i *ZwpLinuxBufferParamsV1) Add(fd uintptr, planeIDx, offset, stride, modif
 //  height: base plane height in pixels
 //  format: DRM_FORMAT code
 //  flags: see enum flags
-func (i *ZwpLinuxBufferParamsV1) Create(width, height int32, format, flags uint32) error {
+func (i *LinuxBufferParams) Create(width, height int32, format, flags uint32) error {
 	err := i.Context().SendRequest(i, 2, width, height, format, flags)
 	return err
 }
@@ -524,59 +524,59 @@ func (i *ZwpLinuxBufferParamsV1) Create(width, height int32, format, flags uint3
 //  height: base plane height in pixels
 //  format: DRM_FORMAT code
 //  flags: see enum flags
-func (i *ZwpLinuxBufferParamsV1) CreateImmed(width, height int32, format, flags uint32) (*client.WlBuffer, error) {
-	bufferID := client.NewWlBuffer(i.Context())
+func (i *LinuxBufferParams) CreateImmed(width, height int32, format, flags uint32) (*client.Buffer, error) {
+	bufferID := client.NewBuffer(i.Context())
 	err := i.Context().SendRequest(i, 3, bufferID, width, height, format, flags)
 	return bufferID, err
 }
 
-// ZwpLinuxBufferParamsV1Error :
+// LinuxBufferParamsError :
 const (
-	// ZwpLinuxBufferParamsV1ErrorAlreadyUsed : the dmabuf_batch object has already been used to create a wl_buffer
-	ZwpLinuxBufferParamsV1ErrorAlreadyUsed = 0
-	// ZwpLinuxBufferParamsV1ErrorPlaneIDx : plane index out of bounds
-	ZwpLinuxBufferParamsV1ErrorPlaneIDx = 1
-	// ZwpLinuxBufferParamsV1ErrorPlaneSet : the plane index was already set
-	ZwpLinuxBufferParamsV1ErrorPlaneSet = 2
-	// ZwpLinuxBufferParamsV1ErrorIncomplete : missing or too many planes to create a buffer
-	ZwpLinuxBufferParamsV1ErrorIncomplete = 3
-	// ZwpLinuxBufferParamsV1ErrorInvalidFormat : format not supported
-	ZwpLinuxBufferParamsV1ErrorInvalidFormat = 4
-	// ZwpLinuxBufferParamsV1ErrorInvalidDimensions : invalid width or height
-	ZwpLinuxBufferParamsV1ErrorInvalidDimensions = 5
-	// ZwpLinuxBufferParamsV1ErrorOutOfBounds : offset + stride * height goes out of dmabuf bounds
-	ZwpLinuxBufferParamsV1ErrorOutOfBounds = 6
-	// ZwpLinuxBufferParamsV1ErrorInvalidWlBuffer : invalid wl_buffer resulted from importing dmabufs via the create_immed request on given buffer_params
-	ZwpLinuxBufferParamsV1ErrorInvalidWlBuffer = 7
+	// LinuxBufferParamsErrorAlreadyUsed : the dmabuf_batch object has already been used to create a wl_buffer
+	LinuxBufferParamsErrorAlreadyUsed = 0
+	// LinuxBufferParamsErrorPlaneIDx : plane index out of bounds
+	LinuxBufferParamsErrorPlaneIDx = 1
+	// LinuxBufferParamsErrorPlaneSet : the plane index was already set
+	LinuxBufferParamsErrorPlaneSet = 2
+	// LinuxBufferParamsErrorIncomplete : missing or too many planes to create a buffer
+	LinuxBufferParamsErrorIncomplete = 3
+	// LinuxBufferParamsErrorInvalidFormat : format not supported
+	LinuxBufferParamsErrorInvalidFormat = 4
+	// LinuxBufferParamsErrorInvalidDimensions : invalid width or height
+	LinuxBufferParamsErrorInvalidDimensions = 5
+	// LinuxBufferParamsErrorOutOfBounds : offset + stride * height goes out of dmabuf bounds
+	LinuxBufferParamsErrorOutOfBounds = 6
+	// LinuxBufferParamsErrorInvalidWlBuffer : invalid wl_buffer resulted from importing dmabufs via the create_immed request on given buffer_params
+	LinuxBufferParamsErrorInvalidWlBuffer = 7
 )
 
-// ZwpLinuxBufferParamsV1Flags :
+// LinuxBufferParamsFlags :
 const (
-	// ZwpLinuxBufferParamsV1FlagsYInvert : contents are y-inverted
-	ZwpLinuxBufferParamsV1FlagsYInvert = 1
-	// ZwpLinuxBufferParamsV1FlagsInterlaced : content is interlaced
-	ZwpLinuxBufferParamsV1FlagsInterlaced = 2
-	// ZwpLinuxBufferParamsV1FlagsBottomFirst : bottom field first
-	ZwpLinuxBufferParamsV1FlagsBottomFirst = 4
+	// LinuxBufferParamsFlagsYInvert : contents are y-inverted
+	LinuxBufferParamsFlagsYInvert = 1
+	// LinuxBufferParamsFlagsInterlaced : content is interlaced
+	LinuxBufferParamsFlagsInterlaced = 2
+	// LinuxBufferParamsFlagsBottomFirst : bottom field first
+	LinuxBufferParamsFlagsBottomFirst = 4
 )
 
-// ZwpLinuxBufferParamsV1CreatedEvent : buffer creation succeeded
+// LinuxBufferParamsCreatedEvent : buffer creation succeeded
 //
 // This event indicates that the attempted buffer creation was
 // successful. It provides the new wl_buffer referencing the dmabuf(s).
 //
 // Upon receiving this event, the client should destroy the
 // zlinux_dmabuf_params object.
-type ZwpLinuxBufferParamsV1CreatedEvent struct {
-	Buffer *client.WlBuffer
+type LinuxBufferParamsCreatedEvent struct {
+	Buffer *client.Buffer
 }
 
-type ZwpLinuxBufferParamsV1CreatedHandler interface {
-	HandleZwpLinuxBufferParamsV1Created(ZwpLinuxBufferParamsV1CreatedEvent)
+type LinuxBufferParamsCreatedHandler interface {
+	HandleLinuxBufferParamsCreated(LinuxBufferParamsCreatedEvent)
 }
 
-// AddCreatedHandler : adds handler for ZwpLinuxBufferParamsV1CreatedEvent
-func (i *ZwpLinuxBufferParamsV1) AddCreatedHandler(h ZwpLinuxBufferParamsV1CreatedHandler) {
+// AddCreatedHandler : adds handler for LinuxBufferParamsCreatedEvent
+func (i *LinuxBufferParams) AddCreatedHandler(h LinuxBufferParamsCreatedHandler) {
 	if h == nil {
 		return
 	}
@@ -586,7 +586,7 @@ func (i *ZwpLinuxBufferParamsV1) AddCreatedHandler(h ZwpLinuxBufferParamsV1Creat
 	i.mu.Unlock()
 }
 
-func (i *ZwpLinuxBufferParamsV1) RemoveCreatedHandler(h ZwpLinuxBufferParamsV1CreatedHandler) {
+func (i *LinuxBufferParams) RemoveCreatedHandler(h LinuxBufferParamsCreatedHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -598,7 +598,7 @@ func (i *ZwpLinuxBufferParamsV1) RemoveCreatedHandler(h ZwpLinuxBufferParamsV1Cr
 	}
 }
 
-// ZwpLinuxBufferParamsV1FailedEvent : buffer creation failed
+// LinuxBufferParamsFailedEvent : buffer creation failed
 //
 // This event indicates that the attempted buffer creation has
 // failed. It usually means that one of the dmabuf constraints
@@ -606,13 +606,13 @@ func (i *ZwpLinuxBufferParamsV1) RemoveCreatedHandler(h ZwpLinuxBufferParamsV1Cr
 //
 // Upon receiving this event, the client should destroy the
 // zlinux_buffer_params object.
-type ZwpLinuxBufferParamsV1FailedEvent struct{}
-type ZwpLinuxBufferParamsV1FailedHandler interface {
-	HandleZwpLinuxBufferParamsV1Failed(ZwpLinuxBufferParamsV1FailedEvent)
+type LinuxBufferParamsFailedEvent struct{}
+type LinuxBufferParamsFailedHandler interface {
+	HandleLinuxBufferParamsFailed(LinuxBufferParamsFailedEvent)
 }
 
-// AddFailedHandler : adds handler for ZwpLinuxBufferParamsV1FailedEvent
-func (i *ZwpLinuxBufferParamsV1) AddFailedHandler(h ZwpLinuxBufferParamsV1FailedHandler) {
+// AddFailedHandler : adds handler for LinuxBufferParamsFailedEvent
+func (i *LinuxBufferParams) AddFailedHandler(h LinuxBufferParamsFailedHandler) {
 	if h == nil {
 		return
 	}
@@ -622,7 +622,7 @@ func (i *ZwpLinuxBufferParamsV1) AddFailedHandler(h ZwpLinuxBufferParamsV1Failed
 	i.mu.Unlock()
 }
 
-func (i *ZwpLinuxBufferParamsV1) RemoveFailedHandler(h ZwpLinuxBufferParamsV1FailedHandler) {
+func (i *LinuxBufferParams) RemoveFailedHandler(h LinuxBufferParamsFailedHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -634,7 +634,7 @@ func (i *ZwpLinuxBufferParamsV1) RemoveFailedHandler(h ZwpLinuxBufferParamsV1Fai
 	}
 }
 
-func (i *ZwpLinuxBufferParamsV1) Dispatch(event *client.Event) {
+func (i *LinuxBufferParams) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -644,15 +644,15 @@ func (i *ZwpLinuxBufferParamsV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpLinuxBufferParamsV1CreatedEvent{
-			Buffer: event.Proxy(i.Context()).(*client.WlBuffer),
+		e := LinuxBufferParamsCreatedEvent{
+			Buffer: event.Proxy(i.Context()).(*client.Buffer),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.createdHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpLinuxBufferParamsV1Created(e)
+			h.HandleLinuxBufferParamsCreated(e)
 
 			i.mu.RLock()
 		}
@@ -665,13 +665,13 @@ func (i *ZwpLinuxBufferParamsV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ZwpLinuxBufferParamsV1FailedEvent{}
+		e := LinuxBufferParamsFailedEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.failedHandlers {
 			i.mu.RUnlock()
 
-			h.HandleZwpLinuxBufferParamsV1Failed(e)
+			h.HandleLinuxBufferParamsFailed(e)
 
 			i.mu.RLock()
 		}

@@ -56,7 +56,7 @@ func (ctx *Context) Dispatch() chan<- struct{} {
 	return ctx.dispatchChan
 }
 
-func Connect(addr string) (*WlDisplay, error) {
+func Connect(addr string) (*Display, error) {
 	if addr == "" {
 		runtimeDir := os.Getenv("XDG_RUNTIME_DIR")
 		if runtimeDir == "" {
@@ -87,7 +87,7 @@ func Connect(addr string) (*WlDisplay, error) {
 	// dispatch events in separate gorutine
 	go ctx.run()
 
-	return NewWlDisplay(ctx), nil
+	return NewDisplay(ctx), nil
 }
 
 func (ctx *Context) run() {

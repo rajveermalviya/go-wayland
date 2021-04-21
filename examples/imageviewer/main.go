@@ -24,19 +24,19 @@ type appState struct {
 	frame         *image.RGBA
 	exitChan      chan struct{}
 
-	display    *client.WlDisplay
-	registry   *client.WlRegistry
-	shm        *client.WlShm
-	compositor *client.WlCompositor
-	xdgWmBase  *xdg_shell.XdgWmBase
-	seat       *client.WlSeat
+	display    *client.Display
+	registry   *client.Registry
+	shm        *client.Shm
+	compositor *client.Compositor
+	xdgWmBase  *xdg_shell.WmBase
+	seat       *client.Seat
 
-	surface     *client.WlSurface
-	xdgSurface  *xdg_shell.XdgSurface
-	xdgTopLevel *xdg_shell.XdgToplevel
+	surface     *client.Surface
+	xdgSurface  *xdg_shell.Surface
+	xdgTopLevel *xdg_shell.Toplevel
 
-	keyboard *client.WlKeyboard
-	pointer  *client.WlPointer
+	keyboard *client.Keyboard
+	pointer  *client.Pointer
 
 	pointerEvent  pointerEvent
 	cursorTheme   *cursor.Theme
@@ -190,19 +190,19 @@ func (app *appState) context() *client.Context {
 	return app.display.Context()
 }
 
-func (app *appState) HandleWlRegistryGlobal(e client.WlRegistryGlobalEvent) {
+func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 	log.Printf("discovered an interface: %q\n", e.Interface)
 
 	switch e.Interface {
 	case "wl_compositor":
-		compositor := client.NewWlCompositor(app.context())
+		compositor := client.NewCompositor(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, compositor)
 		if err != nil {
 			log.Fatalf("unable to bind wl_compositor interface: %v", err)
 		}
 		app.compositor = compositor
 	case "wl_shm":
-		shm := client.NewWlShm(app.context())
+		shm := client.NewShm(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, shm)
 		if err != nil {
 			log.Fatalf("unable to bind wl_shm interface: %v", err)
@@ -211,7 +211,7 @@ func (app *appState) HandleWlRegistryGlobal(e client.WlRegistryGlobalEvent) {
 
 		shm.AddFormatHandler(app)
 	case "xdg_wm_base":
-		xdgWmBase := xdg_shell.NewXdgWmBase(app.context())
+		xdgWmBase := xdg_shell.NewWmBase(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, xdgWmBase)
 		if err != nil {
 			log.Fatalf("unable to bind xdg_wm_base interface: %v", err)
@@ -220,7 +220,7 @@ func (app *appState) HandleWlRegistryGlobal(e client.WlRegistryGlobalEvent) {
 		// Add xdg_wmbase ping handler `app.HandleWmBasePing`
 		xdgWmBase.AddPingHandler(app)
 	case "wl_seat":
-		seat := client.NewWlSeat(app.context())
+		seat := client.NewSeat(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, seat)
 		if err != nil {
 			log.Fatalf("unable to bind wl_seat interface: %v", err)
@@ -232,11 +232,11 @@ func (app *appState) HandleWlRegistryGlobal(e client.WlRegistryGlobalEvent) {
 	}
 }
 
-func (app *appState) HandleWlShmFormat(e client.WlShmFormatEvent) {
+func (app *appState) HandleShmFormat(e client.ShmFormatEvent) {
 	log.Printf("supported pixel format: 0x%08x\n", e.Format)
 }
 
-func (app *appState) HandleXdgSurfaceConfigure(e xdg_shell.XdgSurfaceConfigureEvent) {
+func (app *appState) HandleSurfaceConfigure(e xdg_shell.SurfaceConfigureEvent) {
 	// Send ack to xdg_surface that we have a frame.
 	if err := app.xdgSurface.AckConfigure(e.Serial); err != nil {
 		log.Fatal("unable to ack xdg surface configure")
@@ -255,7 +255,7 @@ func (app *appState) HandleXdgSurfaceConfigure(e xdg_shell.XdgSurfaceConfigureEv
 	}
 }
 
-func (app *appState) HandleXdgToplevelConfigure(e xdg_shell.XdgToplevelConfigureEvent) {
+func (app *appState) HandleToplevelConfigure(e xdg_shell.ToplevelConfigureEvent) {
 	width := e.Width
 	height := e.Height
 
@@ -280,7 +280,7 @@ func (app *appState) HandleXdgToplevelConfigure(e xdg_shell.XdgToplevelConfigure
 	app.height = height
 }
 
-func (app *appState) drawFrame() *client.WlBuffer {
+func (app *appState) drawFrame() *client.Buffer {
 	log.Print("drawing frame")
 
 	stride := app.width * 4
@@ -301,7 +301,7 @@ func (app *appState) drawFrame() *client.WlBuffer {
 		log.Fatalf("unable to create shm pool: %v", err)
 	}
 
-	buf, err := pool.CreateBuffer(0, app.width, app.height, stride, client.WlShmFormatArgb8888)
+	buf, err := pool.CreateBuffer(0, app.width, app.height, stride, client.ShmFormatArgb8888)
 	if err != nil {
 		log.Fatalf("unable to create client.Buffer from shm pool: %v", err)
 	}
@@ -330,17 +330,17 @@ func (app *appState) drawFrame() *client.WlBuffer {
 }
 
 type bufferReleaser struct {
-	buf *client.WlBuffer
+	buf *client.Buffer
 }
 
-func (b bufferReleaser) HandleWlBufferRelease(e client.WlBufferReleaseEvent) {
+func (b bufferReleaser) HandleBufferRelease(e client.BufferReleaseEvent) {
 	if err := b.buf.Destroy(); err != nil {
 		log.Printf("unable to destroy buffer: %v", err)
 	}
 }
 
-func (app *appState) HandleWlSeatCapabilities(e client.WlSeatCapabilitiesEvent) {
-	havePointer := (e.Capabilities * client.WlSeatCapabilityPointer) != 0
+func (app *appState) HandleSeatCapabilities(e client.SeatCapabilitiesEvent) {
+	havePointer := (e.Capabilities * client.SeatCapabilityPointer) != 0
 
 	if havePointer && app.pointer == nil {
 		app.attachPointer()
@@ -348,7 +348,7 @@ func (app *appState) HandleWlSeatCapabilities(e client.WlSeatCapabilitiesEvent) 
 		app.releasePointer()
 	}
 
-	haveKeyboard := (e.Capabilities * client.WlSeatCapabilityKeyboard) != 0
+	haveKeyboard := (e.Capabilities * client.SeatCapabilityKeyboard) != 0
 
 	if haveKeyboard && app.keyboard == nil {
 		app.attachKeyboard()
@@ -357,32 +357,32 @@ func (app *appState) HandleWlSeatCapabilities(e client.WlSeatCapabilitiesEvent) 
 	}
 }
 
-func (*appState) HandleWlSeatName(e client.WlSeatNameEvent) {
+func (*appState) HandleSeatName(e client.SeatNameEvent) {
 	log.Printf("seat name: %v", e.Name)
 }
 
 // HandleDisplayError handles client.Display errors
-func (*appState) HandleWlDisplayError(e client.WlDisplayErrorEvent) {
+func (*appState) HandleDisplayError(e client.DisplayErrorEvent) {
 	// Just log.Fatal for now
 	log.Fatalf("display error event: %v", e)
 }
 
 // HandleWmBasePing handles xdg ping by doing a Pong request
-func (app *appState) HandleXdgWmBasePing(e xdg_shell.XdgWmBasePingEvent) {
+func (app *appState) HandleWmBasePing(e xdg_shell.WmBasePingEvent) {
 	log.Printf("xdg_wmbase ping: serial=%v", e.Serial)
 	app.xdgWmBase.Pong(e.Serial)
 	log.Print("xdg_wmbase pong sent")
 }
 
-func (app *appState) HandleXdgToplevelClose(_ xdg_shell.XdgToplevelCloseEvent) {
+func (app *appState) HandleToplevelClose(_ xdg_shell.ToplevelCloseEvent) {
 	close(app.exitChan)
 }
 
 type doner struct {
-	ch chan client.WlCallbackDoneEvent
+	ch chan client.CallbackDoneEvent
 }
 
-func (d doner) HandleWlCallbackDone(e client.WlCallbackDoneEvent) {
+func (d doner) HandleCallbackDone(e client.CallbackDoneEvent) {
 	close(d.ch)
 }
 
@@ -392,7 +392,7 @@ func (app *appState) displayRoundTrip() {
 	if err != nil {
 		log.Fatalf("unable to get sync callback: %v", err)
 	}
-	doneChan := make(chan client.WlCallbackDoneEvent)
+	doneChan := make(chan client.CallbackDoneEvent)
 	cdeHandler := doner{doneChan}
 	callback.AddDoneHandler(cdeHandler)
 

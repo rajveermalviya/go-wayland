@@ -2,7 +2,7 @@
 // https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 // XML file : https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/d10d18f3d49374d2e3eb96d63511f32795aab5f7/stable/presentation-time/presentation-time.xml
 //
-// PresentationTime Protocol Copyright:
+// presentation_time Protocol Copyright:
 //
 // Copyright © 2013-2014 Collabora, Ltd.
 //
@@ -33,7 +33,7 @@ import (
 	"github.com/rajveermalviya/go-wayland/client"
 )
 
-// WpPresentation : timed presentation related wl_surface requests
+// Presentation : timed presentation related wl_surface requests
 //
 //
 //
@@ -57,13 +57,13 @@ import (
 // presentation time can differ from the compositor's predicted
 // display update time and the update's target time, especially
 // when the compositor misses its target vertical blanking period.
-type WpPresentation struct {
+type Presentation struct {
 	client.BaseProxy
 	mu              sync.RWMutex
-	clockIDHandlers []WpPresentationClockIDHandler
+	clockIDHandlers []PresentationClockIDHandler
 }
 
-// NewWpPresentation : timed presentation related wl_surface requests
+// NewPresentation : timed presentation related wl_surface requests
 //
 //
 //
@@ -87,8 +87,8 @@ type WpPresentation struct {
 // presentation time can differ from the compositor's predicted
 // display update time and the update's target time, especially
 // when the compositor misses its target vertical blanking period.
-func NewWpPresentation(ctx *client.Context) *WpPresentation {
-	wpPresentation := &WpPresentation{}
+func NewPresentation(ctx *client.Context) *Presentation {
+	wpPresentation := &Presentation{}
 	ctx.Register(wpPresentation)
 	return wpPresentation
 }
@@ -99,7 +99,7 @@ func NewWpPresentation(ctx *client.Context) *WpPresentation {
 // this protocol object. Existing objects created by this object
 // are not affected.
 //
-func (i *WpPresentation) Destroy() error {
+func (i *Presentation) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -117,24 +117,24 @@ func (i *WpPresentation) Destroy() error {
 // presentation_feedback interface.
 //
 //  surface: target surface
-func (i *WpPresentation) Feedback(surface *client.WlSurface) (*WpPresentationFeedback, error) {
-	callback := NewWpPresentationFeedback(i.Context())
+func (i *Presentation) Feedback(surface *client.Surface) (*PresentationFeedback, error) {
+	callback := NewPresentationFeedback(i.Context())
 	err := i.Context().SendRequest(i, 1, surface, callback)
 	return callback, err
 }
 
-// WpPresentationError : fatal presentation errors
+// PresentationError : fatal presentation errors
 //
 // These fatal protocol errors may be emitted in response to
 // illegal presentation requests.
 const (
-	// WpPresentationErrorInvalidTimestamp : invalid value in tv_nsec
-	WpPresentationErrorInvalidTimestamp = 0
-	// WpPresentationErrorInvalidFlag : invalid flag
-	WpPresentationErrorInvalidFlag = 1
+	// PresentationErrorInvalidTimestamp : invalid value in tv_nsec
+	PresentationErrorInvalidTimestamp = 0
+	// PresentationErrorInvalidFlag : invalid flag
+	PresentationErrorInvalidFlag = 1
 )
 
-// WpPresentationClockIDEvent : clock ID for timestamps
+// PresentationClockIDEvent : clock ID for timestamps
 //
 // This event tells the client in which clock domain the
 // compositor interprets the timestamps used by the presentation
@@ -165,16 +165,16 @@ const (
 // irrelevant. Precision of one millisecond or better is
 // recommended. Clients must be able to query the current clock
 // value directly, not by asking the compositor.
-type WpPresentationClockIDEvent struct {
+type PresentationClockIDEvent struct {
 	ClkID uint32
 }
 
-type WpPresentationClockIDHandler interface {
-	HandleWpPresentationClockID(WpPresentationClockIDEvent)
+type PresentationClockIDHandler interface {
+	HandlePresentationClockID(PresentationClockIDEvent)
 }
 
-// AddClockIDHandler : adds handler for WpPresentationClockIDEvent
-func (i *WpPresentation) AddClockIDHandler(h WpPresentationClockIDHandler) {
+// AddClockIDHandler : adds handler for PresentationClockIDEvent
+func (i *Presentation) AddClockIDHandler(h PresentationClockIDHandler) {
 	if h == nil {
 		return
 	}
@@ -184,7 +184,7 @@ func (i *WpPresentation) AddClockIDHandler(h WpPresentationClockIDHandler) {
 	i.mu.Unlock()
 }
 
-func (i *WpPresentation) RemoveClockIDHandler(h WpPresentationClockIDHandler) {
+func (i *Presentation) RemoveClockIDHandler(h PresentationClockIDHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -196,7 +196,7 @@ func (i *WpPresentation) RemoveClockIDHandler(h WpPresentationClockIDHandler) {
 	}
 }
 
-func (i *WpPresentation) Dispatch(event *client.Event) {
+func (i *Presentation) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -206,7 +206,7 @@ func (i *WpPresentation) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WpPresentationClockIDEvent{
+		e := PresentationClockIDEvent{
 			ClkID: event.Uint32(),
 		}
 
@@ -214,7 +214,7 @@ func (i *WpPresentation) Dispatch(event *client.Event) {
 		for _, h := range i.clockIDHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWpPresentationClockID(e)
+			h.HandlePresentationClockID(e)
 
 			i.mu.RLock()
 		}
@@ -222,7 +222,7 @@ func (i *WpPresentation) Dispatch(event *client.Event) {
 	}
 }
 
-// WpPresentationFeedback : presentation time feedback event
+// PresentationFeedback : presentation time feedback event
 //
 // A presentation_feedback object returns an indication that a
 // wl_surface content update has become visible to the user.
@@ -235,15 +235,15 @@ func (i *WpPresentation) Dispatch(event *client.Event) {
 //
 // Once a presentation_feedback object has delivered a 'presented'
 // or 'discarded' event it is automatically destroyed.
-type WpPresentationFeedback struct {
+type PresentationFeedback struct {
 	client.BaseProxy
 	mu                 sync.RWMutex
-	syncOutputHandlers []WpPresentationFeedbackSyncOutputHandler
-	presentedHandlers  []WpPresentationFeedbackPresentedHandler
-	discardedHandlers  []WpPresentationFeedbackDiscardedHandler
+	syncOutputHandlers []PresentationFeedbackSyncOutputHandler
+	presentedHandlers  []PresentationFeedbackPresentedHandler
+	discardedHandlers  []PresentationFeedbackDiscardedHandler
 }
 
-// NewWpPresentationFeedback : presentation time feedback event
+// NewPresentationFeedback : presentation time feedback event
 //
 // A presentation_feedback object returns an indication that a
 // wl_surface content update has become visible to the user.
@@ -256,18 +256,18 @@ type WpPresentationFeedback struct {
 //
 // Once a presentation_feedback object has delivered a 'presented'
 // or 'discarded' event it is automatically destroyed.
-func NewWpPresentationFeedback(ctx *client.Context) *WpPresentationFeedback {
-	wpPresentationFeedback := &WpPresentationFeedback{}
+func NewPresentationFeedback(ctx *client.Context) *PresentationFeedback {
+	wpPresentationFeedback := &PresentationFeedback{}
 	ctx.Register(wpPresentationFeedback)
 	return wpPresentationFeedback
 }
 
-func (i *WpPresentationFeedback) Destroy() error {
+func (i *PresentationFeedback) Destroy() error {
 	i.Context().Unregister(i)
 	return nil
 }
 
-// WpPresentationFeedbackKind : bitmask of flags in presented event
+// PresentationFeedbackKind : bitmask of flags in presented event
 //
 // These flags provide information about how the presentation of
 // the related content update was done. The intent is to help
@@ -302,17 +302,17 @@ func (i *WpPresentationFeedback) Destroy() error {
 // Possible zero-copy cases include direct scanout of a
 // fullscreen surface and a surface on a hardware overlay.
 const (
-	// WpPresentationFeedbackKindVsync : presentation was vsync'd
-	WpPresentationFeedbackKindVsync = 0x1
-	// WpPresentationFeedbackKindHwClock : hardware provided the presentation timestamp
-	WpPresentationFeedbackKindHwClock = 0x2
-	// WpPresentationFeedbackKindHwCompletion : hardware signalled the start of the presentation
-	WpPresentationFeedbackKindHwCompletion = 0x4
-	// WpPresentationFeedbackKindZeroCopy : presentation was done zero-copy
-	WpPresentationFeedbackKindZeroCopy = 0x8
+	// PresentationFeedbackKindVsync : presentation was vsync'd
+	PresentationFeedbackKindVsync = 0x1
+	// PresentationFeedbackKindHwClock : hardware provided the presentation timestamp
+	PresentationFeedbackKindHwClock = 0x2
+	// PresentationFeedbackKindHwCompletion : hardware signalled the start of the presentation
+	PresentationFeedbackKindHwCompletion = 0x4
+	// PresentationFeedbackKindZeroCopy : presentation was done zero-copy
+	PresentationFeedbackKindZeroCopy = 0x8
 )
 
-// WpPresentationFeedbackSyncOutputEvent : presentation synchronized to this output
+// PresentationFeedbackSyncOutputEvent : presentation synchronized to this output
 //
 // As presentation can be synchronized to only one output at a
 // time, this event tells which output it was. This event is only
@@ -322,16 +322,16 @@ const (
 // times, this event is sent for each bound instance that matches
 // the synchronized output. If a client has not bound to the
 // right wl_output global at all, this event is not sent.
-type WpPresentationFeedbackSyncOutputEvent struct {
-	Output *client.WlOutput
+type PresentationFeedbackSyncOutputEvent struct {
+	Output *client.Output
 }
 
-type WpPresentationFeedbackSyncOutputHandler interface {
-	HandleWpPresentationFeedbackSyncOutput(WpPresentationFeedbackSyncOutputEvent)
+type PresentationFeedbackSyncOutputHandler interface {
+	HandlePresentationFeedbackSyncOutput(PresentationFeedbackSyncOutputEvent)
 }
 
-// AddSyncOutputHandler : adds handler for WpPresentationFeedbackSyncOutputEvent
-func (i *WpPresentationFeedback) AddSyncOutputHandler(h WpPresentationFeedbackSyncOutputHandler) {
+// AddSyncOutputHandler : adds handler for PresentationFeedbackSyncOutputEvent
+func (i *PresentationFeedback) AddSyncOutputHandler(h PresentationFeedbackSyncOutputHandler) {
 	if h == nil {
 		return
 	}
@@ -341,7 +341,7 @@ func (i *WpPresentationFeedback) AddSyncOutputHandler(h WpPresentationFeedbackSy
 	i.mu.Unlock()
 }
 
-func (i *WpPresentationFeedback) RemoveSyncOutputHandler(h WpPresentationFeedbackSyncOutputHandler) {
+func (i *PresentationFeedback) RemoveSyncOutputHandler(h PresentationFeedbackSyncOutputHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -353,7 +353,7 @@ func (i *WpPresentationFeedback) RemoveSyncOutputHandler(h WpPresentationFeedbac
 	}
 }
 
-// WpPresentationFeedbackPresentedEvent : the content update was displayed
+// PresentationFeedbackPresentedEvent : the content update was displayed
 //
 // The associated content update was displayed to the user at the
 // indicated time (tv_sec_hi/lo, tv_nsec). For the interpretation of
@@ -396,7 +396,7 @@ func (i *WpPresentationFeedback) RemoveSyncOutputHandler(h WpPresentationFeedbac
 // refresh cycle, or the output device is self-refreshing without
 // a way to query the refresh count, then the arguments seq_hi
 // and seq_lo must be zero.
-type WpPresentationFeedbackPresentedEvent struct {
+type PresentationFeedbackPresentedEvent struct {
 	TvSecHi uint32
 	TvSecLo uint32
 	TvNsec  uint32
@@ -406,12 +406,12 @@ type WpPresentationFeedbackPresentedEvent struct {
 	Flags   uint32
 }
 
-type WpPresentationFeedbackPresentedHandler interface {
-	HandleWpPresentationFeedbackPresented(WpPresentationFeedbackPresentedEvent)
+type PresentationFeedbackPresentedHandler interface {
+	HandlePresentationFeedbackPresented(PresentationFeedbackPresentedEvent)
 }
 
-// AddPresentedHandler : adds handler for WpPresentationFeedbackPresentedEvent
-func (i *WpPresentationFeedback) AddPresentedHandler(h WpPresentationFeedbackPresentedHandler) {
+// AddPresentedHandler : adds handler for PresentationFeedbackPresentedEvent
+func (i *PresentationFeedback) AddPresentedHandler(h PresentationFeedbackPresentedHandler) {
 	if h == nil {
 		return
 	}
@@ -421,7 +421,7 @@ func (i *WpPresentationFeedback) AddPresentedHandler(h WpPresentationFeedbackPre
 	i.mu.Unlock()
 }
 
-func (i *WpPresentationFeedback) RemovePresentedHandler(h WpPresentationFeedbackPresentedHandler) {
+func (i *PresentationFeedback) RemovePresentedHandler(h PresentationFeedbackPresentedHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -433,16 +433,16 @@ func (i *WpPresentationFeedback) RemovePresentedHandler(h WpPresentationFeedback
 	}
 }
 
-// WpPresentationFeedbackDiscardedEvent : the content update was not displayed
+// PresentationFeedbackDiscardedEvent : the content update was not displayed
 //
 // The content update was never displayed to the user.
-type WpPresentationFeedbackDiscardedEvent struct{}
-type WpPresentationFeedbackDiscardedHandler interface {
-	HandleWpPresentationFeedbackDiscarded(WpPresentationFeedbackDiscardedEvent)
+type PresentationFeedbackDiscardedEvent struct{}
+type PresentationFeedbackDiscardedHandler interface {
+	HandlePresentationFeedbackDiscarded(PresentationFeedbackDiscardedEvent)
 }
 
-// AddDiscardedHandler : adds handler for WpPresentationFeedbackDiscardedEvent
-func (i *WpPresentationFeedback) AddDiscardedHandler(h WpPresentationFeedbackDiscardedHandler) {
+// AddDiscardedHandler : adds handler for PresentationFeedbackDiscardedEvent
+func (i *PresentationFeedback) AddDiscardedHandler(h PresentationFeedbackDiscardedHandler) {
 	if h == nil {
 		return
 	}
@@ -452,7 +452,7 @@ func (i *WpPresentationFeedback) AddDiscardedHandler(h WpPresentationFeedbackDis
 	i.mu.Unlock()
 }
 
-func (i *WpPresentationFeedback) RemoveDiscardedHandler(h WpPresentationFeedbackDiscardedHandler) {
+func (i *PresentationFeedback) RemoveDiscardedHandler(h PresentationFeedbackDiscardedHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -464,7 +464,7 @@ func (i *WpPresentationFeedback) RemoveDiscardedHandler(h WpPresentationFeedback
 	}
 }
 
-func (i *WpPresentationFeedback) Dispatch(event *client.Event) {
+func (i *PresentationFeedback) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -474,15 +474,15 @@ func (i *WpPresentationFeedback) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WpPresentationFeedbackSyncOutputEvent{
-			Output: event.Proxy(i.Context()).(*client.WlOutput),
+		e := PresentationFeedbackSyncOutputEvent{
+			Output: event.Proxy(i.Context()).(*client.Output),
 		}
 
 		i.mu.RLock()
 		for _, h := range i.syncOutputHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWpPresentationFeedbackSyncOutput(e)
+			h.HandlePresentationFeedbackSyncOutput(e)
 
 			i.mu.RLock()
 		}
@@ -495,7 +495,7 @@ func (i *WpPresentationFeedback) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WpPresentationFeedbackPresentedEvent{
+		e := PresentationFeedbackPresentedEvent{
 			TvSecHi: event.Uint32(),
 			TvSecLo: event.Uint32(),
 			TvNsec:  event.Uint32(),
@@ -509,7 +509,7 @@ func (i *WpPresentationFeedback) Dispatch(event *client.Event) {
 		for _, h := range i.presentedHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWpPresentationFeedbackPresented(e)
+			h.HandlePresentationFeedbackPresented(e)
 
 			i.mu.RLock()
 		}
@@ -522,13 +522,13 @@ func (i *WpPresentationFeedback) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := WpPresentationFeedbackDiscardedEvent{}
+		e := PresentationFeedbackDiscardedEvent{}
 
 		i.mu.RLock()
 		for _, h := range i.discardedHandlers {
 			i.mu.RUnlock()
 
-			h.HandleWpPresentationFeedbackDiscarded(e)
+			h.HandlePresentationFeedbackDiscarded(e)
 
 			i.mu.RLock()
 		}

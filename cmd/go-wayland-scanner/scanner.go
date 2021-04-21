@@ -23,14 +23,16 @@ var (
 	inputFile   string
 	outputFile  string
 	packageName string
-
-	protocol Protocol
+	prefix      string
+	suffix      string
 )
 
 func init() {
 	flag.StringVar(&inputFile, "i", "", "Remote url or local path of the protocol xml file")
 	flag.StringVar(&outputFile, "o", "", "Path of the generated output go file")
 	flag.StringVar(&packageName, "pkg", "", "Go package name")
+	flag.StringVar(&prefix, "prefix", "", "Specifiy prefix to trim")
+	flag.StringVar(&suffix, "suffix", "", "Specifiy suffix to trim")
 }
 
 type Protocol struct {
@@ -103,6 +105,8 @@ type Description struct {
 	Summary string   `xml:"summary,attr"`
 }
 
+var protocol Protocol
+
 func main() {
 	flag.Parse()
 
@@ -130,7 +134,7 @@ func main() {
 	fmt.Fprintf(w, "// https://github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner\n")
 	fmt.Fprintf(w, "// XML file : %s\n", inputFile)
 	fmt.Fprintf(w, "//\n")
-	fmt.Fprintf(w, "// %s Protocol Copyright: \n", toCamel(protocol.Name))
+	fmt.Fprintf(w, "// %s Protocol Copyright: \n", protocol.Name)
 	fmt.Fprint(w, comment(protocol.Copyright))
 	fmt.Fprintf(w, "\n\n")
 	fmt.Fprintf(w, "package %s\n", packageName)
@@ -288,10 +292,10 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 		argIface := toCamel(arg.Interface)
 
 		if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
-			argIface = "client." + argIface
+			argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
 		}
 		if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
-			argIface = "xdg_shell." + argIface
+			argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
 		}
 
 		switch arg.Type {
@@ -339,9 +343,9 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 			argIface := toCamel(arg.Interface)
 
 			if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
-				fmt.Fprintf(w, "%s := client.New%s(i.Context())\n", argNameLower, argIface)
+				fmt.Fprintf(w, "%s := client.New%s(i.Context())\n", argNameLower, toCamelPrefix(arg.Interface, "wl_"))
 			} else if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
-				fmt.Fprintf(w, "%s := xdg_shell.New%s(i.Context())\n", argNameLower, argIface)
+				fmt.Fprintf(w, "%s := xdg_shell.New%s(i.Context())\n", argNameLower, toCamelPrefix(arg.Interface, "xdg_"))
 			} else {
 				fmt.Fprintf(w, "%s := New%s(i.Context())\n", argNameLower, argIface)
 			}
@@ -392,10 +396,10 @@ func writeEvent(w io.Writer, ifaceName string, e Event) {
 				argIface := toCamel(arg.Interface)
 
 				if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
-					argIface = "client." + argIface
+					argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
 				}
 				if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
-					argIface = "xdg_shell." + argIface
+					argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
 				}
 
 				fmt.Fprintf(w, "%s *%s\n", argName, argIface)
@@ -470,10 +474,10 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 					argIface := toCamel(arg.Interface)
 
 					if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
-						argIface = "client." + argIface
+						argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
 					}
 					if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
-						argIface = "xdg_shell." + argIface
+						argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
 					}
 
 					fmt.Fprintf(w, "%s: event.Proxy(i.Context()).(*%s),\n", argName, argIface)
@@ -501,11 +505,25 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 }
 
 func toCamel(s string) string {
-	return strings.ReplaceAll(strcase.ToCamel(s), "Id", "ID")
+	s = strings.TrimPrefix(s, prefix)
+	s = strings.TrimSuffix(s, suffix)
+	s = strcase.ToCamel(s)
+	s = strings.ReplaceAll(s, "Id", "ID")
+	return s
+}
+
+// Same as toCamel but with custom prefix to trim
+func toCamelPrefix(s string, prefix string) string {
+	s = strings.TrimPrefix(s, prefix)
+	s = strcase.ToCamel(s)
+	s = strings.ReplaceAll(s, "Id", "ID")
+	return s
 }
 
 func toLowerCamel(s string) string {
-	return strings.ReplaceAll(strcase.ToLowerCamel(s), "Id", "ID")
+	s = strcase.ToLowerCamel(s)
+	s = strings.ReplaceAll(s, "Id", "ID")
+	return s
 }
 
 func comment(s string) string {

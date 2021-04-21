@@ -77,26 +77,26 @@ func (app *appState) releasePointer() {
 	log.Print("pointer interface released")
 }
 
-func (app *appState) HandleWlPointerEnter(e client.WlPointerEnterEvent) {
+func (app *appState) HandlePointerEnter(e client.PointerEnterEvent) {
 	app.pointerEvent.eventMask |= pointerEventEnter
 	app.pointerEvent.serial = e.Serial
 	app.pointerEvent.surfaceX = uint32(e.SurfaceX)
 	app.pointerEvent.surfaceY = uint32(e.SurfaceY)
 }
 
-func (app *appState) HandleWlPointerLeave(e client.WlPointerLeaveEvent) {
+func (app *appState) HandlePointerLeave(e client.PointerLeaveEvent) {
 	app.pointerEvent.eventMask |= pointerEventLeave
 	app.pointerEvent.serial = e.Serial
 }
 
-func (app *appState) HandleWlPointerMotion(e client.WlPointerMotionEvent) {
+func (app *appState) HandlePointerMotion(e client.PointerMotionEvent) {
 	app.pointerEvent.eventMask |= pointerEventMotion
 	app.pointerEvent.time = e.Time
 	app.pointerEvent.surfaceX = uint32(e.SurfaceX)
 	app.pointerEvent.surfaceY = uint32(e.SurfaceY)
 }
 
-func (app *appState) HandleWlPointerButton(e client.WlPointerButtonEvent) {
+func (app *appState) HandlePointerButton(e client.PointerButtonEvent) {
 	app.pointerEvent.eventMask |= pointerEventButton
 	app.pointerEvent.serial = e.Serial
 	app.pointerEvent.time = e.Time
@@ -104,55 +104,55 @@ func (app *appState) HandleWlPointerButton(e client.WlPointerButtonEvent) {
 	app.pointerEvent.state = e.State
 }
 
-func (app *appState) HandleWlPointerAxis(e client.WlPointerAxisEvent) {
+func (app *appState) HandlePointerAxis(e client.PointerAxisEvent) {
 	app.pointerEvent.eventMask |= pointerEventAxis
 	app.pointerEvent.time = e.Time
 	app.pointerEvent.axes[e.Axis].valid = true
 	app.pointerEvent.axes[e.Axis].value = int32(e.Value)
 }
 
-func (app *appState) HandleWlPointerAxisSource(e client.WlPointerAxisSourceEvent) {
+func (app *appState) HandlePointerAxisSource(e client.PointerAxisSourceEvent) {
 	app.pointerEvent.eventMask |= pointerEventAxis
 	app.pointerEvent.axisSource = e.AxisSource
 }
 
-func (app *appState) HandleWlPointerAxisStop(e client.WlPointerAxisStopEvent) {
+func (app *appState) HandlePointerAxisStop(e client.PointerAxisStopEvent) {
 	app.pointerEvent.eventMask |= pointerEventAxisStop
 	app.pointerEvent.time = e.Time
 	app.pointerEvent.axes[e.Axis].valid = true
 }
 
-func (app *appState) HandleWlPointerAxisDiscrete(e client.WlPointerAxisDiscreteEvent) {
+func (app *appState) HandlePointerAxisDiscrete(e client.PointerAxisDiscreteEvent) {
 	app.pointerEvent.eventMask |= pointerEventAxisDiscrete
 	app.pointerEvent.axes[e.Axis].valid = true
 	app.pointerEvent.axes[e.Axis].discrete = e.Discrete
 }
 
 var axisName = map[int]string{
-	client.WlPointerAxisVerticalScroll:   "vertical",
-	client.WlPointerAxisHorizontalScroll: "horizontal",
+	client.PointerAxisVerticalScroll:   "vertical",
+	client.PointerAxisHorizontalScroll: "horizontal",
 }
 
 var axisSource = map[uint32]string{
-	client.WlPointerAxisSourceWheel:      "wheel",
-	client.WlPointerAxisSourceFinger:     "finger",
-	client.WlPointerAxisSourceContinuous: "continuous",
-	client.WlPointerAxisSourceWheelTilt:  "wheel tilt",
+	client.PointerAxisSourceWheel:      "wheel",
+	client.PointerAxisSourceFinger:     "finger",
+	client.PointerAxisSourceContinuous: "continuous",
+	client.PointerAxisSourceWheelTilt:  "wheel tilt",
 }
 
 var cursorMap = map[uint32]string{
-	xdg_shell.XdgToplevelResizeEdgeTop:         cursor.TopSide,
-	xdg_shell.XdgToplevelResizeEdgeTopLeft:     cursor.TopLeftCorner,
-	xdg_shell.XdgToplevelResizeEdgeTopRight:    cursor.TopRightCorner,
-	xdg_shell.XdgToplevelResizeEdgeBottom:      cursor.BottomSide,
-	xdg_shell.XdgToplevelResizeEdgeBottomLeft:  cursor.BottomLeftCorner,
-	xdg_shell.XdgToplevelResizeEdgeBottomRight: cursor.BottomRightCorner,
-	xdg_shell.XdgToplevelResizeEdgeLeft:        cursor.LeftSide,
-	xdg_shell.XdgToplevelResizeEdgeRight:       cursor.RightSide,
-	xdg_shell.XdgToplevelResizeEdgeNone:        cursor.LeftPtr,
+	xdg_shell.ToplevelResizeEdgeTop:         cursor.TopSide,
+	xdg_shell.ToplevelResizeEdgeTopLeft:     cursor.TopLeftCorner,
+	xdg_shell.ToplevelResizeEdgeTopRight:    cursor.TopRightCorner,
+	xdg_shell.ToplevelResizeEdgeBottom:      cursor.BottomSide,
+	xdg_shell.ToplevelResizeEdgeBottomLeft:  cursor.BottomLeftCorner,
+	xdg_shell.ToplevelResizeEdgeBottomRight: cursor.BottomRightCorner,
+	xdg_shell.ToplevelResizeEdgeLeft:        cursor.LeftSide,
+	xdg_shell.ToplevelResizeEdgeRight:       cursor.RightSide,
+	xdg_shell.ToplevelResizeEdgeNone:        cursor.LeftPtr,
 }
 
-func (app *appState) HandleWlPointerFrame(_ client.WlPointerFrameEvent) {
+func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 	e := app.pointerEvent
 
 	if (e.eventMask & pointerEventEnter) != 0 {
@@ -182,7 +182,7 @@ func (app *appState) HandleWlPointerFrame(_ client.WlPointerFrameEvent) {
 		}
 	}
 	if (e.eventMask & pointerEventButton) != 0 {
-		if e.state == client.WlPointerButtonStateReleased {
+		if e.state == client.PointerButtonStateReleased {
 			log.Printf("button %d released", e.button)
 		} else {
 			log.Printf("button %d pressed", e.button)
@@ -190,7 +190,7 @@ func (app *appState) HandleWlPointerFrame(_ client.WlPointerFrameEvent) {
 			switch e.button {
 			case BtnLeft:
 				edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
-				if edge != xdg_shell.XdgToplevelResizeEdgeNone {
+				if edge != xdg_shell.ToplevelResizeEdgeNone {
 					if err := app.xdgTopLevel.Resize(app.seat, e.serial, edge); err != nil {
 						log.Println("unable to start resize")
 					}
@@ -246,40 +246,40 @@ func componentEdge(width, height, pointerX, pointerY, margin uint32) uint32 {
 	if top {
 		if left {
 			log.Print("ToplevelResizeEdgeTopLeft")
-			return xdg_shell.XdgToplevelResizeEdgeTopLeft
+			return xdg_shell.ToplevelResizeEdgeTopLeft
 		} else if right {
 			log.Print("ToplevelResizeEdgeTopRight")
-			return xdg_shell.XdgToplevelResizeEdgeTopRight
+			return xdg_shell.ToplevelResizeEdgeTopRight
 		} else {
 			log.Print("ToplevelResizeEdgeTop")
-			return xdg_shell.XdgToplevelResizeEdgeTop
+			return xdg_shell.ToplevelResizeEdgeTop
 		}
 	} else if bottom {
 		if left {
 			log.Print("ToplevelResizeEdgeBottomLeft")
-			return xdg_shell.XdgToplevelResizeEdgeBottomLeft
+			return xdg_shell.ToplevelResizeEdgeBottomLeft
 		} else if right {
 			log.Print("ToplevelResizeEdgeBottomRight")
-			return xdg_shell.XdgToplevelResizeEdgeBottomRight
+			return xdg_shell.ToplevelResizeEdgeBottomRight
 		} else {
 			log.Print("ToplevelResizeEdgeBottom")
-			return xdg_shell.XdgToplevelResizeEdgeBottom
+			return xdg_shell.ToplevelResizeEdgeBottom
 		}
 	} else if left {
 		log.Print("ToplevelResizeEdgeLeft")
-		return xdg_shell.XdgToplevelResizeEdgeLeft
+		return xdg_shell.ToplevelResizeEdgeLeft
 	} else if right {
 		log.Print("ToplevelResizeEdgeRight")
-		return xdg_shell.XdgToplevelResizeEdgeRight
+		return xdg_shell.ToplevelResizeEdgeRight
 	} else {
 		log.Print("ToplevelResizeEdgeNone")
-		return xdg_shell.XdgToplevelResizeEdgeNone
+		return xdg_shell.ToplevelResizeEdgeNone
 	}
 }
 
 type cursorData struct {
 	name    string
-	surface *client.WlSurface
+	surface *client.Surface
 }
 
 func (c *cursorData) Destory() {
