@@ -93,7 +93,8 @@ loop:
 		select {
 		case <-app.exitChan:
 			break loop
-		case app.dispatch() <- struct{}{}:
+		default:
+			app.dispatch()
 		}
 	}
 
@@ -182,8 +183,8 @@ func (app *appState) initWindow() {
 	app.cursorTheme = theme
 }
 
-func (app *appState) dispatch() chan<- struct{} {
-	return app.context().Dispatch()
+func (app *appState) dispatch() {
+	app.display.Context().Dispatch()
 }
 
 func (app *appState) context() *client.Context {
@@ -400,10 +401,12 @@ func (app *appState) displayRoundTrip() {
 loop:
 	for {
 		select {
-		case app.dispatch() <- struct{}{}:
 		case <-doneChan:
 			_ = callback.Destroy()
 			break loop
+
+		default:
+			app.dispatch()
 		}
 	}
 }

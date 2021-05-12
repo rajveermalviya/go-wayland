@@ -10,12 +10,10 @@ import (
 )
 
 type Context struct {
-	conn                  *net.UnixConn
-	objects               map[uint32]Proxy
-	dispatchChan          chan struct{}
-	dispatcherStoppedChan chan struct{}
-	mu                    sync.RWMutex
-	currentID             uint32
+	conn      *net.UnixConn
+	objects   map[uint32]Proxy
+	mu        *sync.RWMutex
+	currentID uint32
 }
 
 func (ctx *Context) Register(p Proxy) {
@@ -47,13 +45,30 @@ func (ctx *Context) Unregister(p Proxy) {
 }
 
 func (ctx *Context) Close() error {
-	close(ctx.dispatchChan)
-	<-ctx.dispatcherStoppedChan
 	return ctx.conn.Close()
 }
 
-func (ctx *Context) Dispatch() chan<- struct{} {
-	return ctx.dispatchChan
+func (ctx *Context) Dispatch() {
+	e, err := ctx.readEvent()
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			// connection closed
+			return
+		}
+
+		log.Printf("unable to read event: %v", err)
+	}
+
+	proxy := ctx.lookupProxy(e.SenderID)
+	if proxy != nil {
+		if dispatcher, ok := proxy.(Dispatcher); ok {
+			dispatcher.Dispatch(e)
+		} else {
+			log.Print("not dispatched")
+		}
+	} else {
+		log.Print("unable to find proxy for proxyID=", e.SenderID)
+	}
 }
 
 func Connect(addr string) (*Display, error) {
@@ -72,10 +87,9 @@ func Connect(addr string) (*Display, error) {
 	}
 
 	ctx := &Context{
-		objects:               make(map[uint32]Proxy),
-		currentID:             0,
-		dispatchChan:          make(chan struct{}),
-		dispatcherStoppedChan: make(chan struct{}),
+		objects:   map[uint32]Proxy{},
+		currentID: 0,
+		mu:        &sync.RWMutex{},
 	}
 
 	conn, err := net.DialUnix("unix", nil, &net.UnixAddr{Name: addr, Net: "unix"})
@@ -84,35 +98,5 @@ func Connect(addr string) (*Display, error) {
 	}
 	ctx.conn = conn
 
-	// dispatch events in separate gorutine
-	go ctx.run()
-
 	return NewDisplay(ctx), nil
-}
-
-func (ctx *Context) run() {
-	for range ctx.dispatchChan {
-		e, err := ctx.readEvent()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				// connection closed
-				break
-			}
-
-			log.Printf("unable to read event: %v", err)
-		}
-
-		proxy := ctx.lookupProxy(e.proxyID)
-		if proxy != nil {
-			if dispatcher, ok := proxy.(Dispatcher); ok {
-				dispatcher.Dispatch(e)
-			} else {
-				log.Print("not dispatched")
-			}
-		} else {
-			log.Printf("unable to find proxy for proxyID=%d", e.proxyID)
-		}
-	}
-
-	close(ctx.dispatcherStoppedChan)
 }

@@ -2,8 +2,6 @@ package client
 
 import (
 	"errors"
-	"math"
-	"net"
 	"reflect"
 
 	"golang.org/x/sys/unix"
@@ -28,7 +26,28 @@ func (ctx *Context) SendRequest(p Proxy, opcode uint32, args ...interface{}) (er
 		req.Write(arg)
 	}
 
-	return writeRequest(ctx.conn, req)
+	return ctx.writeRequest(req)
+}
+
+func (ctx *Context) writeRequest(r Request) error {
+	var header []byte
+	// calculate message total size
+	size := uint32(len(r.data) + 8)
+	buf := make([]byte, 4)
+	byteorder.NativeEndian.PutUint32(buf, r.proxyID)
+	header = append(header, buf...)
+	byteorder.NativeEndian.PutUint32(buf, uint32(size<<16|r.opcode&0x0000ffff))
+	header = append(header, buf...)
+
+	d, c, err := ctx.conn.WriteMsgUnix(append(header, r.data...), r.oob, nil)
+	if err != nil {
+		return err
+	}
+	if c != len(r.oob) || d != (len(header)+len(r.data)) {
+		return errors.New("unable to write request")
+	}
+
+	return nil
 }
 
 func (r *Request) Write(arg interface{}) {
@@ -95,30 +114,4 @@ func (r *Request) PutArray(a []int32) {
 func (r *Request) PutFd(fd uintptr) {
 	rights := unix.UnixRights(int(fd))
 	r.oob = append(r.oob, rights...)
-}
-
-func writeRequest(conn *net.UnixConn, r Request) error {
-	var header []byte
-	// calculate message total size
-	size := uint32(len(r.data) + 8)
-	buf := make([]byte, 4)
-	byteorder.NativeEndian.PutUint32(buf, uint32(r.proxyID))
-	header = append(header, buf...)
-	byteorder.NativeEndian.PutUint32(buf, uint32(size<<16|r.opcode&0x0000ffff))
-	header = append(header, buf...)
-
-	d, c, err := conn.WriteMsgUnix(append(header, r.data...), r.oob, nil)
-	if err != nil {
-		return err
-	}
-	if c != len(r.oob) || d != (len(header)+len(r.data)) {
-		return errors.New("WriteMsgUnix failed")
-	}
-
-	return nil
-}
-
-func float64ToFixed(v float64) int32 {
-	dat := v + float64(int64(3)<<(51-8))
-	return int32(math.Float64bits(dat))
 }

@@ -2,8 +2,8 @@ package client
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"math"
 
 	"golang.org/x/sys/unix"
 
@@ -11,10 +11,10 @@ import (
 )
 
 type Event struct {
-	data    *bytes.Buffer
-	scms    []unix.SocketControlMessage
-	proxyID uint32
-	Opcode  uint32
+	data     *bytes.Buffer
+	scms     []unix.SocketControlMessage
+	SenderID uint32
+	Opcode   uint16
 }
 
 func (ctx *Context) readEvent() (*Event, error) {
@@ -26,12 +26,12 @@ func (ctx *Context) readEvent() (*Event, error) {
 		return nil, err
 	}
 	if n != 8 {
-		return nil, fmt.Errorf("unable to read message header")
+		return nil, errors.New("unable to read message header")
 	}
 	e := &Event{}
 	if oobn > 0 {
 		if oobn > len(oob) {
-			return nil, fmt.Errorf("insufficient control msg buffer")
+			return nil, errors.New("insufficient control msg buffer")
 		}
 		scms, err2 := unix.ParseSocketControlMessage(oob)
 		if err2 != nil {
@@ -42,9 +42,9 @@ func (ctx *Context) readEvent() (*Event, error) {
 
 	headerBuf := bytes.NewBuffer(header)
 
-	e.proxyID = byteorder.NativeEndian.Uint32(headerBuf.Next(4))
-	e.Opcode = uint32(byteorder.NativeEndian.Uint16(headerBuf.Next(2)))
-	size := uint32(byteorder.NativeEndian.Uint16(headerBuf.Next(2)))
+	e.SenderID = byteorder.NativeEndian.Uint32(headerBuf.Next(4))
+	e.Opcode = byteorder.NativeEndian.Uint16(headerBuf.Next(2))
+	size := byteorder.NativeEndian.Uint16(headerBuf.Next(2))
 
 	// subtract 8 bytes from header
 	msgSize := int(size) - 8
@@ -55,7 +55,7 @@ func (ctx *Context) readEvent() (*Event, error) {
 		return nil, err
 	}
 	if n != msgSize {
-		return nil, fmt.Errorf("invalid message size recieved from read")
+		return nil, errors.New("unable to read message")
 	}
 
 	e.data = bytes.NewBuffer(data)
@@ -92,7 +92,7 @@ func (e *Event) String() string {
 	if len(buf) != l {
 		panic("unable to read string")
 	}
-	ret := string(bytes.TrimRight(buf, "\x00"))
+	ret := string(bytes.TrimRight(buf, "\u0000"))
 	// padding to 32 bit boundary
 	if (l & 0x3) != 0 {
 		e.data.Next(4 - (l & 0x3))
@@ -115,9 +115,4 @@ func (e *Event) Array() []int32 {
 		arr[i] = e.Int32()
 	}
 	return arr
-}
-
-func fixedToFloat64(fixed int32) float64 {
-	dat := ((int64(1023 + 44)) << 52) + (1 << 51) + int64(fixed)
-	return math.Float64frombits(uint64(dat)) - float64(3<<43)
 }
