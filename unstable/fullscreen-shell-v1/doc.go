@@ -1,3 +1,3 @@
 package fullscreen_shell
 
-//go:generate go run ../../cmd/go-wayland-scanner/scanner.go -pkg fullscreen_shell -prefix zwp -suffix v1 -i https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/d10d18f3d49374d2e3eb96d63511f32795aab5f7/unstable/fullscreen-shell/fullscreen-shell-unstable-v1.xml -o fullscreen_shell.go
+//go:generate go run ../../cmd/go-wayland-scanner/scanner.go -pkg fullscreen_shell -prefix zwp -suffix v1 -i https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/177ff9119da526462e5d35fbfde6c84794913787/unstable/fullscreen-shell/fullscreen-shell-unstable-v1.xml -o fullscreen_shell.go

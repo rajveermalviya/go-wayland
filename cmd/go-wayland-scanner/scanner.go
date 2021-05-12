@@ -291,11 +291,12 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 		argNameLower := toLowerCamel(arg.Name)
 		argIface := toCamel(arg.Interface)
 
-		if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
-			argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
-		}
-		if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
-			argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
+		if !isLocalInterface(arg.Interface) {
+			if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
+				argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
+			} else if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
+				argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
+			}
 		}
 
 		switch arg.Type {
@@ -342,12 +343,14 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 			argNameLower := toLowerCamel(arg.Name)
 			argIface := toCamel(arg.Interface)
 
-			if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
-				fmt.Fprintf(w, "%s := client.New%s(i.Context())\n", argNameLower, toCamelPrefix(arg.Interface, "wl_"))
-			} else if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
-				fmt.Fprintf(w, "%s := xdg_shell.New%s(i.Context())\n", argNameLower, toCamelPrefix(arg.Interface, "xdg_"))
-			} else {
+			if isLocalInterface(arg.Interface) {
 				fmt.Fprintf(w, "%s := New%s(i.Context())\n", argNameLower, argIface)
+			} else {
+				if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
+					fmt.Fprintf(w, "%s := client.New%s(i.Context())\n", argNameLower, toCamelPrefix(arg.Interface, "wl_"))
+				} else if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
+					fmt.Fprintf(w, "%s := xdg_shell.New%s(i.Context())\n", argNameLower, toCamelPrefix(arg.Interface, "xdg_"))
+				}
 			}
 
 			newObjects = append(newObjects, argNameLower)
@@ -395,11 +398,12 @@ func writeEvent(w io.Writer, ifaceName string, e Event) {
 			if arg.Interface != "" {
 				argIface := toCamel(arg.Interface)
 
-				if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
-					argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
-				}
-				if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
-					argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
+				if !isLocalInterface(arg.Interface) {
+					if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
+						argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
+					} else if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
+						argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
+					}
 				}
 
 				fmt.Fprintf(w, "%s *%s\n", argName, argIface)
@@ -473,11 +477,12 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 					argName := toCamel(arg.Name)
 					argIface := toCamel(arg.Interface)
 
-					if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
-						argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
-					}
-					if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
-						argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
+					if !isLocalInterface(arg.Interface) {
+						if protocol.Name != "wayland" && strings.HasPrefix(arg.Interface, "wl_") {
+							argIface = "client." + toCamelPrefix(arg.Interface, "wl_")
+						} else if protocol.Name != "xdg_shell" && strings.HasPrefix(arg.Interface, "xdg_") {
+							argIface = "xdg_shell." + toCamelPrefix(arg.Interface, "xdg_")
+						}
 					}
 
 					fmt.Fprintf(w, "%s: event.Proxy(i.Context()).(*%s),\n", argName, argIface)
@@ -542,6 +547,16 @@ func comment(s string) string {
 func hasDestructor(v Interface) bool {
 	for _, r := range v.Requests {
 		if r.Type == "destructor" {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isLocalInterface(iface string) bool {
+	for _, v := range protocol.Interfaces {
+		if v.Name == iface {
 			return true
 		}
 	}
