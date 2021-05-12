@@ -34,22 +34,22 @@ import (
 	"github.com/rajveermalviya/go-wayland/client"
 )
 
-// ActivationV1 : interface for activating surfaces
+// Activation : interface for activating surfaces
 //
 // A global interface used for informing the compositor about applications
 // being activated or started, or for applications to request to be
 // activated.
-type ActivationV1 struct {
+type Activation struct {
 	client.BaseProxy
 }
 
-// NewActivationV1 : interface for activating surfaces
+// NewActivation : interface for activating surfaces
 //
 // A global interface used for informing the compositor about applications
 // being activated or started, or for applications to request to be
 // activated.
-func NewActivationV1(ctx *client.Context) *ActivationV1 {
-	xdgActivationV1 := &ActivationV1{}
+func NewActivation(ctx *client.Context) *Activation {
+	xdgActivationV1 := &Activation{}
 	ctx.Register(xdgActivationV1)
 	return xdgActivationV1
 }
@@ -62,7 +62,7 @@ func NewActivationV1(ctx *client.Context) *ActivationV1 {
 // The child objects created via this interface are unaffected and should
 // be destroyed separately.
 //
-func (i *ActivationV1) Destroy() error {
+func (i *Activation) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 0)
 	return err
@@ -74,8 +74,8 @@ func (i *ActivationV1) Destroy() error {
 // the initiating client with a unique token for this activation. This
 // token should be offered to the clients to be activated.
 //
-func (i *ActivationV1) GetActivationToken() (*ActivationTokenV1, error) {
-	id := NewActivationTokenV1(i.Context())
+func (i *Activation) GetActivationToken() (*ActivationToken, error) {
+	id := NewActivationToken(i.Context())
 	err := i.Context().SendRequest(i, 1, id)
 	return id, err
 }
@@ -95,12 +95,12 @@ func (i *ActivationV1) GetActivationToken() (*ActivationTokenV1, error) {
 //
 //  token: the activation token of the initiating client
 //  surface: the wl_surface to activate
-func (i *ActivationV1) Activate(token string, surface *client.Surface) error {
+func (i *Activation) Activate(token string, surface *client.Surface) error {
 	err := i.Context().SendRequest(i, 2, token, surface)
 	return err
 }
 
-// ActivationTokenV1 : an exported activation handle
+// ActivationToken : an exported activation handle
 //
 // An object for setting up a token and receiving a token handle that can
 // be passed as an activation token to another client.
@@ -110,13 +110,13 @@ func (i *ActivationV1) Activate(token string, surface *client.Surface) error {
 // and serial information and committed. The compositor shall then issue a
 // done event with the token. In case the request's parameters are invalid,
 // the compositor will provide an invalid token.
-type ActivationTokenV1 struct {
+type ActivationToken struct {
 	client.BaseProxy
 	mu           sync.RWMutex
-	doneHandlers []ActivationTokenV1DoneHandler
+	doneHandlers []ActivationTokenDoneHandler
 }
 
-// NewActivationTokenV1 : an exported activation handle
+// NewActivationToken : an exported activation handle
 //
 // An object for setting up a token and receiving a token handle that can
 // be passed as an activation token to another client.
@@ -126,8 +126,8 @@ type ActivationTokenV1 struct {
 // and serial information and committed. The compositor shall then issue a
 // done event with the token. In case the request's parameters are invalid,
 // the compositor will provide an invalid token.
-func NewActivationTokenV1(ctx *client.Context) *ActivationTokenV1 {
-	xdgActivationTokenV1 := &ActivationTokenV1{}
+func NewActivationToken(ctx *client.Context) *ActivationToken {
+	xdgActivationTokenV1 := &ActivationToken{}
 	ctx.Register(xdgActivationTokenV1)
 	return xdgActivationTokenV1
 }
@@ -141,7 +141,7 @@ func NewActivationTokenV1(ctx *client.Context) *ActivationTokenV1 {
 //
 //  serial: the serial of the event that triggered the activation
 //  seat: the wl_seat of the event
-func (i *ActivationTokenV1) SetSerial(serial uint32, seat *client.Seat) error {
+func (i *ActivationToken) SetSerial(serial uint32, seat *client.Seat) error {
 	err := i.Context().SendRequest(i, 0, serial, seat)
 	return err
 }
@@ -154,7 +154,7 @@ func (i *ActivationTokenV1) SetSerial(serial uint32, seat *client.Seat) error {
 // Must be sent before commit. This information is optional.
 //
 //  appID: the application id of the client being activated.
-func (i *ActivationTokenV1) SetAppID(appID string) error {
+func (i *ActivationToken) SetAppID(appID string) error {
 	err := i.Context().SendRequest(i, 1, appID)
 	return err
 }
@@ -167,7 +167,7 @@ func (i *ActivationTokenV1) SetAppID(appID string) error {
 // Must be triggered before commit. This information is optional.
 //
 //  surface: the requesting surface
-func (i *ActivationTokenV1) SetSurface(surface *client.Surface) error {
+func (i *ActivationToken) SetSurface(surface *client.Surface) error {
 	err := i.Context().SendRequest(i, 2, surface)
 	return err
 }
@@ -177,7 +177,7 @@ func (i *ActivationTokenV1) SetSurface(surface *client.Surface) error {
 // Requests an activation token based on the different parameters that
 // have been offered through set_serial, set_surface and set_app_id.
 //
-func (i *ActivationTokenV1) Commit() error {
+func (i *ActivationToken) Commit() error {
 	err := i.Context().SendRequest(i, 3)
 	return err
 }
@@ -187,19 +187,19 @@ func (i *ActivationTokenV1) Commit() error {
 // Notify the compositor that the xdg_activation_token_v1 object will no
 // longer be used.
 //
-func (i *ActivationTokenV1) Destroy() error {
+func (i *ActivationToken) Destroy() error {
 	defer i.Context().Unregister(i)
 	err := i.Context().SendRequest(i, 4)
 	return err
 }
 
-// ActivationTokenV1Error :
+// ActivationTokenError :
 const (
-	// ActivationTokenV1ErrorAlreadyUsed : The token has already been used previously
-	ActivationTokenV1ErrorAlreadyUsed = 0
+	// ActivationTokenErrorAlreadyUsed : The token has already been used previously
+	ActivationTokenErrorAlreadyUsed = 0
 )
 
-// ActivationTokenV1DoneEvent : the exported activation token
+// ActivationTokenDoneEvent : the exported activation token
 //
 // The 'done' event contains the unique token of this activation request
 // and notifies that the provider is done.
@@ -214,16 +214,16 @@ const (
 //
 // Presentation tokens may be transferred across clients through means not
 // described in this protocol.
-type ActivationTokenV1DoneEvent struct {
+type ActivationTokenDoneEvent struct {
 	Token string
 }
 
-type ActivationTokenV1DoneHandler interface {
-	HandleActivationTokenV1Done(ActivationTokenV1DoneEvent)
+type ActivationTokenDoneHandler interface {
+	HandleActivationTokenDone(ActivationTokenDoneEvent)
 }
 
-// AddDoneHandler : adds handler for ActivationTokenV1DoneEvent
-func (i *ActivationTokenV1) AddDoneHandler(h ActivationTokenV1DoneHandler) {
+// AddDoneHandler : adds handler for ActivationTokenDoneEvent
+func (i *ActivationToken) AddDoneHandler(h ActivationTokenDoneHandler) {
 	if h == nil {
 		return
 	}
@@ -233,7 +233,7 @@ func (i *ActivationTokenV1) AddDoneHandler(h ActivationTokenV1DoneHandler) {
 	i.mu.Unlock()
 }
 
-func (i *ActivationTokenV1) RemoveDoneHandler(h ActivationTokenV1DoneHandler) {
+func (i *ActivationToken) RemoveDoneHandler(h ActivationTokenDoneHandler) {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 
@@ -245,7 +245,7 @@ func (i *ActivationTokenV1) RemoveDoneHandler(h ActivationTokenV1DoneHandler) {
 	}
 }
 
-func (i *ActivationTokenV1) Dispatch(event *client.Event) {
+func (i *ActivationToken) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
 		i.mu.RLock()
@@ -255,7 +255,7 @@ func (i *ActivationTokenV1) Dispatch(event *client.Event) {
 		}
 		i.mu.RUnlock()
 
-		e := ActivationTokenV1DoneEvent{
+		e := ActivationTokenDoneEvent{
 			Token: event.String(),
 		}
 
@@ -263,7 +263,7 @@ func (i *ActivationTokenV1) Dispatch(event *client.Event) {
 		for _, h := range i.doneHandlers {
 			i.mu.RUnlock()
 
-			h.HandleActivationTokenV1Done(e)
+			h.HandleActivationTokenDone(e)
 
 			i.mu.RLock()
 		}
