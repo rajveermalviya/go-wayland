@@ -3,4 +3,4 @@
 // platforms.
 package client
 
-//go:generate go run ../cmd/go-wayland-scanner/scanner.go -pkg client -prefix wl -o client.go -i https://gitlab.freedesktop.org/wayland/wayland/-/raw/f452e41264387dee4fd737cbf1af58b34b53941b/protocol/wayland.xml
+//go:generate go run ../cmd/go-wayland-scanner/scanner.go -pkg client -prefix wl -o client.go -i https://raw.githubusercontent.com/wayland-project/wayland/3e897faa29d13bef6f9af31d4f2e89a526e60f4c/protocol/wayland.xml

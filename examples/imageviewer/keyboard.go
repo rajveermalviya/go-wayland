@@ -1,8 +1,9 @@
 package main
 
 import (
+	"log"
+
 	"github.com/rajveermalviya/go-wayland/client"
-	"github.com/rajveermalviya/go-wayland/internal/log"
 )
 
 func (app *appState) attachKeyboard() {

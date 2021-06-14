@@ -148,7 +148,7 @@ func (image *Image) GetBuffer() (*client.Buffer, error) {
 	if image.buffer == nil {
 		buffer, err := theme.pool.pool.CreateBuffer(
 			int32(image.offset), int32(image.Width), int32(image.Height),
-			int32(image.Width)*4, client.ShmFormatArgb8888,
+			int32(image.Width)*4, uint32(client.ShmFormatArgb8888),
 		)
 		if err != nil {
 			return nil, err

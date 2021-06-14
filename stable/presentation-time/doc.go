@@ -1,3 +1,3 @@
 package presentation_time
 
-//go:generate go run ../../cmd/go-wayland-scanner/scanner.go -pkg presentation_time -prefix wp -o presentation_time.go -i https://gitlab.freedesktop.org/wayland/wayland-protocols/-/raw/177ff9119da526462e5d35fbfde6c84794913787/stable/presentation-time/presentation-time.xml
+//go:generate go run ../../cmd/go-wayland-scanner/scanner.go -pkg presentation_time -prefix wp -o presentation_time.go -i https://raw.githubusercontent.com/wayland-project/wayland-protocols/f01202f4b73aaf0b9c2c58673d9a932e5a24f054/stable/presentation-time/presentation-time.xml

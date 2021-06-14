@@ -1,9 +1,10 @@
 package main
 
 import (
+	"log"
+
 	"github.com/rajveermalviya/go-wayland/client"
 	"github.com/rajveermalviya/go-wayland/cursor"
-	"github.com/rajveermalviya/go-wayland/internal/log"
 	xdg_shell "github.com/rajveermalviya/go-wayland/stable/xdg-shell"
 )
 
@@ -128,19 +129,7 @@ func (app *appState) HandlePointerAxisDiscrete(e client.PointerAxisDiscreteEvent
 	app.pointerEvent.axes[e.Axis].discrete = e.Discrete
 }
 
-var axisName = map[int]string{
-	client.PointerAxisVerticalScroll:   "vertical",
-	client.PointerAxisHorizontalScroll: "horizontal",
-}
-
-var axisSource = map[uint32]string{
-	client.PointerAxisSourceWheel:      "wheel",
-	client.PointerAxisSourceFinger:     "finger",
-	client.PointerAxisSourceContinuous: "continuous",
-	client.PointerAxisSourceWheelTilt:  "wheel tilt",
-}
-
-var cursorMap = map[uint32]string{
+var cursorMap = map[xdg_shell.ToplevelResizeEdge]string{
 	xdg_shell.ToplevelResizeEdgeTop:         cursor.TopSide,
 	xdg_shell.ToplevelResizeEdgeTopLeft:     cursor.TopLeftCorner,
 	xdg_shell.ToplevelResizeEdgeTopRight:    cursor.TopRightCorner,
@@ -159,6 +148,7 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 		log.Printf("entered %v, %v", e.surfaceX, e.surfaceY)
 
 		edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
+		log.Print(edge.Name())
 		cursorName, ok := cursorMap[edge]
 		if ok {
 			app.setCursor(e.serial, cursorName)
@@ -176,13 +166,14 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 		log.Printf("motion %v, %v", e.surfaceX, e.surfaceY)
 
 		edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
+		log.Print(edge.Name())
 		cursorName, ok := cursorMap[edge]
 		if ok {
 			app.setCursor(e.serial, cursorName)
 		}
 	}
 	if (e.eventMask & pointerEventButton) != 0 {
-		if e.state == client.PointerButtonStateReleased {
+		if e.state == uint32(client.PointerButtonStateReleased) {
 			log.Printf("button %d released", e.button)
 		} else {
 			log.Printf("button %d pressed", e.button)
@@ -191,7 +182,7 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 			case BtnLeft:
 				edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
 				if edge != xdg_shell.ToplevelResizeEdgeNone {
-					if err := app.xdgTopLevel.Resize(app.seat, e.serial, edge); err != nil {
+					if err := app.xdgTopLevel.Resize(app.seat, e.serial, uint32(edge)); err != nil {
 						log.Println("unable to start resize")
 					}
 				} else {
@@ -214,7 +205,7 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 			if !e.axes[i].valid {
 				continue
 			}
-			log.Printf("%s axis ", axisName[i])
+			log.Printf("%s axis ", client.PointerAxis(i).Name())
 			if (e.eventMask & pointerEventAxis) != 0 {
 				log.Printf("value %v", e.axes[i].value)
 			}
@@ -222,7 +213,7 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 				log.Printf("discrete %d ", e.axes[i].discrete)
 			}
 			if (e.eventMask & pointerEventAxisSource) != 0 {
-				log.Printf("via %s", axisSource[e.axisSource])
+				log.Printf("via %s", client.PointerAxisSource(e.axisSource).Name())
 			}
 			if (e.eventMask & pointerEventAxisStop) != 0 {
 				log.Printf("(stopped)")
@@ -237,7 +228,7 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 	}
 }
 
-func componentEdge(width, height, pointerX, pointerY, margin uint32) uint32 {
+func componentEdge(width, height, pointerX, pointerY, margin uint32) xdg_shell.ToplevelResizeEdge {
 	top := pointerY < margin
 	bottom := pointerY > (height - margin)
 	left := pointerX < margin
@@ -245,34 +236,25 @@ func componentEdge(width, height, pointerX, pointerY, margin uint32) uint32 {
 
 	if top {
 		if left {
-			log.Print("ToplevelResizeEdgeTopLeft")
 			return xdg_shell.ToplevelResizeEdgeTopLeft
 		} else if right {
-			log.Print("ToplevelResizeEdgeTopRight")
 			return xdg_shell.ToplevelResizeEdgeTopRight
 		} else {
-			log.Print("ToplevelResizeEdgeTop")
 			return xdg_shell.ToplevelResizeEdgeTop
 		}
 	} else if bottom {
 		if left {
-			log.Print("ToplevelResizeEdgeBottomLeft")
 			return xdg_shell.ToplevelResizeEdgeBottomLeft
 		} else if right {
-			log.Print("ToplevelResizeEdgeBottomRight")
 			return xdg_shell.ToplevelResizeEdgeBottomRight
 		} else {
-			log.Print("ToplevelResizeEdgeBottom")
 			return xdg_shell.ToplevelResizeEdgeBottom
 		}
 	} else if left {
-		log.Print("ToplevelResizeEdgeLeft")
 		return xdg_shell.ToplevelResizeEdgeLeft
 	} else if right {
-		log.Print("ToplevelResizeEdgeRight")
 		return xdg_shell.ToplevelResizeEdgeRight
 	} else {
-		log.Print("ToplevelResizeEdgeNone")
 		return xdg_shell.ToplevelResizeEdgeNone
 	}
 }

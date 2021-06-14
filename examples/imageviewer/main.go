@@ -2,6 +2,7 @@ package main
 
 import (
 	"image"
+	"log"
 	"os"
 
 	"golang.org/x/sys/unix"
@@ -9,7 +10,6 @@ import (
 	"github.com/nfnt/resize"
 	"github.com/rajveermalviya/go-wayland/client"
 	"github.com/rajveermalviya/go-wayland/cursor"
-	"github.com/rajveermalviya/go-wayland/internal/log"
 	"github.com/rajveermalviya/go-wayland/internal/swizzle"
 	"github.com/rajveermalviya/go-wayland/internal/tempfile"
 	xdg_shell "github.com/rajveermalviya/go-wayland/stable/xdg-shell"
@@ -234,7 +234,7 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 }
 
 func (app *appState) HandleShmFormat(e client.ShmFormatEvent) {
-	log.Printf("supported pixel format: 0x%08x\n", e.Format)
+	log.Printf("supported pixel format: %v\n", client.ShmFormat(e.Format))
 }
 
 func (app *appState) HandleSurfaceConfigure(e xdg_shell.SurfaceConfigureEvent) {
@@ -302,7 +302,7 @@ func (app *appState) drawFrame() *client.Buffer {
 		log.Fatalf("unable to create shm pool: %v", err)
 	}
 
-	buf, err := pool.CreateBuffer(0, app.width, app.height, stride, client.ShmFormatArgb8888)
+	buf, err := pool.CreateBuffer(0, app.width, app.height, stride, uint32(client.ShmFormatArgb8888))
 	if err != nil {
 		log.Fatalf("unable to create client.Buffer from shm pool: %v", err)
 	}
@@ -314,12 +314,8 @@ func (app *appState) drawFrame() *client.Buffer {
 	}
 
 	// Convert RGBA to BGRA
-	imgData := make([]byte, size)
-	copy(imgData, app.frame.Pix)
-	swizzle.BGRA(imgData)
-
-	// Copy image to buffer
-	copy(data, imgData)
+	copy(data, app.frame.Pix)
+	swizzle.BGRA(data)
 
 	if err := unix.Munmap(data); err != nil {
 		log.Printf("unable to delete mapping: %v", err)
@@ -341,7 +337,7 @@ func (b bufferReleaser) HandleBufferRelease(e client.BufferReleaseEvent) {
 }
 
 func (app *appState) HandleSeatCapabilities(e client.SeatCapabilitiesEvent) {
-	havePointer := (e.Capabilities * client.SeatCapabilityPointer) != 0
+	havePointer := (e.Capabilities * uint32(client.SeatCapabilityPointer)) != 0
 
 	if havePointer && app.pointer == nil {
 		app.attachPointer()
@@ -349,7 +345,7 @@ func (app *appState) HandleSeatCapabilities(e client.SeatCapabilitiesEvent) {
 		app.releasePointer()
 	}
 
-	haveKeyboard := (e.Capabilities * client.SeatCapabilityKeyboard) != 0
+	haveKeyboard := (e.Capabilities * uint32(client.SeatCapabilityKeyboard)) != 0
 
 	if haveKeyboard && app.keyboard == nil {
 		app.attachKeyboard()

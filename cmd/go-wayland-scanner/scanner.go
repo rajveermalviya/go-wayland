@@ -364,6 +364,8 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 func writeEnum(w io.Writer, ifaceName string, e Enum) {
 	enumName := toCamel(e.Name)
 
+	fmt.Fprintf(w, "type %s%s uint32\n", ifaceName, enumName)
+
 	fmt.Fprintf(w, "// %s%s : %s\n", ifaceName, enumName, doc.Synopsis(e.Description.Summary))
 	fmt.Fprint(w, comment(e.Description.Text))
 	fmt.Fprintf(w, "const (\n")
@@ -373,9 +375,39 @@ func writeEnum(w io.Writer, ifaceName string, e Enum) {
 		if entry.Summary != "" {
 			fmt.Fprintf(w, "// %s%s%s : %s\n", ifaceName, enumName, entryName, doc.Synopsis(entry.Summary))
 		}
-		fmt.Fprintf(w, "%s%s%s = %s\n", ifaceName, enumName, entryName, entry.Value)
+		fmt.Fprintf(w, "%s%s%s %s%s = %s\n", ifaceName, enumName, entryName, ifaceName, enumName, entry.Value)
 	}
 	fmt.Fprintf(w, ")\n")
+
+	fmt.Fprintf(w, "func (e %s%s) Name() string {\n", ifaceName, enumName)
+	fmt.Fprintf(w, "switch e {\n")
+	for _, entry := range e.Entries {
+		entryName := toCamel(entry.Name)
+
+		fmt.Fprintf(w, "case %s%s%s:\n", ifaceName, enumName, entryName)
+		fmt.Fprintf(w, "return \"%s\"\n", entry.Name)
+	}
+	fmt.Fprintf(w, "default:\n")
+	fmt.Fprintf(w, "return \"\"\n")
+	fmt.Fprintf(w, "}\n")
+	fmt.Fprintf(w, "}\n")
+
+	fmt.Fprintf(w, "func (e %s%s) Value() string {\n", ifaceName, enumName)
+	fmt.Fprintf(w, "switch e {\n")
+	for _, entry := range e.Entries {
+		entryName := toCamel(entry.Name)
+
+		fmt.Fprintf(w, "case %s%s%s:\n", ifaceName, enumName, entryName)
+		fmt.Fprintf(w, "return \"%s\"\n", entry.Value)
+	}
+	fmt.Fprintf(w, "default:\n")
+	fmt.Fprintf(w, "return \"\"\n")
+	fmt.Fprintf(w, "}\n")
+	fmt.Fprintf(w, "}\n")
+
+	fmt.Fprintf(w, "func (e %s%s) String() string {\n", ifaceName, enumName)
+	fmt.Fprintf(w, "return  e.Name() + \"=\" +  e.Value()\n")
+	fmt.Fprintf(w, "}\n")
 }
 
 func writeEvent(w io.Writer, ifaceName string, e Event) {

@@ -88,7 +88,6 @@ func Connect(addr string) (*Display, error) {
 
 	ctx := &Context{
 		objects:   map[uint32]Proxy{},
-		currentID: 0,
 		mu:        &sync.RWMutex{},
 	}
 
