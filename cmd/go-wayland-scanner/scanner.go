@@ -142,8 +142,8 @@ func main() {
 	// Imports
 	fmt.Fprintf(w, "import \"sync\"\n")
 	if protocol.Name != "wayland" {
-		fmt.Fprintf(w, "import \"github.com/rajveermalviya/go-wayland/client\"\n")
-		fmt.Fprintf(w, "import xdg_shell \"github.com/rajveermalviya/go-wayland/stable/xdg-shell\"\n")
+		fmt.Fprintf(w, "import \"github.com/rajveermalviya/go-wayland/wayland/client\"\n")
+		fmt.Fprintf(w, "import xdg_shell \"github.com/rajveermalviya/go-wayland/wayland/stable/xdg-shell\"\n")
 	}
 
 	// Intefaces

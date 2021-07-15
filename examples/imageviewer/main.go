@@ -8,11 +8,11 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/nfnt/resize"
-	"github.com/rajveermalviya/go-wayland/client"
-	"github.com/rajveermalviya/go-wayland/cursor"
-	"github.com/rajveermalviya/go-wayland/internal/swizzle"
-	"github.com/rajveermalviya/go-wayland/internal/tempfile"
-	xdg_shell "github.com/rajveermalviya/go-wayland/stable/xdg-shell"
+	"github.com/rajveermalviya/go-wayland/examples/imageviewer/internal/swizzle"
+	"github.com/rajveermalviya/go-wayland/examples/imageviewer/internal/tempfile"
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+	"github.com/rajveermalviya/go-wayland/wayland/cursor"
+	xdg_shell "github.com/rajveermalviya/go-wayland/wayland/stable/xdg-shell"
 )
 
 // Global app state

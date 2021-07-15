@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/rajveermalviya/go-wayland/client"
+	"github.com/rajveermalviya/go-wayland/wayland/client"
 )
 
 func (app *appState) attachKeyboard() {

@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/rajveermalviya/go-wayland/client"
-	"github.com/rajveermalviya/go-wayland/cursor"
-	xdg_shell "github.com/rajveermalviya/go-wayland/stable/xdg-shell"
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+	"github.com/rajveermalviya/go-wayland/wayland/cursor"
+	xdg_shell "github.com/rajveermalviya/go-wayland/wayland/stable/xdg-shell"
 )
 
 const (

@@ -9,7 +9,7 @@ Go code is generated from protocol XML files using
 [`go-wayland-scanner`](cmd/go-wayland-scanner/scanner.go).
 
 To load cursor, minimal port of `wayland-cursor` & `xcursor` in pure Go
-is located at [`cursor`](cursor) & [`cursor/xcursor`](cursor/xcursor)
+is located at [`wayland/cursor`](wayland/cursor) & [`wayland/cursor/xcursor`](wayland/cursor/xcursor)
 respectively.
 
 To demonstrate the functionality of this module
