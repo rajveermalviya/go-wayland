@@ -1,7 +1,7 @@
 github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 h1:zYyBkD/k9seD2A7fsi6Oo2LfFZAehjjQMERAvZLEDnQ=
 github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646/go.mod h1:jpp1/29i3P1S/RLdc7JQKbRpFeM1dOBd8T9ki5s+AY8=
-github.com/rajveermalviya/go-wayland/wayland v0.0.0-20210715134246-d34f533e628f h1:BRRJ3WLEC9HhrL5uWUwZikLEctWnC//P6ikZiXSxuMc=
-github.com/rajveermalviya/go-wayland/wayland v0.0.0-20210715134246-d34f533e628f/go.mod h1:9gvkaDFkvvDPPh9eai35RF+fCfEoxgEWvqz/J5zLVEY=
+github.com/rajveermalviya/go-wayland/wayland v0.0.0-20210715135234-5a594332168d h1:0UJOGBshq/Xa1FgdWrPbDIOHlgNCF81CG1wa9YRP/L0=
+github.com/rajveermalviya/go-wayland/wayland v0.0.0-20210715135234-5a594332168d/go.mod h1:9gvkaDFkvvDPPh9eai35RF+fCfEoxgEWvqz/J5zLVEY=
 golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d h1:RNPAfi2nHY7C2srAV8A49jpsYr0ADedCk1wq6fTMTvs=
 golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d/go.mod h1:023OzeP/+EPmXeapQh35lcL3II3LrY8Ic+EFFKVhULM=
 golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c h1:F1jZWGFhYfh0Ci55sIpILtKKK8p3i2/krTr0H1rg74I=

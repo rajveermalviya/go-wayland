@@ -1,6 +1,6 @@
 # Wayland implementation in Go
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/rajveermalviya/go-wayland.svg)](https://pkg.go.dev/github.com/rajveermalviya/go-wayland)
+[![Go Reference](https://pkg.go.dev/badge/github.com/rajveermalviya/go-wayland/wayland.svg)](https://pkg.go.dev/github.com/rajveermalviya/go-wayland/wayland)
 
 This module contains pure Go implementation of the Wayland protocol.
 Currently only wayland-client functionality is supported.
