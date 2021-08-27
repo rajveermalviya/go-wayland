@@ -268,6 +268,7 @@ func (c *cursorData) Destory() {
 	if err := c.surface.Destroy(); err != nil {
 		log.Println("unable to destory current cursor surface:", err)
 	}
+	log.Print("destroyed wl_surface for cursor: ", c.name)
 }
 
 func (app *appState) setCursor(serial uint32, cursorName string) {
@@ -290,7 +291,7 @@ func (app *appState) setCursor(serial uint32, cursorName string) {
 	if err != nil {
 		log.Fatalf("unable to create compositor surface: %v", err)
 	}
-	log.Print("created new wl_surface for cursor: ", c.Name)
+	log.Print("created new wl_surface for cursor: ", cursorName)
 
 	// For now get the first image (there are multiple images because of animated cursors)
 	// will figure out cursor animation afterwards
