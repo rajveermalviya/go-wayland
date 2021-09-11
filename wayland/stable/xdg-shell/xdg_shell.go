@@ -32,11 +32,7 @@
 
 package xdg_shell
 
-import (
-	"sync"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // WmBase : create desktop-style surfaces
 //
@@ -47,7 +43,6 @@ import (
 // creating transient windows such as popup menus.
 type WmBase struct {
 	client.BaseProxy
-	mu           sync.RWMutex
 	pingHandlers []WmBasePingHandler
 }
 
@@ -74,7 +69,15 @@ func NewWmBase(ctx *client.Context) *WmBase {
 //
 func (i *WmBase) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -86,7 +89,17 @@ func (i *WmBase) Destroy() error {
 //
 func (i *WmBase) CreatePositioner() (*Positioner, error) {
 	id := NewPositioner(i.Context())
-	err := i.Context().SendRequest(i, 1, id)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -108,7 +121,19 @@ func (i *WmBase) CreatePositioner() (*Positioner, error) {
 //
 func (i *WmBase) GetXdgSurface(surface *client.Surface) (*Surface, error) {
 	id := NewSurface(i.Context())
-	err := i.Context().SendRequest(i, 2, id, surface)
+	const opcode = 2
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], surface.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -119,7 +144,17 @@ func (i *WmBase) GetXdgSurface(surface *client.Surface) (*Surface, error) {
 //
 //  serial: serial of the ping event
 func (i *WmBase) Pong(serial uint32) error {
-	err := i.Context().SendRequest(i, 3, serial)
+	const opcode = 3
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -210,15 +245,10 @@ func (i *WmBase) AddPingHandler(h WmBasePingHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.pingHandlers = append(i.pingHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *WmBase) RemovePingHandler(h WmBasePingHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.pingHandlers {
 		if e == h {
 			i.pingHandlers = append(i.pingHandlers[:j], i.pingHandlers[j+1:]...)
@@ -230,26 +260,16 @@ func (i *WmBase) RemovePingHandler(h WmBasePingHandler) {
 func (i *WmBase) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.pingHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := WmBasePingEvent{
 			Serial: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.pingHandlers {
-			i.mu.RUnlock()
-
 			h.HandleWmBasePing(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -311,7 +331,15 @@ func NewPositioner(ctx *client.Context) *Positioner {
 //
 func (i *Positioner) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -326,7 +354,19 @@ func (i *Positioner) Destroy() error {
 //  width: width of positioned rectangle
 //  height: height of positioned rectangle
 func (i *Positioner) SetSize(width, height int32) error {
-	err := i.Context().SendRequest(i, 1, width, height)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -348,7 +388,23 @@ func (i *Positioner) SetSize(width, height int32) error {
 //  width: width of anchor rectangle
 //  height: height of anchor rectangle
 func (i *Positioner) SetAnchorRect(x, y, width, height int32) error {
-	err := i.Context().SendRequest(i, 2, x, y, width, height)
+	const opcode = 2
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -363,7 +419,17 @@ func (i *Positioner) SetAnchorRect(x, y, width, height int32) error {
 //
 //  anchor: anchor
 func (i *Positioner) SetAnchor(anchor uint32) error {
-	err := i.Context().SendRequest(i, 3, anchor)
+	const opcode = 3
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(anchor))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -378,7 +444,17 @@ func (i *Positioner) SetAnchor(anchor uint32) error {
 //
 //  gravity: gravity direction
 func (i *Positioner) SetGravity(gravity uint32) error {
-	err := i.Context().SendRequest(i, 4, gravity)
+	const opcode = 4
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(gravity))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -400,7 +476,17 @@ func (i *Positioner) SetGravity(gravity uint32) error {
 //
 //  constraintAdjustment: bit mask of constraint adjustments
 func (i *Positioner) SetConstraintAdjustment(constraintAdjustment uint32) error {
-	err := i.Context().SendRequest(i, 5, constraintAdjustment)
+	const opcode = 5
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(constraintAdjustment))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -421,7 +507,19 @@ func (i *Positioner) SetConstraintAdjustment(constraintAdjustment uint32) error 
 //  x: surface position x offset
 //  y: surface position y offset
 func (i *Positioner) SetOffset(x, y int32) error {
-	err := i.Context().SendRequest(i, 6, x, y)
+	const opcode = 6
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -435,7 +533,15 @@ func (i *Positioner) SetOffset(x, y int32) error {
 // xdg_surface.configure event.
 //
 func (i *Positioner) SetReactive() error {
-	err := i.Context().SendRequest(i, 7)
+	const opcode = 7
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -452,7 +558,19 @@ func (i *Positioner) SetReactive() error {
 //  parentWidth: future window geometry width of parent
 //  parentHeight: future window geometry height of parent
 func (i *Positioner) SetParentSize(parentWidth, parentHeight int32) error {
-	err := i.Context().SendRequest(i, 8, parentWidth, parentHeight)
+	const opcode = 8
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(parentWidth))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(parentHeight))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -465,7 +583,17 @@ func (i *Positioner) SetParentSize(parentWidth, parentHeight int32) error {
 //
 //  serial: serial of parent configure event
 func (i *Positioner) SetParentConfigure(serial uint32) error {
-	err := i.Context().SendRequest(i, 9, serial)
+	const opcode = 9
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -756,7 +884,6 @@ func (e PositionerConstraintAdjustment) String() string {
 // has not been destroyed.
 type Surface struct {
 	client.BaseProxy
-	mu                sync.RWMutex
 	configureHandlers []SurfaceConfigureHandler
 }
 
@@ -819,7 +946,15 @@ func NewSurface(ctx *client.Context) *Surface {
 //
 func (i *Surface) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -833,7 +968,17 @@ func (i *Surface) Destroy() error {
 //
 func (i *Surface) GetToplevel() (*Toplevel, error) {
 	id := NewToplevel(i.Context())
-	err := i.Context().SendRequest(i, 1, id)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -850,7 +995,26 @@ func (i *Surface) GetToplevel() (*Toplevel, error) {
 //
 func (i *Surface) GetPopup(parent *Surface, positioner *Positioner) (*Popup, error) {
 	id := NewPopup(i.Context())
-	err := i.Context().SendRequest(i, 2, id, parent, positioner)
+	const opcode = 2
+	const rLen = 8 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	if parent == nil {
+		client.PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		client.PutUint32(r[l:l+4], parent.ID())
+		l += 4
+	}
+	client.PutUint32(r[l:l+4], positioner.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -887,7 +1051,23 @@ func (i *Surface) GetPopup(parent *Surface, positioner *Positioner) (*Popup, err
 // subsurfaces.
 //
 func (i *Surface) SetWindowGeometry(x, y, width, height int32) error {
-	err := i.Context().SendRequest(i, 3, x, y, width, height)
+	const opcode = 3
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -915,7 +1095,17 @@ func (i *Surface) SetWindowGeometry(x, y, width, height int32) error {
 //
 //  serial: the serial from the configure event
 func (i *Surface) AckConfigure(serial uint32) error {
-	err := i.Context().SendRequest(i, 4, serial)
+	const opcode = 4
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -990,15 +1180,10 @@ func (i *Surface) AddConfigureHandler(h SurfaceConfigureHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.configureHandlers = append(i.configureHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Surface) RemoveConfigureHandler(h SurfaceConfigureHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.configureHandlers {
 		if e == h {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
@@ -1010,26 +1195,16 @@ func (i *Surface) RemoveConfigureHandler(h SurfaceConfigureHandler) {
 func (i *Surface) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.configureHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := SurfaceConfigureEvent{
 			Serial: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.configureHandlers {
-			i.mu.RUnlock()
-
 			h.HandleSurfaceConfigure(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -1054,7 +1229,6 @@ func (i *Surface) Dispatch(event *client.Event) {
 // Attaching a null buffer to a toplevel unmaps the surface.
 type Toplevel struct {
 	client.BaseProxy
-	mu                sync.RWMutex
 	configureHandlers []ToplevelConfigureHandler
 	closeHandlers     []ToplevelCloseHandler
 }
@@ -1091,7 +1265,15 @@ func NewToplevel(ctx *client.Context) *Toplevel {
 //
 func (i *Toplevel) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1115,7 +1297,22 @@ func (i *Toplevel) Destroy() error {
 // parent surface.
 //
 func (i *Toplevel) SetParent(parent *Toplevel) error {
-	err := i.Context().SendRequest(i, 1, parent)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if parent == nil {
+		client.PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		client.PutUint32(r[l:l+4], parent.ID())
+		l += 4
+	}
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1130,7 +1327,18 @@ func (i *Toplevel) SetParent(parent *Toplevel) error {
 // The string must be encoded in UTF-8.
 //
 func (i *Toplevel) SetTitle(title string) error {
-	err := i.Context().SendRequest(i, 2, title)
+	const opcode = 2
+	titleLen := client.StringPaddedLen(title)
+	rLen := 8 + (4 + titleLen)
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutString(r[l:l+(4+titleLen)], title, titleLen)
+	l += (4 + titleLen)
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1161,7 +1369,18 @@ func (i *Toplevel) SetTitle(title string) error {
 // [0] http://standards.freedesktop.org/desktop-entry-spec/
 //
 func (i *Toplevel) SetAppID(appID string) error {
-	err := i.Context().SendRequest(i, 3, appID)
+	const opcode = 3
+	appIDLen := client.StringPaddedLen(appID)
+	rLen := 8 + (4 + appIDLen)
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutString(r[l:l+(4+appIDLen)], appID, appIDLen)
+	l += (4 + appIDLen)
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1184,7 +1403,23 @@ func (i *Toplevel) SetAppID(appID string) error {
 //  x: the x position to pop up the window menu at
 //  y: the y position to pop up the window menu at
 func (i *Toplevel) ShowWindowMenu(seat *client.Seat, serial uint32, x, y int32) error {
-	err := i.Context().SendRequest(i, 4, seat, serial, x, y)
+	const opcode = 4
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1210,7 +1445,19 @@ func (i *Toplevel) ShowWindowMenu(seat *client.Seat, serial uint32, x, y int32) 
 //  seat: the wl_seat of the user event
 //  serial: the serial of the user event
 func (i *Toplevel) Move(seat *client.Seat, serial uint32) error {
-	err := i.Context().SendRequest(i, 5, seat, serial)
+	const opcode = 5
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1251,7 +1498,21 @@ func (i *Toplevel) Move(seat *client.Seat, serial uint32) error {
 //  serial: the serial of the user event
 //  edges: which edge or corner is being dragged
 func (i *Toplevel) Resize(seat *client.Seat, serial, edges uint32) error {
-	err := i.Context().SendRequest(i, 6, seat, serial, edges)
+	const opcode = 6
+	const rLen = 8 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(edges))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1293,7 +1554,19 @@ func (i *Toplevel) Resize(seat *client.Seat, serial, edges uint32) error {
 // protocol error.
 //
 func (i *Toplevel) SetMaxSize(width, height int32) error {
-	err := i.Context().SendRequest(i, 7, width, height)
+	const opcode = 7
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1335,7 +1608,19 @@ func (i *Toplevel) SetMaxSize(width, height int32) error {
 // protocol error.
 //
 func (i *Toplevel) SetMinSize(width, height int32) error {
-	err := i.Context().SendRequest(i, 8, width, height)
+	const opcode = 8
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1362,7 +1647,15 @@ func (i *Toplevel) SetMinSize(width, height int32) error {
 // unmaximized unless overridden by the compositor.
 //
 func (i *Toplevel) SetMaximized() error {
-	err := i.Context().SendRequest(i, 9)
+	const opcode = 9
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1391,7 +1684,15 @@ func (i *Toplevel) SetMaximized() error {
 // unmaximized unless overridden by the compositor.
 //
 func (i *Toplevel) UnsetMaximized() error {
-	err := i.Context().SendRequest(i, 10)
+	const opcode = 10
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1422,7 +1723,22 @@ func (i *Toplevel) UnsetMaximized() error {
 // visible below the fullscreened surface.
 //
 func (i *Toplevel) SetFullscreen(output *client.Output) error {
-	err := i.Context().SendRequest(i, 11, output)
+	const opcode = 11
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if output == nil {
+		client.PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		client.PutUint32(r[l:l+4], output.ID())
+		l += 4
+	}
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1447,7 +1763,15 @@ func (i *Toplevel) SetFullscreen(output *client.Output) error {
 // content (see ack_configure).
 //
 func (i *Toplevel) UnsetFullscreen() error {
-	err := i.Context().SendRequest(i, 12)
+	const opcode = 12
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1463,7 +1787,15 @@ func (i *Toplevel) UnsetFullscreen() error {
 // similar compositor features.
 //
 func (i *Toplevel) SetMinimized() error {
-	err := i.Context().SendRequest(i, 13)
+	const opcode = 13
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1652,15 +1984,10 @@ func (i *Toplevel) AddConfigureHandler(h ToplevelConfigureHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.configureHandlers = append(i.configureHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Toplevel) RemoveConfigureHandler(h ToplevelConfigureHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.configureHandlers {
 		if e == h {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
@@ -1690,15 +2017,10 @@ func (i *Toplevel) AddCloseHandler(h ToplevelCloseHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.closeHandlers = append(i.closeHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Toplevel) RemoveCloseHandler(h ToplevelCloseHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.closeHandlers {
 		if e == h {
 			i.closeHandlers = append(i.closeHandlers[:j], i.closeHandlers[j+1:]...)
@@ -1710,47 +2032,27 @@ func (i *Toplevel) RemoveCloseHandler(h ToplevelCloseHandler) {
 func (i *Toplevel) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.configureHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := ToplevelConfigureEvent{
 			Width:  event.Int32(),
 			Height: event.Int32(),
 			States: event.Array(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.configureHandlers {
-			i.mu.RUnlock()
-
 			h.HandleToplevelConfigure(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.closeHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := ToplevelCloseEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.closeHandlers {
-			i.mu.RUnlock()
-
 			h.HandleToplevelClose(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -1782,7 +2084,6 @@ func (i *Toplevel) Dispatch(event *client.Event) {
 // for the xdg_popup state to take effect.
 type Popup struct {
 	client.BaseProxy
-	mu                   sync.RWMutex
 	configureHandlers    []PopupConfigureHandler
 	popupDoneHandlers    []PopupPopupDoneHandler
 	repositionedHandlers []PopupRepositionedHandler
@@ -1830,7 +2131,15 @@ func NewPopup(ctx *client.Context) *Popup {
 //
 func (i *Popup) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1881,7 +2190,19 @@ func (i *Popup) Destroy() error {
 //  seat: the wl_seat of the user event
 //  serial: the serial of the user event
 func (i *Popup) Grab(seat *client.Seat, serial uint32) error {
-	err := i.Context().SendRequest(i, 1, seat, serial)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1913,7 +2234,19 @@ func (i *Popup) Grab(seat *client.Seat, serial uint32) error {
 //
 //  token: reposition request token
 func (i *Popup) Reposition(positioner *Positioner, token uint32) error {
-	err := i.Context().SendRequest(i, 2, positioner, token)
+	const opcode = 2
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], positioner.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(token))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1978,15 +2311,10 @@ func (i *Popup) AddConfigureHandler(h PopupConfigureHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.configureHandlers = append(i.configureHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Popup) RemoveConfigureHandler(h PopupConfigureHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.configureHandlers {
 		if e == h {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
@@ -2011,15 +2339,10 @@ func (i *Popup) AddPopupDoneHandler(h PopupPopupDoneHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.popupDoneHandlers = append(i.popupDoneHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Popup) RemovePopupDoneHandler(h PopupPopupDoneHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.popupDoneHandlers {
 		if e == h {
 			i.popupDoneHandlers = append(i.popupDoneHandlers[:j], i.popupDoneHandlers[j+1:]...)
@@ -2059,15 +2382,10 @@ func (i *Popup) AddRepositionedHandler(h PopupRepositionedHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.repositionedHandlers = append(i.repositionedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Popup) RemoveRepositionedHandler(h PopupRepositionedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.repositionedHandlers {
 		if e == h {
 			i.repositionedHandlers = append(i.repositionedHandlers[:j], i.repositionedHandlers[j+1:]...)
@@ -2079,13 +2397,9 @@ func (i *Popup) RemoveRepositionedHandler(h PopupRepositionedHandler) {
 func (i *Popup) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.configureHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PopupConfigureEvent{
 			X:      event.Int32(),
 			Y:      event.Int32(),
@@ -2093,54 +2407,28 @@ func (i *Popup) Dispatch(event *client.Event) {
 			Height: event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.configureHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePopupConfigure(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.popupDoneHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PopupPopupDoneEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.popupDoneHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePopupPopupDone(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.repositionedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PopupRepositionedEvent{
 			Token: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.repositionedHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePopupRepositioned(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }

@@ -29,11 +29,7 @@
 
 package drm_lease
 
-import (
-	"sync"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // DrmLeaseDevice : lease device
 //
@@ -69,7 +65,6 @@ import (
 // only be done by creating a new major version of the extension.
 type DrmLeaseDevice struct {
 	client.BaseProxy
-	mu                sync.RWMutex
 	drmFdHandlers     []DrmLeaseDeviceDrmFdHandler
 	connectorHandlers []DrmLeaseDeviceConnectorHandler
 	doneHandlers      []DrmLeaseDeviceDoneHandler
@@ -122,7 +117,17 @@ func NewDrmLeaseDevice(ctx *client.Context) *DrmLeaseDevice {
 //
 func (i *DrmLeaseDevice) CreateLeaseRequest() (*DrmLeaseRequest, error) {
 	id := NewDrmLeaseRequest(i.Context())
-	err := i.Context().SendRequest(i, 0, id)
+	const opcode = 0
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -136,7 +141,15 @@ func (i *DrmLeaseDevice) CreateLeaseRequest() (*DrmLeaseRequest, error) {
 // Existing connectors, lease request and leases will not be affected.
 //
 func (i *DrmLeaseDevice) Release() error {
-	err := i.Context().SendRequest(i, 1)
+	const opcode = 1
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -169,15 +182,10 @@ func (i *DrmLeaseDevice) AddDrmFdHandler(h DrmLeaseDeviceDrmFdHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.drmFdHandlers = append(i.drmFdHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseDevice) RemoveDrmFdHandler(h DrmLeaseDeviceDrmFdHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.drmFdHandlers {
 		if e == h {
 			i.drmFdHandlers = append(i.drmFdHandlers[:j], i.drmFdHandlers[j+1:]...)
@@ -212,15 +220,10 @@ func (i *DrmLeaseDevice) AddConnectorHandler(h DrmLeaseDeviceConnectorHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.connectorHandlers = append(i.connectorHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseDevice) RemoveConnectorHandler(h DrmLeaseDeviceConnectorHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.connectorHandlers {
 		if e == h {
 			i.connectorHandlers = append(i.connectorHandlers[:j], i.connectorHandlers[j+1:]...)
@@ -248,15 +251,10 @@ func (i *DrmLeaseDevice) AddDoneHandler(h DrmLeaseDeviceDoneHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.doneHandlers = append(i.doneHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseDevice) RemoveDoneHandler(h DrmLeaseDeviceDoneHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.doneHandlers {
 		if e == h {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
@@ -283,15 +281,10 @@ func (i *DrmLeaseDevice) AddReleasedHandler(h DrmLeaseDeviceReleasedHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.releasedHandlers = append(i.releasedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseDevice) RemoveReleasedHandler(h DrmLeaseDeviceReleasedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.releasedHandlers {
 		if e == h {
 			i.releasedHandlers = append(i.releasedHandlers[:j], i.releasedHandlers[j+1:]...)
@@ -303,85 +296,45 @@ func (i *DrmLeaseDevice) RemoveReleasedHandler(h DrmLeaseDeviceReleasedHandler) 
 func (i *DrmLeaseDevice) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.drmFdHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseDeviceDrmFdEvent{
 			Fd: event.FD(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.drmFdHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseDeviceDrmFd(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.connectorHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseDeviceConnectorEvent{
 			ID: event.Proxy(i.Context()).(*DrmLeaseConnector),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.connectorHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseDeviceConnector(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.doneHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseDeviceDoneEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.doneHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseDeviceDone(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.releasedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseDeviceReleasedEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.releasedHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseDeviceReleased(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -396,7 +349,6 @@ func (i *DrmLeaseDevice) Dispatch(event *client.Event) {
 // description event followed by a done event.
 type DrmLeaseConnector struct {
 	client.BaseProxy
-	mu                  sync.RWMutex
 	nameHandlers        []DrmLeaseConnectorNameHandler
 	descriptionHandlers []DrmLeaseConnectorDescriptionHandler
 	connectorIDHandlers []DrmLeaseConnectorConnectorIDHandler
@@ -429,7 +381,15 @@ func NewDrmLeaseConnector(ctx *client.Context) *DrmLeaseConnector {
 //
 func (i *DrmLeaseConnector) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -453,15 +413,10 @@ func (i *DrmLeaseConnector) AddNameHandler(h DrmLeaseConnectorNameHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.nameHandlers = append(i.nameHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseConnector) RemoveNameHandler(h DrmLeaseConnectorNameHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.nameHandlers {
 		if e == h {
 			i.nameHandlers = append(i.nameHandlers[:j], i.nameHandlers[j+1:]...)
@@ -490,15 +445,10 @@ func (i *DrmLeaseConnector) AddDescriptionHandler(h DrmLeaseConnectorDescription
 		return
 	}
 
-	i.mu.Lock()
 	i.descriptionHandlers = append(i.descriptionHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseConnector) RemoveDescriptionHandler(h DrmLeaseConnectorDescriptionHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.descriptionHandlers {
 		if e == h {
 			i.descriptionHandlers = append(i.descriptionHandlers[:j], i.descriptionHandlers[j+1:]...)
@@ -527,15 +477,10 @@ func (i *DrmLeaseConnector) AddConnectorIDHandler(h DrmLeaseConnectorConnectorID
 		return
 	}
 
-	i.mu.Lock()
 	i.connectorIDHandlers = append(i.connectorIDHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseConnector) RemoveConnectorIDHandler(h DrmLeaseConnectorConnectorIDHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.connectorIDHandlers {
 		if e == h {
 			i.connectorIDHandlers = append(i.connectorIDHandlers[:j], i.connectorIDHandlers[j+1:]...)
@@ -560,15 +505,10 @@ func (i *DrmLeaseConnector) AddDoneHandler(h DrmLeaseConnectorDoneHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.doneHandlers = append(i.doneHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseConnector) RemoveDoneHandler(h DrmLeaseConnectorDoneHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.doneHandlers {
 		if e == h {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
@@ -597,15 +537,10 @@ func (i *DrmLeaseConnector) AddWithdrawnHandler(h DrmLeaseConnectorWithdrawnHand
 		return
 	}
 
-	i.mu.Lock()
 	i.withdrawnHandlers = append(i.withdrawnHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLeaseConnector) RemoveWithdrawnHandler(h DrmLeaseConnectorWithdrawnHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.withdrawnHandlers {
 		if e == h {
 			i.withdrawnHandlers = append(i.withdrawnHandlers[:j], i.withdrawnHandlers[j+1:]...)
@@ -617,106 +552,56 @@ func (i *DrmLeaseConnector) RemoveWithdrawnHandler(h DrmLeaseConnectorWithdrawnH
 func (i *DrmLeaseConnector) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.nameHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseConnectorNameEvent{
 			Name: event.String(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.nameHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseConnectorName(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.descriptionHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseConnectorDescriptionEvent{
 			Description: event.String(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.descriptionHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseConnectorDescription(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.connectorIDHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseConnectorConnectorIDEvent{
 			ConnectorID: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.connectorIDHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseConnectorConnectorID(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.doneHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseConnectorDoneEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.doneHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseConnectorDone(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 4:
-		i.mu.RLock()
 		if len(i.withdrawnHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseConnectorWithdrawnEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.withdrawnHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseConnectorWithdrawn(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -756,7 +641,17 @@ func NewDrmLeaseRequest(ctx *client.Context) *DrmLeaseRequest {
 // connector twice will raise the duplicate_connector error.
 //
 func (i *DrmLeaseRequest) RequestConnector(connector *DrmLeaseConnector) error {
-	err := i.Context().SendRequest(i, 0, connector)
+	const opcode = 0
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], connector.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -773,7 +668,17 @@ func (i *DrmLeaseRequest) RequestConnector(connector *DrmLeaseConnector) error {
 func (i *DrmLeaseRequest) Submit() (*DrmLease, error) {
 	defer i.Context().Unregister(i)
 	id := NewDrmLease(i.Context())
-	err := i.Context().SendRequest(i, 1, id)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -831,7 +736,6 @@ func (e DrmLeaseRequestError) String() string {
 // event.
 type DrmLease struct {
 	client.BaseProxy
-	mu               sync.RWMutex
 	leaseFdHandlers  []DrmLeaseLeaseFdHandler
 	finishedHandlers []DrmLeaseFinishedHandler
 }
@@ -860,7 +764,15 @@ func NewDrmLease(ctx *client.Context) *DrmLease {
 //
 func (i *DrmLease) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -890,15 +802,10 @@ func (i *DrmLease) AddLeaseFdHandler(h DrmLeaseLeaseFdHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.leaseFdHandlers = append(i.leaseFdHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLease) RemoveLeaseFdHandler(h DrmLeaseLeaseFdHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.leaseFdHandlers {
 		if e == h {
 			i.leaseFdHandlers = append(i.leaseFdHandlers[:j], i.leaseFdHandlers[j+1:]...)
@@ -928,15 +835,10 @@ func (i *DrmLease) AddFinishedHandler(h DrmLeaseFinishedHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.finishedHandlers = append(i.finishedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DrmLease) RemoveFinishedHandler(h DrmLeaseFinishedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.finishedHandlers {
 		if e == h {
 			i.finishedHandlers = append(i.finishedHandlers[:j], i.finishedHandlers[j+1:]...)
@@ -948,44 +850,24 @@ func (i *DrmLease) RemoveFinishedHandler(h DrmLeaseFinishedHandler) {
 func (i *DrmLease) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.leaseFdHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseLeaseFdEvent{
 			LeasedFd: event.FD(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.leaseFdHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseLeaseFd(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.finishedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DrmLeaseFinishedEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.finishedHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDrmLeaseFinished(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }

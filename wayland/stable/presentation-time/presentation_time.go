@@ -27,11 +27,7 @@
 
 package presentation_time
 
-import (
-	"sync"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // Presentation : timed presentation related wl_surface requests
 //
@@ -59,7 +55,6 @@ import (
 // when the compositor misses its target vertical blanking period.
 type Presentation struct {
 	client.BaseProxy
-	mu              sync.RWMutex
 	clockIDHandlers []PresentationClockIDHandler
 }
 
@@ -101,7 +96,15 @@ func NewPresentation(ctx *client.Context) *Presentation {
 //
 func (i *Presentation) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -119,7 +122,19 @@ func (i *Presentation) Destroy() error {
 //  surface: target surface
 func (i *Presentation) Feedback(surface *client.Surface) (*PresentationFeedback, error) {
 	callback := NewPresentationFeedback(i.Context())
-	err := i.Context().SendRequest(i, 1, surface, callback)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], surface.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], callback.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return callback, err
 }
 
@@ -207,15 +222,10 @@ func (i *Presentation) AddClockIDHandler(h PresentationClockIDHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.clockIDHandlers = append(i.clockIDHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Presentation) RemoveClockIDHandler(h PresentationClockIDHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.clockIDHandlers {
 		if e == h {
 			i.clockIDHandlers = append(i.clockIDHandlers[:j], i.clockIDHandlers[j+1:]...)
@@ -227,26 +237,16 @@ func (i *Presentation) RemoveClockIDHandler(h PresentationClockIDHandler) {
 func (i *Presentation) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.clockIDHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PresentationClockIDEvent{
 			ClkID: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.clockIDHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePresentationClockID(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -265,7 +265,6 @@ func (i *Presentation) Dispatch(event *client.Event) {
 // or 'discarded' event it is automatically destroyed.
 type PresentationFeedback struct {
 	client.BaseProxy
-	mu                 sync.RWMutex
 	syncOutputHandlers []PresentationFeedbackSyncOutputHandler
 	presentedHandlers  []PresentationFeedbackPresentedHandler
 	discardedHandlers  []PresentationFeedbackDiscardedHandler
@@ -368,15 +367,10 @@ func (i *PresentationFeedback) AddSyncOutputHandler(h PresentationFeedbackSyncOu
 		return
 	}
 
-	i.mu.Lock()
 	i.syncOutputHandlers = append(i.syncOutputHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *PresentationFeedback) RemoveSyncOutputHandler(h PresentationFeedbackSyncOutputHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.syncOutputHandlers {
 		if e == h {
 			i.syncOutputHandlers = append(i.syncOutputHandlers[:j], i.syncOutputHandlers[j+1:]...)
@@ -448,15 +442,10 @@ func (i *PresentationFeedback) AddPresentedHandler(h PresentationFeedbackPresent
 		return
 	}
 
-	i.mu.Lock()
 	i.presentedHandlers = append(i.presentedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *PresentationFeedback) RemovePresentedHandler(h PresentationFeedbackPresentedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.presentedHandlers {
 		if e == h {
 			i.presentedHandlers = append(i.presentedHandlers[:j], i.presentedHandlers[j+1:]...)
@@ -479,15 +468,10 @@ func (i *PresentationFeedback) AddDiscardedHandler(h PresentationFeedbackDiscard
 		return
 	}
 
-	i.mu.Lock()
 	i.discardedHandlers = append(i.discardedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *PresentationFeedback) RemoveDiscardedHandler(h PresentationFeedbackDiscardedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.discardedHandlers {
 		if e == h {
 			i.discardedHandlers = append(i.discardedHandlers[:j], i.discardedHandlers[j+1:]...)
@@ -499,34 +483,20 @@ func (i *PresentationFeedback) RemoveDiscardedHandler(h PresentationFeedbackDisc
 func (i *PresentationFeedback) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.syncOutputHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PresentationFeedbackSyncOutputEvent{
 			Output: event.Proxy(i.Context()).(*client.Output),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.syncOutputHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePresentationFeedbackSyncOutput(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.presentedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PresentationFeedbackPresentedEvent{
 			TvSecHi: event.Uint32(),
 			TvSecLo: event.Uint32(),
@@ -537,33 +507,17 @@ func (i *PresentationFeedback) Dispatch(event *client.Event) {
 			Flags:   event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.presentedHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePresentationFeedbackPresented(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.discardedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PresentationFeedbackDiscardedEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.discardedHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePresentationFeedbackDiscarded(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }

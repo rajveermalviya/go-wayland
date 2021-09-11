@@ -32,11 +32,7 @@
 
 package text_input
 
-import (
-	"sync"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // TextInput : text input
 //
@@ -68,7 +64,6 @@ import (
 // needs to be resent by the client.
 type TextInput struct {
 	client.BaseProxy
-	mu                            sync.RWMutex
 	enterHandlers                 []TextInputEnterHandler
 	leaveHandlers                 []TextInputLeaveHandler
 	preeditStringHandlers         []TextInputPreeditStringHandler
@@ -118,7 +113,15 @@ func NewTextInput(ctx *client.Context) *TextInput {
 //
 func (i *TextInput) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -155,7 +158,15 @@ func (i *TextInput) Destroy() error {
 // zwp_text_input_v3.commit request.
 //
 func (i *TextInput) Enable() error {
-	err := i.Context().SendRequest(i, 1)
+	const opcode = 1
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -168,7 +179,15 @@ func (i *TextInput) Enable() error {
 // the next zwp_text_input_v3.commit request.
 //
 func (i *TextInput) Disable() error {
-	err := i.Context().SendRequest(i, 2)
+	const opcode = 2
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -207,7 +226,22 @@ func (i *TextInput) Disable() error {
 // get applied, subsequent attempts to change them may have no effect.
 //
 func (i *TextInput) SetSurroundingText(text string, cursor, anchor int32) error {
-	err := i.Context().SendRequest(i, 3, text, cursor, anchor)
+	const opcode = 3
+	textLen := client.StringPaddedLen(text)
+	rLen := 8 + (4 + textLen) + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutString(r[l:l+(4+textLen)], text, textLen)
+	l += (4 + textLen)
+	client.PutUint32(r[l:l+4], uint32(cursor))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(anchor))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -229,7 +263,17 @@ func (i *TextInput) SetSurroundingText(text string, cursor, anchor int32) error 
 // The initial value of cause is input_method.
 //
 func (i *TextInput) SetTextChangeCause(cause uint32) error {
-	err := i.Context().SendRequest(i, 4, cause)
+	const opcode = 4
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(cause))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -248,7 +292,19 @@ func (i *TextInput) SetTextChangeCause(cause uint32) error {
 // is normal.
 //
 func (i *TextInput) SetContentType(hint, purpose uint32) error {
-	err := i.Context().SendRequest(i, 5, hint, purpose)
+	const opcode = 5
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(hint))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(purpose))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -273,7 +329,23 @@ func (i *TextInput) SetContentType(hint, purpose uint32) error {
 // no effect.
 //
 func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
-	err := i.Context().SendRequest(i, 6, x, y, width, height)
+	const opcode = 6
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -304,7 +376,15 @@ func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
 // events.
 //
 func (i *TextInput) Commit() error {
-	err := i.Context().SendRequest(i, 7)
+	const opcode = 7
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -577,15 +657,10 @@ func (i *TextInput) AddEnterHandler(h TextInputEnterHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.enterHandlers = append(i.enterHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *TextInput) RemoveEnterHandler(h TextInputEnterHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.enterHandlers {
 		if e == h {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
@@ -621,15 +696,10 @@ func (i *TextInput) AddLeaveHandler(h TextInputLeaveHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.leaveHandlers = append(i.leaveHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *TextInput) RemoveLeaveHandler(h TextInputLeaveHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.leaveHandlers {
 		if e == h {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
@@ -674,15 +744,10 @@ func (i *TextInput) AddPreeditStringHandler(h TextInputPreeditStringHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.preeditStringHandlers = append(i.preeditStringHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *TextInput) RemovePreeditStringHandler(h TextInputPreeditStringHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.preeditStringHandlers {
 		if e == h {
 			i.preeditStringHandlers = append(i.preeditStringHandlers[:j], i.preeditStringHandlers[j+1:]...)
@@ -715,15 +780,10 @@ func (i *TextInput) AddCommitStringHandler(h TextInputCommitStringHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.commitStringHandlers = append(i.commitStringHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *TextInput) RemoveCommitStringHandler(h TextInputCommitStringHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.commitStringHandlers {
 		if e == h {
 			i.commitStringHandlers = append(i.commitStringHandlers[:j], i.commitStringHandlers[j+1:]...)
@@ -763,15 +823,10 @@ func (i *TextInput) AddDeleteSurroundingTextHandler(h TextInputDeleteSurrounding
 		return
 	}
 
-	i.mu.Lock()
 	i.deleteSurroundingTextHandlers = append(i.deleteSurroundingTextHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *TextInput) RemoveDeleteSurroundingTextHandler(h TextInputDeleteSurroundingTextHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.deleteSurroundingTextHandlers {
 		if e == h {
 			i.deleteSurroundingTextHandlers = append(i.deleteSurroundingTextHandlers[:j], i.deleteSurroundingTextHandlers[j+1:]...)
@@ -818,15 +873,10 @@ func (i *TextInput) AddDoneHandler(h TextInputDoneHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.doneHandlers = append(i.doneHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *TextInput) RemoveDoneHandler(h TextInputDoneHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.doneHandlers {
 		if e == h {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
@@ -838,134 +888,74 @@ func (i *TextInput) RemoveDoneHandler(h TextInputDoneHandler) {
 func (i *TextInput) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.enterHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TextInputEnterEvent{
 			Surface: event.Proxy(i.Context()).(*client.Surface),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.enterHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTextInputEnter(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.leaveHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TextInputLeaveEvent{
 			Surface: event.Proxy(i.Context()).(*client.Surface),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTextInputLeave(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.preeditStringHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TextInputPreeditStringEvent{
 			Text:        event.String(),
 			CursorBegin: event.Int32(),
 			CursorEnd:   event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.preeditStringHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTextInputPreeditString(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.commitStringHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TextInputCommitStringEvent{
 			Text: event.String(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.commitStringHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTextInputCommitString(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 4:
-		i.mu.RLock()
 		if len(i.deleteSurroundingTextHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TextInputDeleteSurroundingTextEvent{
 			BeforeLength: event.Uint32(),
 			AfterLength:  event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.deleteSurroundingTextHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTextInputDeleteSurroundingText(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 5:
-		i.mu.RLock()
 		if len(i.doneHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TextInputDoneEvent{
 			Serial: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.doneHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTextInputDone(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -991,7 +981,15 @@ func NewTextInputManager(ctx *client.Context) *TextInputManager {
 //
 func (i *TextInputManager) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1001,6 +999,18 @@ func (i *TextInputManager) Destroy() error {
 //
 func (i *TextInputManager) GetTextInput(seat *client.Seat) (*TextInput, error) {
 	id := NewTextInput(i.Context())
-	err := i.Context().SendRequest(i, 1, id, seat)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }

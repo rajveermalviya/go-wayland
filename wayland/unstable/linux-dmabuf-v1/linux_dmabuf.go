@@ -28,9 +28,8 @@
 package linux_dmabuf
 
 import (
-	"sync"
-
 	"github.com/rajveermalviya/go-wayland/wayland/client"
+	"golang.org/x/sys/unix"
 )
 
 // LinuxDmabuf : factory for creating dmabuf-based wl_buffers
@@ -101,7 +100,6 @@ import (
 // interface version number is reset.
 type LinuxDmabuf struct {
 	client.BaseProxy
-	mu               sync.RWMutex
 	formatHandlers   []LinuxDmabufFormatHandler
 	modifierHandlers []LinuxDmabufModifierHandler
 }
@@ -185,7 +183,15 @@ func NewLinuxDmabuf(ctx *client.Context) *LinuxDmabuf {
 //
 func (i *LinuxDmabuf) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -198,7 +204,17 @@ func (i *LinuxDmabuf) Destroy() error {
 //
 func (i *LinuxDmabuf) CreateParams() (*LinuxBufferParams, error) {
 	paramsID := NewLinuxBufferParams(i.Context())
-	err := i.Context().SendRequest(i, 1, paramsID)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], paramsID.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return paramsID, err
 }
 
@@ -230,15 +246,10 @@ func (i *LinuxDmabuf) AddFormatHandler(h LinuxDmabufFormatHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.formatHandlers = append(i.formatHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *LinuxDmabuf) RemoveFormatHandler(h LinuxDmabufFormatHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.formatHandlers {
 		if e == h {
 			i.formatHandlers = append(i.formatHandlers[:j], i.formatHandlers[j+1:]...)
@@ -284,15 +295,10 @@ func (i *LinuxDmabuf) AddModifierHandler(h LinuxDmabufModifierHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.modifierHandlers = append(i.modifierHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *LinuxDmabuf) RemoveModifierHandler(h LinuxDmabufModifierHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.modifierHandlers {
 		if e == h {
 			i.modifierHandlers = append(i.modifierHandlers[:j], i.modifierHandlers[j+1:]...)
@@ -304,49 +310,29 @@ func (i *LinuxDmabuf) RemoveModifierHandler(h LinuxDmabufModifierHandler) {
 func (i *LinuxDmabuf) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.formatHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := LinuxDmabufFormatEvent{
 			Format: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.formatHandlers {
-			i.mu.RUnlock()
-
 			h.HandleLinuxDmabufFormat(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.modifierHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := LinuxDmabufModifierEvent{
 			Format:     event.Uint32(),
 			ModifierHi: event.Uint32(),
 			ModifierLo: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.modifierHandlers {
-			i.mu.RUnlock()
-
 			h.HandleLinuxDmabufModifier(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -368,7 +354,6 @@ func (i *LinuxDmabuf) Dispatch(event *client.Event) {
 // be given in any order. Each plane index can be set only once.
 type LinuxBufferParams struct {
 	client.BaseProxy
-	mu              sync.RWMutex
 	createdHandlers []LinuxBufferParamsCreatedHandler
 	failedHandlers  []LinuxBufferParamsFailedHandler
 }
@@ -402,7 +387,15 @@ func NewLinuxBufferParams(ctx *client.Context) *LinuxBufferParams {
 //
 func (i *LinuxBufferParams) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -434,7 +427,26 @@ func (i *LinuxBufferParams) Destroy() error {
 //  modifierHi: high 32 bits of layout modifier
 //  modifierLo: low 32 bits of layout modifier
 func (i *LinuxBufferParams) Add(fd uintptr, planeIDx, offset, stride, modifierHi, modifierLo uint32) error {
-	err := i.Context().SendRequest(i, 1, fd, planeIDx, offset, stride, modifierHi, modifierLo)
+	const opcode = 1
+	const rLen = 8 + 4 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(planeIDx))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(offset))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(stride))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(modifierHi))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(modifierLo))
+	l += 4
+	oob := unix.UnixRights(int(fd))
+	err := i.Context().WriteMsg(r, oob)
 	return err
 }
 
@@ -505,7 +517,23 @@ func (i *LinuxBufferParams) Add(fd uintptr, planeIDx, offset, stride, modifierHi
 //  format: DRM_FORMAT code
 //  flags: see enum flags
 func (i *LinuxBufferParams) Create(width, height int32, format, flags uint32) error {
-	err := i.Context().SendRequest(i, 2, width, height, format, flags)
+	const opcode = 2
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(format))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(flags))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -541,7 +569,25 @@ func (i *LinuxBufferParams) Create(width, height int32, format, flags uint32) er
 //  flags: see enum flags
 func (i *LinuxBufferParams) CreateImmed(width, height int32, format, flags uint32) (*client.Buffer, error) {
 	bufferID := client.NewBuffer(i.Context())
-	err := i.Context().SendRequest(i, 3, bufferID, width, height, format, flags)
+	const opcode = 3
+	const rLen = 8 + 4 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], bufferID.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(format))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(flags))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return bufferID, err
 }
 
@@ -680,15 +726,10 @@ func (i *LinuxBufferParams) AddCreatedHandler(h LinuxBufferParamsCreatedHandler)
 		return
 	}
 
-	i.mu.Lock()
 	i.createdHandlers = append(i.createdHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *LinuxBufferParams) RemoveCreatedHandler(h LinuxBufferParamsCreatedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.createdHandlers {
 		if e == h {
 			i.createdHandlers = append(i.createdHandlers[:j], i.createdHandlers[j+1:]...)
@@ -716,15 +757,10 @@ func (i *LinuxBufferParams) AddFailedHandler(h LinuxBufferParamsFailedHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.failedHandlers = append(i.failedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *LinuxBufferParams) RemoveFailedHandler(h LinuxBufferParamsFailedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.failedHandlers {
 		if e == h {
 			i.failedHandlers = append(i.failedHandlers[:j], i.failedHandlers[j+1:]...)
@@ -736,44 +772,24 @@ func (i *LinuxBufferParams) RemoveFailedHandler(h LinuxBufferParamsFailedHandler
 func (i *LinuxBufferParams) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.createdHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := LinuxBufferParamsCreatedEvent{
 			Buffer: event.Proxy(i.Context()).(*client.Buffer),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.createdHandlers {
-			i.mu.RUnlock()
-
 			h.HandleLinuxBufferParamsCreated(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.failedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := LinuxBufferParamsFailedEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.failedHandlers {
-			i.mu.RUnlock()
-
 			h.HandleLinuxBufferParamsFailed(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }

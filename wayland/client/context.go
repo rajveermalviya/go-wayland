@@ -6,46 +6,27 @@ import (
 	"log"
 	"net"
 	"os"
-	"sync"
 )
 
 type Context struct {
-	conn      *net.UnixConn
+	Conn      *net.UnixConn
 	objects   map[uint32]Proxy
-	mu        *sync.RWMutex
 	currentID uint32
 }
 
 func (ctx *Context) Register(p Proxy) {
-	ctx.mu.Lock()
-	defer ctx.mu.Unlock()
-
 	ctx.currentID++
 	p.SetID(ctx.currentID)
 	p.SetContext(ctx)
 	ctx.objects[ctx.currentID] = p
 }
 
-func (ctx *Context) lookupProxy(id uint32) Proxy {
-	ctx.mu.RLock()
-	defer ctx.mu.RUnlock()
-
-	p, ok := ctx.objects[id]
-	if !ok {
-		return nil
-	}
-	return p
-}
-
 func (ctx *Context) Unregister(p Proxy) {
-	ctx.mu.Lock()
-	defer ctx.mu.Unlock()
-
 	delete(ctx.objects, p.ID())
 }
 
 func (ctx *Context) Close() error {
-	return ctx.conn.Close()
+	return ctx.Conn.Close()
 }
 
 func (ctx *Context) Dispatch() {
@@ -59,8 +40,8 @@ func (ctx *Context) Dispatch() {
 		log.Printf("unable to read event: %v", err)
 	}
 
-	proxy := ctx.lookupProxy(e.SenderID)
-	if proxy != nil {
+	proxy, ok := ctx.objects[e.SenderID]
+	if ok {
 		if dispatcher, ok := proxy.(Dispatcher); ok {
 			dispatcher.Dispatch(e)
 		} else {
@@ -87,15 +68,14 @@ func Connect(addr string) (*Display, error) {
 	}
 
 	ctx := &Context{
-		objects:   map[uint32]Proxy{},
-		mu:        &sync.RWMutex{},
+		objects: map[uint32]Proxy{},
 	}
 
 	conn, err := net.DialUnix("unix", nil, &net.UnixAddr{Name: addr, Net: "unix"})
 	if err != nil {
 		return nil, err
 	}
-	ctx.conn = conn
+	ctx.Conn = conn
 
 	return NewDisplay(ctx), nil
 }

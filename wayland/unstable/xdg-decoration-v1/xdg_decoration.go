@@ -28,8 +28,6 @@
 package xdg_decoration
 
 import (
-	"sync"
-
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	xdg_shell "github.com/rajveermalviya/go-wayland/wayland/stable/xdg-shell"
 )
@@ -99,7 +97,15 @@ func NewDecorationManager(ctx *client.Context) *DecorationManager {
 //
 func (i *DecorationManager) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -115,7 +121,19 @@ func (i *DecorationManager) Destroy() error {
 //
 func (i *DecorationManager) GetToplevelDecoration(toplevel *xdg_shell.Toplevel) (*ToplevelDecoration, error) {
 	id := NewToplevelDecoration(i.Context())
-	err := i.Context().SendRequest(i, 1, id, toplevel)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], toplevel.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -129,7 +147,6 @@ func (i *DecorationManager) GetToplevelDecoration(toplevel *xdg_shell.Toplevel) 
 // xdg_toplevel.
 type ToplevelDecoration struct {
 	client.BaseProxy
-	mu                sync.RWMutex
 	configureHandlers []ToplevelDecorationConfigureHandler
 }
 
@@ -154,7 +171,15 @@ func NewToplevelDecoration(ctx *client.Context) *ToplevelDecoration {
 //
 func (i *ToplevelDecoration) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -181,7 +206,17 @@ func (i *ToplevelDecoration) Destroy() error {
 //
 //  mode: the decoration mode
 func (i *ToplevelDecoration) SetMode(mode uint32) error {
-	err := i.Context().SendRequest(i, 1, mode)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(mode))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -193,7 +228,15 @@ func (i *ToplevelDecoration) SetMode(mode uint32) error {
 // This request has the same semantics as set_mode.
 //
 func (i *ToplevelDecoration) UnsetMode() error {
-	err := i.Context().SendRequest(i, 2)
+	const opcode = 2
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -300,15 +343,10 @@ func (i *ToplevelDecoration) AddConfigureHandler(h ToplevelDecorationConfigureHa
 		return
 	}
 
-	i.mu.Lock()
 	i.configureHandlers = append(i.configureHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *ToplevelDecoration) RemoveConfigureHandler(h ToplevelDecorationConfigureHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.configureHandlers {
 		if e == h {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
@@ -320,25 +358,15 @@ func (i *ToplevelDecoration) RemoveConfigureHandler(h ToplevelDecorationConfigur
 func (i *ToplevelDecoration) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.configureHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := ToplevelDecorationConfigureEvent{
 			Mode: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.configureHandlers {
-			i.mu.RUnlock()
-
 			h.HandleToplevelDecorationConfigure(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }

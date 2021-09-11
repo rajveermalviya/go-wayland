@@ -32,6 +32,6 @@ func (app *appState) releaseKeyboard() {
 func (app *appState) HandleKeyboardKey(e client.KeyboardKeyEvent) {
 	// close on "q"
 	if e.Key == 16 {
-		close(app.exitChan)
+		app.exit = true
 	}
 }

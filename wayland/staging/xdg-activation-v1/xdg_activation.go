@@ -28,11 +28,7 @@
 
 package xdg_activation
 
-import (
-	"sync"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // Activation : interface for activating surfaces
 //
@@ -64,7 +60,15 @@ func NewActivation(ctx *client.Context) *Activation {
 //
 func (i *Activation) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -76,7 +80,17 @@ func (i *Activation) Destroy() error {
 //
 func (i *Activation) GetActivationToken() (*ActivationToken, error) {
 	id := NewActivationToken(i.Context())
-	err := i.Context().SendRequest(i, 1, id)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -96,7 +110,20 @@ func (i *Activation) GetActivationToken() (*ActivationToken, error) {
 //  token: the activation token of the initiating client
 //  surface: the wl_surface to activate
 func (i *Activation) Activate(token string, surface *client.Surface) error {
-	err := i.Context().SendRequest(i, 2, token, surface)
+	const opcode = 2
+	tokenLen := client.StringPaddedLen(token)
+	rLen := 8 + (4 + tokenLen) + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutString(r[l:l+(4+tokenLen)], token, tokenLen)
+	l += (4 + tokenLen)
+	client.PutUint32(r[l:l+4], surface.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -112,7 +139,6 @@ func (i *Activation) Activate(token string, surface *client.Surface) error {
 // the compositor will provide an invalid token.
 type ActivationToken struct {
 	client.BaseProxy
-	mu           sync.RWMutex
 	doneHandlers []ActivationTokenDoneHandler
 }
 
@@ -150,7 +176,19 @@ func NewActivationToken(ctx *client.Context) *ActivationToken {
 //  serial: the serial of the event that triggered the activation
 //  seat: the wl_seat of the event
 func (i *ActivationToken) SetSerial(serial uint32, seat *client.Seat) error {
-	err := i.Context().SendRequest(i, 0, serial, seat)
+	const opcode = 0
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	client.PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -163,7 +201,18 @@ func (i *ActivationToken) SetSerial(serial uint32, seat *client.Seat) error {
 //
 //  appID: the application id of the client being activated.
 func (i *ActivationToken) SetAppID(appID string) error {
-	err := i.Context().SendRequest(i, 1, appID)
+	const opcode = 1
+	appIDLen := client.StringPaddedLen(appID)
+	rLen := 8 + (4 + appIDLen)
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutString(r[l:l+(4+appIDLen)], appID, appIDLen)
+	l += (4 + appIDLen)
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -179,7 +228,17 @@ func (i *ActivationToken) SetAppID(appID string) error {
 //
 //  surface: the requesting surface
 func (i *ActivationToken) SetSurface(surface *client.Surface) error {
-	err := i.Context().SendRequest(i, 2, surface)
+	const opcode = 2
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], surface.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -189,7 +248,15 @@ func (i *ActivationToken) SetSurface(surface *client.Surface) error {
 // have been offered through set_serial, set_surface and set_app_id.
 //
 func (i *ActivationToken) Commit() error {
-	err := i.Context().SendRequest(i, 3)
+	const opcode = 3
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -200,7 +267,15 @@ func (i *ActivationToken) Commit() error {
 //
 func (i *ActivationToken) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 4)
+	const opcode = 4
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -252,15 +327,10 @@ func (i *ActivationToken) AddDoneHandler(h ActivationTokenDoneHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.doneHandlers = append(i.doneHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *ActivationToken) RemoveDoneHandler(h ActivationTokenDoneHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.doneHandlers {
 		if e == h {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
@@ -272,25 +342,15 @@ func (i *ActivationToken) RemoveDoneHandler(h ActivationTokenDoneHandler) {
 func (i *ActivationToken) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.doneHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := ActivationTokenDoneEvent{
 			Token: event.String(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.doneHandlers {
-			i.mu.RUnlock()
-
 			h.HandleActivationTokenDone(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }

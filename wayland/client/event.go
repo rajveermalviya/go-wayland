@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/rajveermalviya/go-wayland/wayland/internal/byteorder"
+	"golang.org/x/sys/unix"
 )
 
 type Event struct {
@@ -21,7 +20,7 @@ func (ctx *Context) readEvent() (*Event, error) {
 	header := make([]byte, 8)
 	oob := make([]byte, 24)
 
-	n, oobn, _, _, err := ctx.conn.ReadMsgUnix(header, oob)
+	n, oobn, _, _, err := ctx.Conn.ReadMsgUnix(header, oob)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +49,7 @@ func (ctx *Context) readEvent() (*Event, error) {
 	msgSize := int(size) - 8
 
 	data := make([]byte, msgSize)
-	n, err = ctx.conn.Read(data)
+	n, err = ctx.Conn.Read(data)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +82,7 @@ func (e *Event) Uint32() uint32 {
 }
 
 func (e *Event) Proxy(ctx *Context) Proxy {
-	return ctx.lookupProxy(e.Uint32())
+	return ctx.objects[e.Uint32()]
 }
 
 func (e *Event) String() string {

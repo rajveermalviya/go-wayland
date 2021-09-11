@@ -5,14 +5,13 @@ import (
 	"log"
 	"os"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/nfnt/resize"
 	"github.com/rajveermalviya/go-wayland/examples/imageviewer/internal/swizzle"
 	"github.com/rajveermalviya/go-wayland/examples/imageviewer/internal/tempfile"
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	"github.com/rajveermalviya/go-wayland/wayland/cursor"
 	xdg_shell "github.com/rajveermalviya/go-wayland/wayland/stable/xdg-shell"
+	"golang.org/x/sys/unix"
 )
 
 // Global app state
@@ -22,7 +21,7 @@ type appState struct {
 	pImage        *image.RGBA
 	width, height int32
 	frame         *image.RGBA
-	exitChan      chan struct{}
+	exit          bool
 
 	display    *client.Display
 	registry   *client.Registry
@@ -60,14 +59,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// Create a proxy image for large images, makes resizing a little better
-	if pImage.Rect.Dy() > pImage.Rect.Dx() && pImage.Rect.Dy() > maxHeight {
-		pImage = resize.Resize(0, maxHeight, pImage, resize.Bilinear).(*image.RGBA)
-		log.Print("creating proxy image, resizing by height clamped to", maxHeight)
-	} else if pImage.Rect.Dx() > pImage.Rect.Dy() && pImage.Rect.Dx() > maxWidth {
-		pImage = resize.Resize(maxWidth, 0, pImage, resize.Bilinear).(*image.RGBA)
-		log.Print("creating proxy image, resizing by width clamped to", maxWidth)
-	}
 
 	// Resize again, for first frame
 	frameImage := resize.Resize(0, 480, pImage, resize.Bilinear).(*image.RGBA)
@@ -78,24 +69,18 @@ func main() {
 		title: fileName + " - imageviewer",
 		appID: "imageviewer",
 		// Keep proxy image in cache, for use in resizing
-		pImage:   pImage,
-		width:    int32(frameRect.Dx()),
-		height:   int32(frameRect.Dy()),
-		frame:    frameImage,
-		exitChan: make(chan struct{}),
+		pImage: pImage,
+		width:  int32(frameRect.Dx()),
+		height: int32(frameRect.Dy()),
+		frame:  frameImage,
+		exit:   false,
 	}
 
 	app.initWindow()
 
 	// Start the dispatch loop
-loop:
-	for {
-		select {
-		case <-app.exitChan:
-			break loop
-		default:
-			app.dispatch()
-		}
+	for !app.exit {
+		app.dispatch()
 	}
 
 	log.Println("closing")
@@ -291,35 +276,41 @@ func (app *appState) drawFrame() *client.Buffer {
 	if err != nil {
 		log.Fatalf("unable to create a temporary file: %v", err)
 	}
+	defer func() {
+		if err2 := file.Close(); err2 != nil {
+			log.Printf("unable to close file: %v", err2)
+		}
+	}()
 
 	data, err := unix.Mmap(int(file.Fd()), 0, int(size), unix.PROT_READ|unix.PROT_WRITE, unix.MAP_SHARED)
 	if err != nil {
 		log.Fatalf("unable to create mapping: %v", err)
 	}
+	defer func() {
+		if err2 := unix.Munmap(data); err2 != nil {
+			log.Printf("unable to delete mapping: %v", err2)
+		}
+	}()
 
 	pool, err := app.shm.CreatePool(file.Fd(), size)
 	if err != nil {
 		log.Fatalf("unable to create shm pool: %v", err)
 	}
+	defer func() {
+		if err2 := pool.Destroy(); err2 != nil {
+			log.Printf("unable to destroy shm pool: %v", err2)
+		}
+	}()
 
 	buf, err := pool.CreateBuffer(0, app.width, app.height, stride, uint32(client.ShmFormatArgb8888))
 	if err != nil {
 		log.Fatalf("unable to create client.Buffer from shm pool: %v", err)
-	}
-	if err := pool.Destroy(); err != nil {
-		log.Printf("unable to destroy shm pool: %v", err)
-	}
-	if err := file.Close(); err != nil {
-		log.Printf("unable to close file: %v", err)
 	}
 
 	// Convert RGBA to BGRA
 	copy(data, app.frame.Pix)
 	swizzle.BGRA(data)
 
-	if err := unix.Munmap(data); err != nil {
-		log.Printf("unable to delete mapping: %v", err)
-	}
 	buf.AddReleaseHandler(bufferReleaser{buf: buf})
 
 	log.Print("drawing frame complete")
@@ -372,15 +363,17 @@ func (app *appState) HandleWmBasePing(e xdg_shell.WmBasePingEvent) {
 }
 
 func (app *appState) HandleToplevelClose(_ xdg_shell.ToplevelCloseEvent) {
-	close(app.exitChan)
+	app.exit = true
 }
 
 type doner struct {
-	ch chan client.CallbackDoneEvent
+	done bool
+	ev   client.CallbackDoneEvent
 }
 
-func (d doner) HandleCallbackDone(e client.CallbackDoneEvent) {
-	close(d.ch)
+func (d *doner) HandleCallbackDone(e client.CallbackDoneEvent) {
+	d.done = true
+	d.ev = e
 }
 
 func (app *appState) displayRoundTrip() {
@@ -389,21 +382,18 @@ func (app *appState) displayRoundTrip() {
 	if err != nil {
 		log.Fatalf("unable to get sync callback: %v", err)
 	}
-	doneChan := make(chan client.CallbackDoneEvent)
-	cdeHandler := doner{doneChan}
+	defer func() {
+		if err2 := callback.Destroy(); err2 != nil {
+			log.Println("unable to destroy callback:", err2)
+		}
+	}()
+
+	cdeHandler := &doner{}
 	callback.AddDoneHandler(cdeHandler)
 
 	// Wait for callback to return
-loop:
-	for {
-		select {
-		case <-doneChan:
-			_ = callback.Destroy()
-			break loop
-
-		default:
-			app.dispatch()
-		}
+	for !cdeHandler.done {
+		app.dispatch()
 	}
 }
 

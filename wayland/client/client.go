@@ -31,7 +31,7 @@
 
 package client
 
-import "sync"
+import "golang.org/x/sys/unix"
 
 // Display : core global object
 //
@@ -39,7 +39,6 @@ import "sync"
 // is used for internal Wayland protocol features.
 type Display struct {
 	BaseProxy
-	mu               sync.RWMutex
 	errorHandlers    []DisplayErrorHandler
 	deleteIDHandlers []DisplayDeleteIDHandler
 }
@@ -70,7 +69,17 @@ func NewDisplay(ctx *Context) *Display {
 //
 func (i *Display) Sync() (*Callback, error) {
 	callback := NewCallback(i.Context())
-	err := i.Context().SendRequest(i, 0, callback)
+	const opcode = 0
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], callback.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return callback, err
 }
 
@@ -88,7 +97,17 @@ func (i *Display) Sync() (*Callback, error) {
 //
 func (i *Display) GetRegistry() (*Registry, error) {
 	registry := NewRegistry(i.Context())
-	err := i.Context().SendRequest(i, 1, registry)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], registry.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return registry, err
 }
 
@@ -173,15 +192,10 @@ func (i *Display) AddErrorHandler(h DisplayErrorHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.errorHandlers = append(i.errorHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Display) RemoveErrorHandler(h DisplayErrorHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.errorHandlers {
 		if e == h {
 			i.errorHandlers = append(i.errorHandlers[:j], i.errorHandlers[j+1:]...)
@@ -211,15 +225,10 @@ func (i *Display) AddDeleteIDHandler(h DisplayDeleteIDHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.deleteIDHandlers = append(i.deleteIDHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Display) RemoveDeleteIDHandler(h DisplayDeleteIDHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.deleteIDHandlers {
 		if e == h {
 			i.deleteIDHandlers = append(i.deleteIDHandlers[:j], i.deleteIDHandlers[j+1:]...)
@@ -231,49 +240,29 @@ func (i *Display) RemoveDeleteIDHandler(h DisplayDeleteIDHandler) {
 func (i *Display) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.errorHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DisplayErrorEvent{
 			ObjectID: event.Proxy(i.Context()),
 			Code:     event.Uint32(),
 			Message:  event.String(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.errorHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDisplayError(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.deleteIDHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DisplayDeleteIDEvent{
 			ID: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.deleteIDHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDisplayDeleteID(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -301,7 +290,6 @@ func (i *Display) Dispatch(event *Event) {
 // the object.
 type Registry struct {
 	BaseProxy
-	mu                   sync.RWMutex
 	globalHandlers       []RegistryGlobalHandler
 	globalRemoveHandlers []RegistryGlobalRemoveHandler
 }
@@ -341,7 +329,24 @@ func NewRegistry(ctx *Context) *Registry {
 //
 //  name: unique numeric name of the object
 func (i *Registry) Bind(name uint32, iface string, version uint32, id Proxy) error {
-	err := i.Context().SendRequest(i, 0, name, iface, version, id)
+	const opcode = 0
+	ifaceLen := StringPaddedLen(iface)
+	rLen := 8 + 4 + (4 + ifaceLen) + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(name))
+	l += 4
+	PutString(r[l:l+(4+ifaceLen)], iface, ifaceLen)
+	l += (4 + ifaceLen)
+	PutUint32(r[l:l+4], uint32(version))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -373,15 +378,10 @@ func (i *Registry) AddGlobalHandler(h RegistryGlobalHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.globalHandlers = append(i.globalHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Registry) RemoveGlobalHandler(h RegistryGlobalHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.globalHandlers {
 		if e == h {
 			i.globalHandlers = append(i.globalHandlers[:j], i.globalHandlers[j+1:]...)
@@ -416,15 +416,10 @@ func (i *Registry) AddGlobalRemoveHandler(h RegistryGlobalRemoveHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.globalRemoveHandlers = append(i.globalRemoveHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Registry) RemoveGlobalRemoveHandler(h RegistryGlobalRemoveHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.globalRemoveHandlers {
 		if e == h {
 			i.globalRemoveHandlers = append(i.globalRemoveHandlers[:j], i.globalRemoveHandlers[j+1:]...)
@@ -436,49 +431,29 @@ func (i *Registry) RemoveGlobalRemoveHandler(h RegistryGlobalRemoveHandler) {
 func (i *Registry) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.globalHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := RegistryGlobalEvent{
 			Name:      event.Uint32(),
 			Interface: event.String(),
 			Version:   event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.globalHandlers {
-			i.mu.RUnlock()
-
 			h.HandleRegistryGlobal(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.globalRemoveHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := RegistryGlobalRemoveEvent{
 			Name: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.globalRemoveHandlers {
-			i.mu.RUnlock()
-
 			h.HandleRegistryGlobalRemove(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -488,7 +463,6 @@ func (i *Registry) Dispatch(event *Event) {
 // the related request is done.
 type Callback struct {
 	BaseProxy
-	mu           sync.RWMutex
 	doneHandlers []CallbackDoneHandler
 }
 
@@ -524,15 +498,10 @@ func (i *Callback) AddDoneHandler(h CallbackDoneHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.doneHandlers = append(i.doneHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Callback) RemoveDoneHandler(h CallbackDoneHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.doneHandlers {
 		if e == h {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
@@ -544,26 +513,16 @@ func (i *Callback) RemoveDoneHandler(h CallbackDoneHandler) {
 func (i *Callback) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.doneHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := CallbackDoneEvent{
 			CallbackData: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.doneHandlers {
-			i.mu.RUnlock()
-
 			h.HandleCallbackDone(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -593,7 +552,17 @@ func NewCompositor(ctx *Context) *Compositor {
 //
 func (i *Compositor) CreateSurface() (*Surface, error) {
 	id := NewSurface(i.Context())
-	err := i.Context().SendRequest(i, 0, id)
+	const opcode = 0
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -603,7 +572,17 @@ func (i *Compositor) CreateSurface() (*Surface, error) {
 //
 func (i *Compositor) CreateRegion() (*Region, error) {
 	id := NewRegion(i.Context())
-	err := i.Context().SendRequest(i, 1, id)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -661,7 +640,27 @@ func NewShmPool(ctx *Context) *ShmPool {
 //  format: buffer pixel format
 func (i *ShmPool) CreateBuffer(offset, width, height, stride int32, format uint32) (*Buffer, error) {
 	id := NewBuffer(i.Context())
-	err := i.Context().SendRequest(i, 0, id, offset, width, height, stride, format)
+	const opcode = 0
+	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(offset))
+	l += 4
+	PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	PutUint32(r[l:l+4], uint32(stride))
+	l += 4
+	PutUint32(r[l:l+4], uint32(format))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -675,7 +674,15 @@ func (i *ShmPool) CreateBuffer(offset, width, height, stride int32, format uint3
 //
 func (i *ShmPool) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 1)
+	const opcode = 1
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -688,7 +695,17 @@ func (i *ShmPool) Destroy() error {
 //
 //  size: new size of the pool, in bytes
 func (i *ShmPool) Resize(size int32) error {
-	err := i.Context().SendRequest(i, 2, size)
+	const opcode = 2
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(size))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -705,7 +722,6 @@ func (i *ShmPool) Resize(size int32) error {
 // that can be used for buffers.
 type Shm struct {
 	BaseProxy
-	mu             sync.RWMutex
 	formatHandlers []ShmFormatHandler
 }
 
@@ -738,7 +754,20 @@ func NewShm(ctx *Context) *Shm {
 //  size: pool size, in bytes
 func (i *Shm) CreatePool(fd uintptr, size int32) (*ShmPool, error) {
 	id := NewShmPool(i.Context())
-	err := i.Context().SendRequest(i, 0, id, fd, size)
+	const opcode = 0
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(size))
+	l += 4
+	oob := unix.UnixRights(int(fd))
+	err := i.Context().WriteMsg(r, oob)
 	return id, err
 }
 
@@ -1456,15 +1485,10 @@ func (i *Shm) AddFormatHandler(h ShmFormatHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.formatHandlers = append(i.formatHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Shm) RemoveFormatHandler(h ShmFormatHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.formatHandlers {
 		if e == h {
 			i.formatHandlers = append(i.formatHandlers[:j], i.formatHandlers[j+1:]...)
@@ -1476,26 +1500,16 @@ func (i *Shm) RemoveFormatHandler(h ShmFormatHandler) {
 func (i *Shm) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.formatHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := ShmFormatEvent{
 			Format: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.formatHandlers {
-			i.mu.RUnlock()
-
 			h.HandleShmFormat(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -1508,7 +1522,6 @@ func (i *Shm) Dispatch(event *Event) {
 // updates the contents is defined by the buffer factory interface.
 type Buffer struct {
 	BaseProxy
-	mu              sync.RWMutex
 	releaseHandlers []BufferReleaseHandler
 }
 
@@ -1534,7 +1547,15 @@ func NewBuffer(ctx *Context) *Buffer {
 //
 func (i *Buffer) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1563,15 +1584,10 @@ func (i *Buffer) AddReleaseHandler(h BufferReleaseHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.releaseHandlers = append(i.releaseHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Buffer) RemoveReleaseHandler(h BufferReleaseHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.releaseHandlers {
 		if e == h {
 			i.releaseHandlers = append(i.releaseHandlers[:j], i.releaseHandlers[j+1:]...)
@@ -1583,24 +1599,14 @@ func (i *Buffer) RemoveReleaseHandler(h BufferReleaseHandler) {
 func (i *Buffer) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.releaseHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := BufferReleaseEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.releaseHandlers {
-			i.mu.RUnlock()
-
 			h.HandleBufferRelease(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -1614,7 +1620,6 @@ func (i *Buffer) Dispatch(event *Event) {
 // data directly from the source client.
 type DataOffer struct {
 	BaseProxy
-	mu                    sync.RWMutex
 	offerHandlers         []DataOfferOfferHandler
 	sourceActionsHandlers []DataOfferSourceActionsHandler
 	actionHandlers        []DataOfferActionHandler
@@ -1654,7 +1659,20 @@ func NewDataOffer(ctx *Context) *DataOffer {
 //  serial: serial number of the accept request
 //  mimeType: mime type accepted by the client
 func (i *DataOffer) Accept(serial uint32, mimeType string) error {
-	err := i.Context().SendRequest(i, 0, serial, mimeType)
+	const opcode = 0
+	mimeTypeLen := StringPaddedLen(mimeType)
+	rLen := 8 + 4 + (4 + mimeTypeLen)
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	PutString(r[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
+	l += (4 + mimeTypeLen)
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1679,7 +1697,19 @@ func (i *DataOffer) Accept(serial uint32, mimeType string) error {
 //  mimeType: mime type desired by receiver
 //  fd: file descriptor for data transfer
 func (i *DataOffer) Receive(mimeType string, fd uintptr) error {
-	err := i.Context().SendRequest(i, 1, mimeType, fd)
+	const opcode = 1
+	mimeTypeLen := StringPaddedLen(mimeType)
+	rLen := 8 + (4 + mimeTypeLen)
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutString(r[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
+	l += (4 + mimeTypeLen)
+	oob := unix.UnixRights(int(fd))
+	err := i.Context().WriteMsg(r, oob)
 	return err
 }
 
@@ -1689,7 +1719,15 @@ func (i *DataOffer) Receive(mimeType string, fd uintptr) error {
 //
 func (i *DataOffer) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 2)
+	const opcode = 2
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1711,7 +1749,15 @@ func (i *DataOffer) Destroy() error {
 // operation, the invalid_finish protocol error is raised.
 //
 func (i *DataOffer) Finish() error {
-	err := i.Context().SendRequest(i, 3)
+	const opcode = 3
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1752,7 +1798,19 @@ func (i *DataOffer) Finish() error {
 //  dndActions: actions supported by the destination client
 //  preferredAction: action preferred by the destination client
 func (i *DataOffer) SetActions(dndActions, preferredAction uint32) error {
-	err := i.Context().SendRequest(i, 4, dndActions, preferredAction)
+	const opcode = 4
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(dndActions))
+	l += 4
+	PutUint32(r[l:l+4], uint32(preferredAction))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -1822,15 +1880,10 @@ func (i *DataOffer) AddOfferHandler(h DataOfferOfferHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.offerHandlers = append(i.offerHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataOffer) RemoveOfferHandler(h DataOfferOfferHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.offerHandlers {
 		if e == h {
 			i.offerHandlers = append(i.offerHandlers[:j], i.offerHandlers[j+1:]...)
@@ -1858,15 +1911,10 @@ func (i *DataOffer) AddSourceActionsHandler(h DataOfferSourceActionsHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.sourceActionsHandlers = append(i.sourceActionsHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataOffer) RemoveSourceActionsHandler(h DataOfferSourceActionsHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.sourceActionsHandlers {
 		if e == h {
 			i.sourceActionsHandlers = append(i.sourceActionsHandlers[:j], i.sourceActionsHandlers[j+1:]...)
@@ -1926,15 +1974,10 @@ func (i *DataOffer) AddActionHandler(h DataOfferActionHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.actionHandlers = append(i.actionHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataOffer) RemoveActionHandler(h DataOfferActionHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.actionHandlers {
 		if e == h {
 			i.actionHandlers = append(i.actionHandlers[:j], i.actionHandlers[j+1:]...)
@@ -1946,68 +1989,38 @@ func (i *DataOffer) RemoveActionHandler(h DataOfferActionHandler) {
 func (i *DataOffer) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.offerHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataOfferOfferEvent{
 			MimeType: event.String(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.offerHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataOfferOffer(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.sourceActionsHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataOfferSourceActionsEvent{
 			SourceActions: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.sourceActionsHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataOfferSourceActions(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.actionHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataOfferActionEvent{
 			DndAction: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.actionHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataOfferAction(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -2019,7 +2032,6 @@ func (i *DataOffer) Dispatch(event *Event) {
 // to requests to transfer the data.
 type DataSource struct {
 	BaseProxy
-	mu                       sync.RWMutex
 	targetHandlers           []DataSourceTargetHandler
 	sendHandlers             []DataSourceSendHandler
 	cancelledHandlers        []DataSourceCancelledHandler
@@ -2048,7 +2060,18 @@ func NewDataSource(ctx *Context) *DataSource {
 //
 //  mimeType: mime type offered by the data source
 func (i *DataSource) Offer(mimeType string) error {
-	err := i.Context().SendRequest(i, 0, mimeType)
+	const opcode = 0
+	mimeTypeLen := StringPaddedLen(mimeType)
+	rLen := 8 + (4 + mimeTypeLen)
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutString(r[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
+	l += (4 + mimeTypeLen)
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -2058,7 +2081,15 @@ func (i *DataSource) Offer(mimeType string) error {
 //
 func (i *DataSource) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 1)
+	const opcode = 1
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -2080,7 +2111,17 @@ func (i *DataSource) Destroy() error {
 //
 //  dndActions: actions supported by the data source
 func (i *DataSource) SetActions(dndActions uint32) error {
-	err := i.Context().SendRequest(i, 2, dndActions)
+	const opcode = 2
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(dndActions))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -2140,15 +2181,10 @@ func (i *DataSource) AddTargetHandler(h DataSourceTargetHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.targetHandlers = append(i.targetHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataSource) RemoveTargetHandler(h DataSourceTargetHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.targetHandlers {
 		if e == h {
 			i.targetHandlers = append(i.targetHandlers[:j], i.targetHandlers[j+1:]...)
@@ -2177,15 +2213,10 @@ func (i *DataSource) AddSendHandler(h DataSourceSendHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.sendHandlers = append(i.sendHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataSource) RemoveSendHandler(h DataSourceSendHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.sendHandlers {
 		if e == h {
 			i.sendHandlers = append(i.sendHandlers[:j], i.sendHandlers[j+1:]...)
@@ -2227,15 +2258,10 @@ func (i *DataSource) AddCancelledHandler(h DataSourceCancelledHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.cancelledHandlers = append(i.cancelledHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataSource) RemoveCancelledHandler(h DataSourceCancelledHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.cancelledHandlers {
 		if e == h {
 			i.cancelledHandlers = append(i.cancelledHandlers[:j], i.cancelledHandlers[j+1:]...)
@@ -2266,15 +2292,10 @@ func (i *DataSource) AddDndDropPerformedHandler(h DataSourceDndDropPerformedHand
 		return
 	}
 
-	i.mu.Lock()
 	i.dndDropPerformedHandlers = append(i.dndDropPerformedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataSource) RemoveDndDropPerformedHandler(h DataSourceDndDropPerformedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.dndDropPerformedHandlers {
 		if e == h {
 			i.dndDropPerformedHandlers = append(i.dndDropPerformedHandlers[:j], i.dndDropPerformedHandlers[j+1:]...)
@@ -2302,15 +2323,10 @@ func (i *DataSource) AddDndFinishedHandler(h DataSourceDndFinishedHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.dndFinishedHandlers = append(i.dndFinishedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataSource) RemoveDndFinishedHandler(h DataSourceDndFinishedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.dndFinishedHandlers {
 		if e == h {
 			i.dndFinishedHandlers = append(i.dndFinishedHandlers[:j], i.dndFinishedHandlers[j+1:]...)
@@ -2360,15 +2376,10 @@ func (i *DataSource) AddActionHandler(h DataSourceActionHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.actionHandlers = append(i.actionHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataSource) RemoveActionHandler(h DataSourceActionHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.actionHandlers {
 		if e == h {
 			i.actionHandlers = append(i.actionHandlers[:j], i.actionHandlers[j+1:]...)
@@ -2380,126 +2391,66 @@ func (i *DataSource) RemoveActionHandler(h DataSourceActionHandler) {
 func (i *DataSource) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.targetHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataSourceTargetEvent{
 			MimeType: event.String(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.targetHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataSourceTarget(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.sendHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataSourceSendEvent{
 			MimeType: event.String(),
 			Fd:       event.FD(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.sendHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataSourceSend(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.cancelledHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataSourceCancelledEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.cancelledHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataSourceCancelled(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.dndDropPerformedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataSourceDndDropPerformedEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.dndDropPerformedHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataSourceDndDropPerformed(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 4:
-		i.mu.RLock()
 		if len(i.dndFinishedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataSourceDndFinishedEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.dndFinishedHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataSourceDndFinished(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 5:
-		i.mu.RLock()
 		if len(i.actionHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataSourceActionEvent{
 			DndAction: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.actionHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataSourceAction(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -2512,7 +2463,6 @@ func (i *DataSource) Dispatch(event *Event) {
 // mechanisms such as copy-and-paste and drag-and-drop.
 type DataDevice struct {
 	BaseProxy
-	mu                sync.RWMutex
 	dataOfferHandlers []DataDeviceDataOfferHandler
 	enterHandlers     []DataDeviceEnterHandler
 	leaveHandlers     []DataDeviceLeaveHandler
@@ -2570,7 +2520,33 @@ func NewDataDevice(ctx *Context) *DataDevice {
 //  icon: drag-and-drop icon surface
 //  serial: serial number of the implicit grab on the origin
 func (i *DataDevice) StartDrag(source *DataSource, origin, icon *Surface, serial uint32) error {
-	err := i.Context().SendRequest(i, 0, source, origin, icon, serial)
+	const opcode = 0
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if source == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], source.ID())
+		l += 4
+	}
+	PutUint32(r[l:l+4], origin.ID())
+	l += 4
+	if icon == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], icon.ID())
+		l += 4
+	}
+	PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -2584,7 +2560,24 @@ func (i *DataDevice) StartDrag(source *DataSource, origin, icon *Surface, serial
 //  source: data source for the selection
 //  serial: serial number of the event that triggered this request
 func (i *DataDevice) SetSelection(source *DataSource, serial uint32) error {
-	err := i.Context().SendRequest(i, 1, source, serial)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if source == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], source.ID())
+		l += 4
+	}
+	PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -2594,7 +2587,15 @@ func (i *DataDevice) SetSelection(source *DataSource, serial uint32) error {
 //
 func (i *DataDevice) Release() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 2)
+	const opcode = 2
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -2651,15 +2652,10 @@ func (i *DataDevice) AddDataOfferHandler(h DataDeviceDataOfferHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.dataOfferHandlers = append(i.dataOfferHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataDevice) RemoveDataOfferHandler(h DataDeviceDataOfferHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.dataOfferHandlers {
 		if e == h {
 			i.dataOfferHandlers = append(i.dataOfferHandlers[:j], i.dataOfferHandlers[j+1:]...)
@@ -2692,15 +2688,10 @@ func (i *DataDevice) AddEnterHandler(h DataDeviceEnterHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.enterHandlers = append(i.enterHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataDevice) RemoveEnterHandler(h DataDeviceEnterHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.enterHandlers {
 		if e == h {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
@@ -2725,15 +2716,10 @@ func (i *DataDevice) AddLeaveHandler(h DataDeviceLeaveHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.leaveHandlers = append(i.leaveHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataDevice) RemoveLeaveHandler(h DataDeviceLeaveHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.leaveHandlers {
 		if e == h {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
@@ -2764,15 +2750,10 @@ func (i *DataDevice) AddMotionHandler(h DataDeviceMotionHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.motionHandlers = append(i.motionHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataDevice) RemoveMotionHandler(h DataDeviceMotionHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.motionHandlers {
 		if e == h {
 			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
@@ -2807,15 +2788,10 @@ func (i *DataDevice) AddDropHandler(h DataDeviceDropHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.dropHandlers = append(i.dropHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataDevice) RemoveDropHandler(h DataDeviceDropHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.dropHandlers {
 		if e == h {
 			i.dropHandlers = append(i.dropHandlers[:j], i.dropHandlers[j+1:]...)
@@ -2851,15 +2827,10 @@ func (i *DataDevice) AddSelectionHandler(h DataDeviceSelectionHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.selectionHandlers = append(i.selectionHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *DataDevice) RemoveSelectionHandler(h DataDeviceSelectionHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.selectionHandlers {
 		if e == h {
 			i.selectionHandlers = append(i.selectionHandlers[:j], i.selectionHandlers[j+1:]...)
@@ -2871,34 +2842,20 @@ func (i *DataDevice) RemoveSelectionHandler(h DataDeviceSelectionHandler) {
 func (i *DataDevice) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.dataOfferHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataDeviceDataOfferEvent{
 			ID: event.Proxy(i.Context()).(*DataOffer),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.dataOfferHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataDeviceDataOffer(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.enterHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataDeviceEnterEvent{
 			Serial:  event.Uint32(),
 			Surface: event.Proxy(i.Context()).(*Surface),
@@ -2907,97 +2864,51 @@ func (i *DataDevice) Dispatch(event *Event) {
 			ID:      event.Proxy(i.Context()).(*DataOffer),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.enterHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataDeviceEnter(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.leaveHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataDeviceLeaveEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataDeviceLeave(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.motionHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataDeviceMotionEvent{
 			Time: event.Uint32(),
 			X:    event.Float32(),
 			Y:    event.Float32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.motionHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataDeviceMotion(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 4:
-		i.mu.RLock()
 		if len(i.dropHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataDeviceDropEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.dropHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataDeviceDrop(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 5:
-		i.mu.RLock()
 		if len(i.selectionHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := DataDeviceSelectionEvent{
 			ID: event.Proxy(i.Context()).(*DataOffer),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.selectionHandlers {
-			i.mu.RUnlock()
-
 			h.HandleDataDeviceSelection(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -3041,7 +2952,17 @@ func NewDataDeviceManager(ctx *Context) *DataDeviceManager {
 //
 func (i *DataDeviceManager) CreateDataSource() (*DataSource, error) {
 	id := NewDataSource(i.Context())
-	err := i.Context().SendRequest(i, 0, id)
+	const opcode = 0
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -3052,7 +2973,19 @@ func (i *DataDeviceManager) CreateDataSource() (*DataSource, error) {
 //  seat: seat associated with the data device
 func (i *DataDeviceManager) GetDataDevice(seat *Seat) (*DataDevice, error) {
 	id := NewDataDevice(i.Context())
-	err := i.Context().SendRequest(i, 1, id, seat)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -3174,7 +3107,19 @@ func NewShell(ctx *Context) *Shell {
 //  surface: surface to be given the shell surface role
 func (i *Shell) GetShellSurface(surface *Surface) (*ShellSurface, error) {
 	id := NewShellSurface(i.Context())
-	err := i.Context().SendRequest(i, 0, id, surface)
+	const opcode = 0
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	PutUint32(r[l:l+4], surface.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -3228,7 +3173,6 @@ func (e ShellError) String() string {
 // the wl_surface object.
 type ShellSurface struct {
 	BaseProxy
-	mu                sync.RWMutex
 	pingHandlers      []ShellSurfacePingHandler
 	configureHandlers []ShellSurfaceConfigureHandler
 	popupDoneHandlers []ShellSurfacePopupDoneHandler
@@ -3260,7 +3204,17 @@ func NewShellSurface(ctx *Context) *ShellSurface {
 //
 //  serial: serial number of the ping event
 func (i *ShellSurface) Pong(serial uint32) error {
-	err := i.Context().SendRequest(i, 0, serial)
+	const opcode = 0
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3275,7 +3229,19 @@ func (i *ShellSurface) Pong(serial uint32) error {
 //  seat: seat whose pointer is used
 //  serial: serial number of the implicit grab on the pointer
 func (i *ShellSurface) Move(seat *Seat, serial uint32) error {
-	err := i.Context().SendRequest(i, 1, seat, serial)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3291,7 +3257,21 @@ func (i *ShellSurface) Move(seat *Seat, serial uint32) error {
 //  serial: serial number of the implicit grab on the pointer
 //  edges: which edge or corner is being dragged
 func (i *ShellSurface) Resize(seat *Seat, serial, edges uint32) error {
-	err := i.Context().SendRequest(i, 2, seat, serial, edges)
+	const opcode = 2
+	const rLen = 8 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	PutUint32(r[l:l+4], uint32(edges))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3302,7 +3282,15 @@ func (i *ShellSurface) Resize(seat *Seat, serial, edges uint32) error {
 // A toplevel surface is not fullscreen, maximized or transient.
 //
 func (i *ShellSurface) SetToplevel() error {
-	err := i.Context().SendRequest(i, 3)
+	const opcode = 3
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3321,7 +3309,23 @@ func (i *ShellSurface) SetToplevel() error {
 //  y: surface-local y coordinate
 //  flags: transient surface behavior
 func (i *ShellSurface) SetTransient(parent *Surface, x, y int32, flags uint32) error {
-	err := i.Context().SendRequest(i, 4, parent, x, y, flags)
+	const opcode = 4
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], parent.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	PutUint32(r[l:l+4], uint32(flags))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3365,7 +3369,26 @@ func (i *ShellSurface) SetTransient(parent *Surface, x, y int32, flags uint32) e
 //  framerate: framerate in mHz
 //  output: output on which the surface is to be fullscreen
 func (i *ShellSurface) SetFullscreen(method, framerate uint32, output *Output) error {
-	err := i.Context().SendRequest(i, 5, method, framerate, output)
+	const opcode = 5
+	const rLen = 8 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(method))
+	l += 4
+	PutUint32(r[l:l+4], uint32(framerate))
+	l += 4
+	if output == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], output.ID())
+		l += 4
+	}
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3398,7 +3421,27 @@ func (i *ShellSurface) SetFullscreen(method, framerate uint32, output *Output) e
 //  y: surface-local y coordinate
 //  flags: transient surface behavior
 func (i *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x, y int32, flags uint32) error {
-	err := i.Context().SendRequest(i, 6, seat, serial, parent, x, y, flags)
+	const opcode = 6
+	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], seat.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	PutUint32(r[l:l+4], parent.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	PutUint32(r[l:l+4], uint32(flags))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3425,7 +3468,22 @@ func (i *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x, y
 //
 //  output: output on which the surface is to be maximized
 func (i *ShellSurface) SetMaximized(output *Output) error {
-	err := i.Context().SendRequest(i, 7, output)
+	const opcode = 7
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if output == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], output.ID())
+		l += 4
+	}
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3441,7 +3499,18 @@ func (i *ShellSurface) SetMaximized(output *Output) error {
 //
 //  title: surface title
 func (i *ShellSurface) SetTitle(title string) error {
-	err := i.Context().SendRequest(i, 8, title)
+	const opcode = 8
+	titleLen := StringPaddedLen(title)
+	rLen := 8 + (4 + titleLen)
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutString(r[l:l+(4+titleLen)], title, titleLen)
+	l += (4 + titleLen)
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3456,7 +3525,18 @@ func (i *ShellSurface) SetTitle(title string) error {
 //
 //  class: surface class
 func (i *ShellSurface) SetClass(class string) error {
-	err := i.Context().SendRequest(i, 9, class)
+	const opcode = 9
+	classLen := StringPaddedLen(class)
+	rLen := 8 + (4 + classLen)
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutString(r[l:l+(4+classLen)], class, classLen)
+	l += (4 + classLen)
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3651,15 +3731,10 @@ func (i *ShellSurface) AddPingHandler(h ShellSurfacePingHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.pingHandlers = append(i.pingHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *ShellSurface) RemovePingHandler(h ShellSurfacePingHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.pingHandlers {
 		if e == h {
 			i.pingHandlers = append(i.pingHandlers[:j], i.pingHandlers[j+1:]...)
@@ -3703,15 +3778,10 @@ func (i *ShellSurface) AddConfigureHandler(h ShellSurfaceConfigureHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.configureHandlers = append(i.configureHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *ShellSurface) RemoveConfigureHandler(h ShellSurfaceConfigureHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.configureHandlers {
 		if e == h {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
@@ -3736,15 +3806,10 @@ func (i *ShellSurface) AddPopupDoneHandler(h ShellSurfacePopupDoneHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.popupDoneHandlers = append(i.popupDoneHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *ShellSurface) RemovePopupDoneHandler(h ShellSurfacePopupDoneHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.popupDoneHandlers {
 		if e == h {
 			i.popupDoneHandlers = append(i.popupDoneHandlers[:j], i.popupDoneHandlers[j+1:]...)
@@ -3756,68 +3821,38 @@ func (i *ShellSurface) RemovePopupDoneHandler(h ShellSurfacePopupDoneHandler) {
 func (i *ShellSurface) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.pingHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := ShellSurfacePingEvent{
 			Serial: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.pingHandlers {
-			i.mu.RUnlock()
-
 			h.HandleShellSurfacePing(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.configureHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := ShellSurfaceConfigureEvent{
 			Edges:  event.Uint32(),
 			Width:  event.Int32(),
 			Height: event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.configureHandlers {
-			i.mu.RUnlock()
-
 			h.HandleShellSurfaceConfigure(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.popupDoneHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := ShellSurfacePopupDoneEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.popupDoneHandlers {
-			i.mu.RUnlock()
-
 			h.HandleShellSurfacePopupDone(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -3866,7 +3901,6 @@ func (i *ShellSurface) Dispatch(event *Event) {
 // switching is not allowed).
 type Surface struct {
 	BaseProxy
-	mu            sync.RWMutex
 	enterHandlers []SurfaceEnterHandler
 	leaveHandlers []SurfaceLeaveHandler
 }
@@ -3926,7 +3960,15 @@ func NewSurface(ctx *Context) *Surface {
 //
 func (i *Surface) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -3983,7 +4025,26 @@ func (i *Surface) Destroy() error {
 //  x: surface-local x coordinate
 //  y: surface-local y coordinate
 func (i *Surface) Attach(buffer *Buffer, x, y int32) error {
-	err := i.Context().SendRequest(i, 1, buffer, x, y)
+	const opcode = 1
+	const rLen = 8 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if buffer == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], buffer.ID())
+		l += 4
+	}
+	PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4016,7 +4077,23 @@ func (i *Surface) Attach(buffer *Buffer, x, y int32) error {
 //  width: width of damage rectangle
 //  height: height of damage rectangle
 func (i *Surface) Damage(x, y, width, height int32) error {
-	err := i.Context().SendRequest(i, 2, x, y, width, height)
+	const opcode = 2
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4057,7 +4134,17 @@ func (i *Surface) Damage(x, y, width, height int32) error {
 //
 func (i *Surface) Frame() (*Callback, error) {
 	callback := NewCallback(i.Context())
-	err := i.Context().SendRequest(i, 3, callback)
+	const opcode = 3
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], callback.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return callback, err
 }
 
@@ -4090,7 +4177,22 @@ func (i *Surface) Frame() (*Callback, error) {
 //
 //  region: opaque region of the surface
 func (i *Surface) SetOpaqueRegion(region *Region) error {
-	err := i.Context().SendRequest(i, 4, region)
+	const opcode = 4
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if region == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], region.ID())
+		l += 4
+	}
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4121,7 +4223,22 @@ func (i *Surface) SetOpaqueRegion(region *Region) error {
 //
 //  region: input region of the surface
 func (i *Surface) SetInputRegion(region *Region) error {
-	err := i.Context().SendRequest(i, 5, region)
+	const opcode = 5
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if region == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], region.ID())
+		l += 4
+	}
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4146,7 +4263,15 @@ func (i *Surface) SetInputRegion(region *Region) error {
 // Other interfaces may add further double-buffered surface state.
 //
 func (i *Surface) Commit() error {
-	err := i.Context().SendRequest(i, 6)
+	const opcode = 6
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4184,7 +4309,17 @@ func (i *Surface) Commit() error {
 //
 //  transform: transform for interpreting buffer contents
 func (i *Surface) SetBufferTransform(transform int32) error {
-	err := i.Context().SendRequest(i, 7, transform)
+	const opcode = 7
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(transform))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4216,7 +4351,17 @@ func (i *Surface) SetBufferTransform(transform int32) error {
 //
 //  scale: positive scale for interpreting buffer contents
 func (i *Surface) SetBufferScale(scale int32) error {
-	err := i.Context().SendRequest(i, 8, scale)
+	const opcode = 8
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(scale))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4260,7 +4405,23 @@ func (i *Surface) SetBufferScale(scale int32) error {
 //  width: width of damage rectangle
 //  height: height of damage rectangle
 func (i *Surface) DamageBuffer(x, y, width, height int32) error {
-	err := i.Context().SendRequest(i, 9, x, y, width, height)
+	const opcode = 9
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4329,15 +4490,10 @@ func (i *Surface) AddEnterHandler(h SurfaceEnterHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.enterHandlers = append(i.enterHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Surface) RemoveEnterHandler(h SurfaceEnterHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.enterHandlers {
 		if e == h {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
@@ -4371,15 +4527,10 @@ func (i *Surface) AddLeaveHandler(h SurfaceLeaveHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.leaveHandlers = append(i.leaveHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Surface) RemoveLeaveHandler(h SurfaceLeaveHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.leaveHandlers {
 		if e == h {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
@@ -4391,47 +4542,27 @@ func (i *Surface) RemoveLeaveHandler(h SurfaceLeaveHandler) {
 func (i *Surface) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.enterHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := SurfaceEnterEvent{
 			Output: event.Proxy(i.Context()).(*Output),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.enterHandlers {
-			i.mu.RUnlock()
-
 			h.HandleSurfaceEnter(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.leaveHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := SurfaceLeaveEvent{
 			Output: event.Proxy(i.Context()).(*Output),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
-			i.mu.RUnlock()
-
 			h.HandleSurfaceLeave(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -4443,7 +4574,6 @@ func (i *Surface) Dispatch(event *Event) {
 // maintains a keyboard focus and a pointer focus.
 type Seat struct {
 	BaseProxy
-	mu                   sync.RWMutex
 	capabilitiesHandlers []SeatCapabilitiesHandler
 	nameHandlers         []SeatNameHandler
 }
@@ -4473,7 +4603,17 @@ func NewSeat(ctx *Context) *Seat {
 //
 func (i *Seat) GetPointer() (*Pointer, error) {
 	id := NewPointer(i.Context())
-	err := i.Context().SendRequest(i, 0, id)
+	const opcode = 0
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -4490,7 +4630,17 @@ func (i *Seat) GetPointer() (*Pointer, error) {
 //
 func (i *Seat) GetKeyboard() (*Keyboard, error) {
 	id := NewKeyboard(i.Context())
-	err := i.Context().SendRequest(i, 1, id)
+	const opcode = 1
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -4507,7 +4657,17 @@ func (i *Seat) GetKeyboard() (*Keyboard, error) {
 //
 func (i *Seat) GetTouch() (*Touch, error) {
 	id := NewTouch(i.Context())
-	err := i.Context().SendRequest(i, 2, id)
+	const opcode = 2
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -4518,7 +4678,15 @@ func (i *Seat) GetTouch() (*Touch, error) {
 //
 func (i *Seat) Release() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 3)
+	const opcode = 3
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4639,15 +4807,10 @@ func (i *Seat) AddCapabilitiesHandler(h SeatCapabilitiesHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.capabilitiesHandlers = append(i.capabilitiesHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Seat) RemoveCapabilitiesHandler(h SeatCapabilitiesHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.capabilitiesHandlers {
 		if e == h {
 			i.capabilitiesHandlers = append(i.capabilitiesHandlers[:j], i.capabilitiesHandlers[j+1:]...)
@@ -4675,15 +4838,10 @@ func (i *Seat) AddNameHandler(h SeatNameHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.nameHandlers = append(i.nameHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Seat) RemoveNameHandler(h SeatNameHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.nameHandlers {
 		if e == h {
 			i.nameHandlers = append(i.nameHandlers[:j], i.nameHandlers[j+1:]...)
@@ -4695,47 +4853,27 @@ func (i *Seat) RemoveNameHandler(h SeatNameHandler) {
 func (i *Seat) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.capabilitiesHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := SeatCapabilitiesEvent{
 			Capabilities: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.capabilitiesHandlers {
-			i.mu.RUnlock()
-
 			h.HandleSeatCapabilities(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.nameHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := SeatNameEvent{
 			Name: event.String(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.nameHandlers {
-			i.mu.RUnlock()
-
 			h.HandleSeatName(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -4751,7 +4889,6 @@ func (i *Seat) Dispatch(event *Event) {
 // and scrolling.
 type Pointer struct {
 	BaseProxy
-	mu                   sync.RWMutex
 	enterHandlers        []PointerEnterHandler
 	leaveHandlers        []PointerLeaveHandler
 	motionHandlers       []PointerMotionHandler
@@ -4818,7 +4955,28 @@ func NewPointer(ctx *Context) *Pointer {
 //  hotspotX: surface-local x coordinate
 //  hotspotY: surface-local y coordinate
 func (i *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX, hotspotY int32) error {
-	err := i.Context().SendRequest(i, 0, serial, surface, hotspotX, hotspotY)
+	const opcode = 0
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(serial))
+	l += 4
+	if surface == nil {
+		PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		PutUint32(r[l:l+4], surface.ID())
+		l += 4
+	}
+	PutUint32(r[l:l+4], uint32(hotspotX))
+	l += 4
+	PutUint32(r[l:l+4], uint32(hotspotY))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -4832,7 +4990,15 @@ func (i *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX, hotspotY 
 //
 func (i *Pointer) Release() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 1)
+	const opcode = 1
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -5033,15 +5199,10 @@ func (i *Pointer) AddEnterHandler(h PointerEnterHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.enterHandlers = append(i.enterHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveEnterHandler(h PointerEnterHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.enterHandlers {
 		if e == h {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
@@ -5072,15 +5233,10 @@ func (i *Pointer) AddLeaveHandler(h PointerLeaveHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.leaveHandlers = append(i.leaveHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveLeaveHandler(h PointerLeaveHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.leaveHandlers {
 		if e == h {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
@@ -5110,15 +5266,10 @@ func (i *Pointer) AddMotionHandler(h PointerMotionHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.motionHandlers = append(i.motionHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveMotionHandler(h PointerMotionHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.motionHandlers {
 		if e == h {
 			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
@@ -5160,15 +5311,10 @@ func (i *Pointer) AddButtonHandler(h PointerButtonHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.buttonHandlers = append(i.buttonHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveButtonHandler(h PointerButtonHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.buttonHandlers {
 		if e == h {
 			i.buttonHandlers = append(i.buttonHandlers[:j], i.buttonHandlers[j+1:]...)
@@ -5211,15 +5357,10 @@ func (i *Pointer) AddAxisHandler(h PointerAxisHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.axisHandlers = append(i.axisHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveAxisHandler(h PointerAxisHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.axisHandlers {
 		if e == h {
 			i.axisHandlers = append(i.axisHandlers[:j], i.axisHandlers[j+1:]...)
@@ -5275,15 +5416,10 @@ func (i *Pointer) AddFrameHandler(h PointerFrameHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.frameHandlers = append(i.frameHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveFrameHandler(h PointerFrameHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.frameHandlers {
 		if e == h {
 			i.frameHandlers = append(i.frameHandlers[:j], i.frameHandlers[j+1:]...)
@@ -5333,15 +5469,10 @@ func (i *Pointer) AddAxisSourceHandler(h PointerAxisSourceHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.axisSourceHandlers = append(i.axisSourceHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveAxisSourceHandler(h PointerAxisSourceHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.axisSourceHandlers {
 		if e == h {
 			i.axisSourceHandlers = append(i.axisSourceHandlers[:j], i.axisSourceHandlers[j+1:]...)
@@ -5381,15 +5512,10 @@ func (i *Pointer) AddAxisStopHandler(h PointerAxisStopHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.axisStopHandlers = append(i.axisStopHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveAxisStopHandler(h PointerAxisStopHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.axisStopHandlers {
 		if e == h {
 			i.axisStopHandlers = append(i.axisStopHandlers[:j], i.axisStopHandlers[j+1:]...)
@@ -5441,15 +5567,10 @@ func (i *Pointer) AddAxisDiscreteHandler(h PointerAxisDiscreteHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.axisDiscreteHandlers = append(i.axisDiscreteHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Pointer) RemoveAxisDiscreteHandler(h PointerAxisDiscreteHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.axisDiscreteHandlers {
 		if e == h {
 			i.axisDiscreteHandlers = append(i.axisDiscreteHandlers[:j], i.axisDiscreteHandlers[j+1:]...)
@@ -5461,13 +5582,9 @@ func (i *Pointer) RemoveAxisDiscreteHandler(h PointerAxisDiscreteHandler) {
 func (i *Pointer) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.enterHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerEnterEvent{
 			Serial:   event.Uint32(),
 			Surface:  event.Proxy(i.Context()).(*Surface),
@@ -5475,68 +5592,38 @@ func (i *Pointer) Dispatch(event *Event) {
 			SurfaceY: event.Float32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.enterHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerEnter(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.leaveHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerLeaveEvent{
 			Serial:  event.Uint32(),
 			Surface: event.Proxy(i.Context()).(*Surface),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerLeave(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.motionHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerMotionEvent{
 			Time:     event.Uint32(),
 			SurfaceX: event.Float32(),
 			SurfaceY: event.Float32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.motionHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerMotion(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.buttonHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerButtonEvent{
 			Serial: event.Uint32(),
 			Time:   event.Uint32(),
@@ -5544,122 +5631,66 @@ func (i *Pointer) Dispatch(event *Event) {
 			State:  event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.buttonHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerButton(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 4:
-		i.mu.RLock()
 		if len(i.axisHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerAxisEvent{
 			Time:  event.Uint32(),
 			Axis:  event.Uint32(),
 			Value: event.Float32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.axisHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerAxis(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 5:
-		i.mu.RLock()
 		if len(i.frameHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerFrameEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.frameHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerFrame(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 6:
-		i.mu.RLock()
 		if len(i.axisSourceHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerAxisSourceEvent{
 			AxisSource: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.axisSourceHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerAxisSource(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 7:
-		i.mu.RLock()
 		if len(i.axisStopHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerAxisStopEvent{
 			Time: event.Uint32(),
 			Axis: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.axisStopHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerAxisStop(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 8:
-		i.mu.RLock()
 		if len(i.axisDiscreteHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := PointerAxisDiscreteEvent{
 			Axis:     event.Uint32(),
 			Discrete: event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.axisDiscreteHandlers {
-			i.mu.RUnlock()
-
 			h.HandlePointerAxisDiscrete(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -5669,7 +5700,6 @@ func (i *Pointer) Dispatch(event *Event) {
 // associated with a seat.
 type Keyboard struct {
 	BaseProxy
-	mu                 sync.RWMutex
 	keymapHandlers     []KeyboardKeymapHandler
 	enterHandlers      []KeyboardEnterHandler
 	leaveHandlers      []KeyboardLeaveHandler
@@ -5692,7 +5722,15 @@ func NewKeyboard(ctx *Context) *Keyboard {
 //
 func (i *Keyboard) Release() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -5796,15 +5834,10 @@ func (i *Keyboard) AddKeymapHandler(h KeyboardKeymapHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.keymapHandlers = append(i.keymapHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Keyboard) RemoveKeymapHandler(h KeyboardKeymapHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.keymapHandlers {
 		if e == h {
 			i.keymapHandlers = append(i.keymapHandlers[:j], i.keymapHandlers[j+1:]...)
@@ -5836,15 +5869,10 @@ func (i *Keyboard) AddEnterHandler(h KeyboardEnterHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.enterHandlers = append(i.enterHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Keyboard) RemoveEnterHandler(h KeyboardEnterHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.enterHandlers {
 		if e == h {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
@@ -5878,15 +5906,10 @@ func (i *Keyboard) AddLeaveHandler(h KeyboardLeaveHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.leaveHandlers = append(i.leaveHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Keyboard) RemoveLeaveHandler(h KeyboardLeaveHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.leaveHandlers {
 		if e == h {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
@@ -5923,15 +5946,10 @@ func (i *Keyboard) AddKeyHandler(h KeyboardKeyHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.keyHandlers = append(i.keyHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Keyboard) RemoveKeyHandler(h KeyboardKeyHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.keyHandlers {
 		if e == h {
 			i.keyHandlers = append(i.keyHandlers[:j], i.keyHandlers[j+1:]...)
@@ -5962,15 +5980,10 @@ func (i *Keyboard) AddModifiersHandler(h KeyboardModifiersHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.modifiersHandlers = append(i.modifiersHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Keyboard) RemoveModifiersHandler(h KeyboardModifiersHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.modifiersHandlers {
 		if e == h {
 			i.modifiersHandlers = append(i.modifiersHandlers[:j], i.modifiersHandlers[j+1:]...)
@@ -6008,15 +6021,10 @@ func (i *Keyboard) AddRepeatInfoHandler(h KeyboardRepeatInfoHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.repeatInfoHandlers = append(i.repeatInfoHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Keyboard) RemoveRepeatInfoHandler(h KeyboardRepeatInfoHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.repeatInfoHandlers {
 		if e == h {
 			i.repeatInfoHandlers = append(i.repeatInfoHandlers[:j], i.repeatInfoHandlers[j+1:]...)
@@ -6028,81 +6036,47 @@ func (i *Keyboard) RemoveRepeatInfoHandler(h KeyboardRepeatInfoHandler) {
 func (i *Keyboard) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.keymapHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := KeyboardKeymapEvent{
 			Format: event.Uint32(),
 			Fd:     event.FD(),
 			Size:   event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.keymapHandlers {
-			i.mu.RUnlock()
-
 			h.HandleKeyboardKeymap(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.enterHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := KeyboardEnterEvent{
 			Serial:  event.Uint32(),
 			Surface: event.Proxy(i.Context()).(*Surface),
 			Keys:    event.Array(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.enterHandlers {
-			i.mu.RUnlock()
-
 			h.HandleKeyboardEnter(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.leaveHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := KeyboardLeaveEvent{
 			Serial:  event.Uint32(),
 			Surface: event.Proxy(i.Context()).(*Surface),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.leaveHandlers {
-			i.mu.RUnlock()
-
 			h.HandleKeyboardLeave(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.keyHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := KeyboardKeyEvent{
 			Serial: event.Uint32(),
 			Time:   event.Uint32(),
@@ -6110,23 +6084,13 @@ func (i *Keyboard) Dispatch(event *Event) {
 			State:  event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.keyHandlers {
-			i.mu.RUnlock()
-
 			h.HandleKeyboardKey(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 4:
-		i.mu.RLock()
 		if len(i.modifiersHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := KeyboardModifiersEvent{
 			Serial:        event.Uint32(),
 			ModsDepressed: event.Uint32(),
@@ -6135,37 +6099,21 @@ func (i *Keyboard) Dispatch(event *Event) {
 			Group:         event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.modifiersHandlers {
-			i.mu.RUnlock()
-
 			h.HandleKeyboardModifiers(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 5:
-		i.mu.RLock()
 		if len(i.repeatInfoHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := KeyboardRepeatInfoEvent{
 			Rate:  event.Int32(),
 			Delay: event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.repeatInfoHandlers {
-			i.mu.RUnlock()
-
 			h.HandleKeyboardRepeatInfo(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -6181,7 +6129,6 @@ func (i *Keyboard) Dispatch(event *Event) {
 // contact point can be identified by the ID of the sequence.
 type Touch struct {
 	BaseProxy
-	mu                  sync.RWMutex
 	downHandlers        []TouchDownHandler
 	upHandlers          []TouchUpHandler
 	motionHandlers      []TouchMotionHandler
@@ -6211,7 +6158,15 @@ func NewTouch(ctx *Context) *Touch {
 //
 func (i *Touch) Release() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -6240,15 +6195,10 @@ func (i *Touch) AddDownHandler(h TouchDownHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.downHandlers = append(i.downHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Touch) RemoveDownHandler(h TouchDownHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.downHandlers {
 		if e == h {
 			i.downHandlers = append(i.downHandlers[:j], i.downHandlers[j+1:]...)
@@ -6278,15 +6228,10 @@ func (i *Touch) AddUpHandler(h TouchUpHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.upHandlers = append(i.upHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Touch) RemoveUpHandler(h TouchUpHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.upHandlers {
 		if e == h {
 			i.upHandlers = append(i.upHandlers[:j], i.upHandlers[j+1:]...)
@@ -6315,15 +6260,10 @@ func (i *Touch) AddMotionHandler(h TouchMotionHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.motionHandlers = append(i.motionHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Touch) RemoveMotionHandler(h TouchMotionHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.motionHandlers {
 		if e == h {
 			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
@@ -6353,15 +6293,10 @@ func (i *Touch) AddFrameHandler(h TouchFrameHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.frameHandlers = append(i.frameHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Touch) RemoveFrameHandler(h TouchFrameHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.frameHandlers {
 		if e == h {
 			i.frameHandlers = append(i.frameHandlers[:j], i.frameHandlers[j+1:]...)
@@ -6389,15 +6324,10 @@ func (i *Touch) AddCancelHandler(h TouchCancelHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.cancelHandlers = append(i.cancelHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Touch) RemoveCancelHandler(h TouchCancelHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.cancelHandlers {
 		if e == h {
 			i.cancelHandlers = append(i.cancelHandlers[:j], i.cancelHandlers[j+1:]...)
@@ -6449,15 +6379,10 @@ func (i *Touch) AddShapeHandler(h TouchShapeHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.shapeHandlers = append(i.shapeHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Touch) RemoveShapeHandler(h TouchShapeHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.shapeHandlers {
 		if e == h {
 			i.shapeHandlers = append(i.shapeHandlers[:j], i.shapeHandlers[j+1:]...)
@@ -6506,15 +6431,10 @@ func (i *Touch) AddOrientationHandler(h TouchOrientationHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.orientationHandlers = append(i.orientationHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Touch) RemoveOrientationHandler(h TouchOrientationHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.orientationHandlers {
 		if e == h {
 			i.orientationHandlers = append(i.orientationHandlers[:j], i.orientationHandlers[j+1:]...)
@@ -6526,13 +6446,9 @@ func (i *Touch) RemoveOrientationHandler(h TouchOrientationHandler) {
 func (i *Touch) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.downHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TouchDownEvent{
 			Serial:  event.Uint32(),
 			Time:    event.Uint32(),
@@ -6542,46 +6458,26 @@ func (i *Touch) Dispatch(event *Event) {
 			Y:       event.Float32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.downHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTouchDown(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.upHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TouchUpEvent{
 			Serial: event.Uint32(),
 			Time:   event.Uint32(),
 			ID:     event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.upHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTouchUp(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.motionHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TouchMotionEvent{
 			Time: event.Uint32(),
 			ID:   event.Int32(),
@@ -6589,98 +6485,52 @@ func (i *Touch) Dispatch(event *Event) {
 			Y:    event.Float32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.motionHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTouchMotion(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.frameHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TouchFrameEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.frameHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTouchFrame(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 4:
-		i.mu.RLock()
 		if len(i.cancelHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TouchCancelEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.cancelHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTouchCancel(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 5:
-		i.mu.RLock()
 		if len(i.shapeHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TouchShapeEvent{
 			ID:    event.Int32(),
 			Major: event.Float32(),
 			Minor: event.Float32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.shapeHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTouchShape(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 6:
-		i.mu.RLock()
 		if len(i.orientationHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := TouchOrientationEvent{
 			ID:          event.Int32(),
 			Orientation: event.Float32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.orientationHandlers {
-			i.mu.RUnlock()
-
 			h.HandleTouchOrientation(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -6694,7 +6544,6 @@ func (i *Touch) Dispatch(event *Event) {
 // as global during start up, or when a monitor is hotplugged.
 type Output struct {
 	BaseProxy
-	mu               sync.RWMutex
 	geometryHandlers []OutputGeometryHandler
 	modeHandlers     []OutputModeHandler
 	doneHandlers     []OutputDoneHandler
@@ -6722,7 +6571,15 @@ func NewOutput(ctx *Context) *Output {
 //
 func (i *Output) Release() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -6948,15 +6805,10 @@ func (i *Output) AddGeometryHandler(h OutputGeometryHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.geometryHandlers = append(i.geometryHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Output) RemoveGeometryHandler(h OutputGeometryHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.geometryHandlers {
 		if e == h {
 			i.geometryHandlers = append(i.geometryHandlers[:j], i.geometryHandlers[j+1:]...)
@@ -7014,15 +6866,10 @@ func (i *Output) AddModeHandler(h OutputModeHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.modeHandlers = append(i.modeHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Output) RemoveModeHandler(h OutputModeHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.modeHandlers {
 		if e == h {
 			i.modeHandlers = append(i.modeHandlers[:j], i.modeHandlers[j+1:]...)
@@ -7049,15 +6896,10 @@ func (i *Output) AddDoneHandler(h OutputDoneHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.doneHandlers = append(i.doneHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Output) RemoveDoneHandler(h OutputDoneHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.doneHandlers {
 		if e == h {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
@@ -7100,15 +6942,10 @@ func (i *Output) AddScaleHandler(h OutputScaleHandler) {
 		return
 	}
 
-	i.mu.Lock()
 	i.scaleHandlers = append(i.scaleHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *Output) RemoveScaleHandler(h OutputScaleHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.scaleHandlers {
 		if e == h {
 			i.scaleHandlers = append(i.scaleHandlers[:j], i.scaleHandlers[j+1:]...)
@@ -7120,13 +6957,9 @@ func (i *Output) RemoveScaleHandler(h OutputScaleHandler) {
 func (i *Output) Dispatch(event *Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.geometryHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := OutputGeometryEvent{
 			X:              event.Int32(),
 			Y:              event.Int32(),
@@ -7138,23 +6971,13 @@ func (i *Output) Dispatch(event *Event) {
 			Transform:      event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.geometryHandlers {
-			i.mu.RUnlock()
-
 			h.HandleOutputGeometry(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.modeHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := OutputModeEvent{
 			Flags:   event.Uint32(),
 			Width:   event.Int32(),
@@ -7162,55 +6985,29 @@ func (i *Output) Dispatch(event *Event) {
 			Refresh: event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.modeHandlers {
-			i.mu.RUnlock()
-
 			h.HandleOutputMode(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.doneHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := OutputDoneEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.doneHandlers {
-			i.mu.RUnlock()
-
 			h.HandleOutputDone(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 3:
-		i.mu.RLock()
 		if len(i.scaleHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := OutputScaleEvent{
 			Factor: event.Int32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.scaleHandlers {
-			i.mu.RUnlock()
-
 			h.HandleOutputScale(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
@@ -7242,7 +7039,15 @@ func NewRegion(ctx *Context) *Region {
 //
 func (i *Region) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7255,7 +7060,23 @@ func (i *Region) Destroy() error {
 //  width: rectangle width
 //  height: rectangle height
 func (i *Region) Add(x, y, width, height int32) error {
-	err := i.Context().SendRequest(i, 1, x, y, width, height)
+	const opcode = 1
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7268,7 +7089,23 @@ func (i *Region) Add(x, y, width, height int32) error {
 //  width: rectangle width
 //  height: rectangle height
 func (i *Region) Subtract(x, y, width, height int32) error {
-	err := i.Context().SendRequest(i, 2, x, y, width, height)
+	const opcode = 2
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	PutUint32(r[l:l+4], uint32(width))
+	l += 4
+	PutUint32(r[l:l+4], uint32(height))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7332,7 +7169,15 @@ func NewSubcompositor(ctx *Context) *Subcompositor {
 //
 func (i *Subcompositor) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7358,7 +7203,21 @@ func (i *Subcompositor) Destroy() error {
 //  parent: the parent surface
 func (i *Subcompositor) GetSubsurface(surface, parent *Surface) (*Subsurface, error) {
 	id := NewSubsurface(i.Context())
-	err := i.Context().SendRequest(i, 1, id, surface, parent)
+	const opcode = 1
+	const rLen = 8 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], id.ID())
+	l += 4
+	PutUint32(r[l:l+4], surface.ID())
+	l += 4
+	PutUint32(r[l:l+4], parent.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return id, err
 }
 
@@ -7514,7 +7373,15 @@ func NewSubsurface(ctx *Context) *Subsurface {
 //
 func (i *Subsurface) Destroy() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7540,7 +7407,19 @@ func (i *Subsurface) Destroy() error {
 //  x: x coordinate in the parent surface
 //  y: y coordinate in the parent surface
 func (i *Subsurface) SetPosition(x, y int32) error {
-	err := i.Context().SendRequest(i, 1, x, y)
+	const opcode = 1
+	const rLen = 8 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], uint32(x))
+	l += 4
+	PutUint32(r[l:l+4], uint32(y))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7564,7 +7443,17 @@ func (i *Subsurface) SetPosition(x, y int32) error {
 //
 //  sibling: the reference surface
 func (i *Subsurface) PlaceAbove(sibling *Surface) error {
-	err := i.Context().SendRequest(i, 2, sibling)
+	const opcode = 2
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], sibling.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7575,7 +7464,17 @@ func (i *Subsurface) PlaceAbove(sibling *Surface) error {
 //
 //  sibling: the reference surface
 func (i *Subsurface) PlaceBelow(sibling *Surface) error {
-	err := i.Context().SendRequest(i, 3, sibling)
+	const opcode = 3
+	const rLen = 8 + 4
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	PutUint32(r[l:l+4], sibling.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7596,7 +7495,15 @@ func (i *Subsurface) PlaceBelow(sibling *Surface) error {
 // See wl_subsurface for the recursive effect of this mode.
 //
 func (i *Subsurface) SetSync() error {
-	err := i.Context().SendRequest(i, 4)
+	const opcode = 4
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -7623,7 +7530,15 @@ func (i *Subsurface) SetSync() error {
 // the cached state is applied on set_desync.
 //
 func (i *Subsurface) SetDesync() error {
-	err := i.Context().SendRequest(i, 5)
+	const opcode = 5
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	PutUint32(r[l:4], i.ID())
+	l += 4
+	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 

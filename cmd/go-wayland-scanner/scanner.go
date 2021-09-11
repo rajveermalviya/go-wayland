@@ -140,7 +140,6 @@ func main() {
 	fmt.Fprintf(w, "package %s\n", packageName)
 
 	// Imports
-	fmt.Fprintf(w, "import \"sync\"\n")
 	if protocol.Name != "wayland" {
 		fmt.Fprintf(w, "import \"github.com/rajveermalviya/go-wayland/wayland/client\"\n")
 		fmt.Fprintf(w, "import xdg_shell \"github.com/rajveermalviya/go-wayland/wayland/stable/xdg-shell\"\n")
@@ -234,9 +233,6 @@ func writeInterface(w io.Writer, v Interface) {
 	} else {
 		fmt.Fprintf(w, "BaseProxy\n")
 	}
-	if len(v.Events) > 0 {
-		fmt.Fprintf(w, "mu sync.RWMutex\n")
-	}
 	for _, event := range v.Events {
 		fmt.Fprintf(w, "%sHandlers []%s%sHandler\n", toLowerCamel(event.Name), ifaceName, toCamel(event.Name))
 	}
@@ -281,11 +277,11 @@ func writeInterface(w io.Writer, v Interface) {
 	writeEventDispatcher(w, ifaceName, v)
 }
 
-func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
+func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 	requestName := toCamel(r.Name)
 
+	// Generate param & returns types
 	params := []string{}
-	reqParams := []string{}
 	returnTypes := []string{}
 	for _, arg := range r.Args {
 		argNameLower := toLowerCamel(arg.Name)
@@ -302,22 +298,18 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 		switch arg.Type {
 		case "new_id":
 			if arg.Interface != "" {
-				reqParams = append(reqParams, argNameLower)
 				returnTypes = append(returnTypes, "*"+argIface)
 			} else {
 				// Special for wl_registry.bind
 				params = append(params, "iface string", "version uint32", "id Proxy")
-				reqParams = append(reqParams, "iface", "version", "id")
 			}
 
 		case "object":
 			params = append(params, argNameLower+" *"+argIface)
-			reqParams = append(reqParams, argNameLower)
 
 		case "int", "uint", "fixed",
-			"string", "array", "fd":
+			"string", "fd":
 			params = append(params, argNameLower+" "+typeToGoTypeMap[arg.Type])
-			reqParams = append(reqParams, argNameLower)
 		}
 	}
 
@@ -337,6 +329,8 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 	if r.Type == "destructor" {
 		fmt.Fprintf(w, "defer i.Context().Unregister(i)\n")
 	}
+
+	// Create new objects, if any
 	newObjects := []string{}
 	for _, arg := range r.Args {
 		if arg.Type == "new_id" && arg.Interface != "" {
@@ -356,7 +350,158 @@ func writeRequest(w io.Writer, ifaceName string, order int, r Request) {
 			newObjects = append(newObjects, argNameLower)
 		}
 	}
-	fmt.Fprintf(w, "err := i.Context().SendRequest(i, %d, %s)\n", order, strings.Join(reqParams, ","))
+
+	// Create request
+	fmt.Fprintf(w, "const opcode = %d\n", opcode)
+
+	// Calculate size
+	sizes := []string{"8"}
+	canBeConst := true
+	for _, arg := range r.Args {
+		argNameLower := toLowerCamel(arg.Name)
+
+		switch arg.Type {
+		case "new_id":
+			if arg.Interface != "" {
+				sizes = append(sizes, "4")
+			} else {
+				canBeConst = false
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "ifaceLen := StringPaddedLen(iface)\n")
+				} else {
+					fmt.Fprintf(w, "ifaceLen := client.StringPaddedLen(iface)\n")
+				}
+				sizes = append(sizes, "(4 + ifaceLen)", "4", "4")
+			}
+
+		case "object", "int", "uint", "fixed":
+			sizes = append(sizes, "4")
+
+		case "string":
+			canBeConst = false
+			if protocol.Name == "wayland" {
+				fmt.Fprintf(w, "%sLen := StringPaddedLen(%s)\n", argNameLower, argNameLower)
+			} else {
+				fmt.Fprintf(w, "%sLen := client.StringPaddedLen(%s)\n", argNameLower, argNameLower)
+			}
+			sizes = append(sizes, fmt.Sprintf("(4 + %sLen)", argNameLower))
+		}
+	}
+
+	if canBeConst {
+		fmt.Fprintf(w, "const rLen =  %s\n", strings.Join(sizes, "+"))
+	} else {
+		fmt.Fprintf(w, "rLen := %s\n", strings.Join(sizes, "+"))
+	}
+	fmt.Fprintf(w, "r := make([]byte, rLen)\n")
+
+	fmt.Fprintf(w, "l := 0\n")
+	if protocol.Name == "wayland" {
+		fmt.Fprintf(w, "PutUint32(r[l:4], i.ID())\n")
+	} else {
+		fmt.Fprintf(w, "client.PutUint32(r[l:4], i.ID())\n")
+	}
+	fmt.Fprintf(w, "l += 4\n")
+	if protocol.Name == "wayland" {
+		fmt.Fprintf(w, "PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))\n")
+	} else {
+		fmt.Fprintf(w, "client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))\n")
+	}
+	fmt.Fprintf(w, "l += 4\n")
+
+	fdIndex := -1
+	for i, arg := range r.Args {
+		argNameLower := toLowerCamel(arg.Name)
+
+		switch arg.Type {
+		case "object":
+			if arg.AllowNull {
+				fmt.Fprintf(w, "if %s == nil {\n", argNameLower)
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "PutUint32(r[l:l+4], 0)\n")
+				} else {
+					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], 0)\n")
+				}
+				fmt.Fprintf(w, "l += 4\n")
+				fmt.Fprintf(w, "} else {\n")
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+				} else {
+					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+				}
+				fmt.Fprintf(w, "l += 4\n")
+				fmt.Fprintf(w, "}\n")
+			} else {
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+				} else {
+					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+				}
+				fmt.Fprintf(w, "l += 4\n")
+			}
+
+		case "new_id":
+			if arg.Interface != "" {
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+				} else {
+					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+				}
+				fmt.Fprintf(w, "l += 4\n")
+			} else {
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "PutString(r[l:l+(4 + ifaceLen)], iface, ifaceLen)\n")
+				} else {
+					fmt.Fprintf(w, "client.PutString(r[l:l+(4 + ifaceLen)], iface, ifaceLen)\n")
+				}
+				fmt.Fprintf(w, "l += (4 + ifaceLen)\n")
+
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "PutUint32(r[l:l+4], uint32(version))\n")
+				} else {
+					fmt.Fprintf(w, "client.PutUint32(r[l:l+4],  uint32(version))\n")
+				}
+				fmt.Fprintf(w, "l += 4\n")
+
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "PutUint32(r[l:l+4], id.ID())\n")
+				} else {
+					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], id.ID())\n")
+				}
+				fmt.Fprintf(w, "l += 4\n")
+			}
+
+		case "int", "uint", "fixed":
+			if protocol.Name == "wayland" {
+				fmt.Fprintf(w, "PutUint32(r[l:l+4], uint32(%s))\n", argNameLower)
+			} else {
+				fmt.Fprintf(w, "client.PutUint32(r[l:l+4], uint32(%s))\n", argNameLower)
+			}
+			fmt.Fprintf(w, "l += 4\n")
+
+		case "string":
+			if protocol.Name == "wayland" {
+				fmt.Fprintf(w, "PutString(r[l:l+(4 + %sLen)], %s, %sLen)\n", argNameLower, argNameLower, argNameLower)
+			} else {
+				fmt.Fprintf(w, "client.PutString(r[l:l+(4 + %sLen)], %s, %sLen)\n", argNameLower, argNameLower, argNameLower)
+			}
+			fmt.Fprintf(w, "l += (4 + %sLen)\n", argNameLower)
+
+		case "fd":
+			fdIndex = i
+		}
+	}
+
+	if fdIndex != -1 {
+		arg := r.Args[fdIndex]
+		argNameLower := toLowerCamel(arg.Name)
+
+		fmt.Fprintf(w, "oob := unix.UnixRights(int(%s))\n", argNameLower)
+		fmt.Fprintf(w, "err := i.Context().WriteMsg(r, oob)\n")
+	} else {
+		fmt.Fprintf(w, "err := i.Context().WriteMsg(r, nil)\n")
+	}
+
 	fmt.Fprintf(w, "return %s\n", strings.Join(append(newObjects, "err"), ","))
 	fmt.Fprintf(w, "}\n")
 }
@@ -461,15 +606,11 @@ func writeEvent(w io.Writer, ifaceName string, e Event) {
 	fmt.Fprintf(w, "if h == nil {\n")
 	fmt.Fprintf(w, "return\n")
 	fmt.Fprintf(w, "}\n\n")
-	fmt.Fprintf(w, "i.mu.Lock()\n")
 	fmt.Fprintf(w, "i.%sHandlers = append(i.%sHandlers, h)\n", eventNameLower, eventNameLower)
-	fmt.Fprintf(w, "i.mu.Unlock()\n")
 	fmt.Fprintf(w, "}\n")
 
 	// Remove handler
 	fmt.Fprintf(w, "func (i *%s) Remove%sHandler(h %s%sHandler) {\n", ifaceName, eventName, ifaceName, eventName)
-	fmt.Fprintf(w, "i.mu.Lock()\n")
-	fmt.Fprintf(w, "defer i.mu.Unlock()\n\n")
 	fmt.Fprintf(w, "for j, e := range i.%sHandlers {\n", eventNameLower)
 	fmt.Fprintf(w, "if e == h {\n")
 	fmt.Fprintf(w, "i.%sHandlers = append(i.%sHandlers[:j], i.%sHandlers[j+1:]...)\n", eventNameLower, eventNameLower, eventNameLower)
@@ -495,12 +636,9 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 		eventNameLower := toLowerCamel(e.Name)
 
 		fmt.Fprintf(w, "case %d:\n", i)
-		fmt.Fprintf(w, "i.mu.RLock()\n")
 		fmt.Fprintf(w, "if len(i.%sHandlers) == 0 {\n", eventNameLower)
-		fmt.Fprintf(w, "i.mu.RUnlock()\n")
 		fmt.Fprintf(w, "break\n")
 		fmt.Fprintf(w, "}\n")
-		fmt.Fprintf(w, "i.mu.RUnlock()\n\n")
 		fmt.Fprintf(w, "e := %s%sEvent{\n", ifaceName, eventName)
 		for _, arg := range e.Args {
 			switch arg.Type {
@@ -528,14 +666,9 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 			}
 		}
 		fmt.Fprintf(w, "}\n\n")
-
-		fmt.Fprintf(w, "i.mu.RLock()\n")
 		fmt.Fprintf(w, "for _, h := range i.%sHandlers {\n", eventNameLower)
-		fmt.Fprintf(w, "i.mu.RUnlock()\n\n")
 		fmt.Fprintf(w, "h.Handle%s%s(e)\n\n", ifaceName, eventName)
-		fmt.Fprintf(w, "i.mu.RLock()\n")
 		fmt.Fprintf(w, "}\n")
-		fmt.Fprintf(w, "i.mu.RUnlock()\n")
 	}
 	fmt.Fprintf(w, "}\n")
 	fmt.Fprintf(w, "}\n")

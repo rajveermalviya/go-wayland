@@ -29,11 +29,7 @@
 
 package fullscreen_shell
 
-import (
-	"sync"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // FullscreenShell : displays a single surface per output
 //
@@ -72,7 +68,6 @@ import (
 // interface version number is reset.
 type FullscreenShell struct {
 	client.BaseProxy
-	mu                 sync.RWMutex
 	capabilityHandlers []FullscreenShellCapabilityHandler
 }
 
@@ -127,7 +122,15 @@ func NewFullscreenShell(ctx *client.Context) *FullscreenShell {
 //
 func (i *FullscreenShell) Release() error {
 	defer i.Context().Unregister(i)
-	err := i.Context().SendRequest(i, 0)
+	const opcode = 0
+	const rLen = 8
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -156,7 +159,31 @@ func (i *FullscreenShell) Release() error {
 // error.
 //
 func (i *FullscreenShell) PresentSurface(surface *client.Surface, method uint32, output *client.Output) error {
-	err := i.Context().SendRequest(i, 1, surface, method, output)
+	const opcode = 1
+	const rLen = 8 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	if surface == nil {
+		client.PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		client.PutUint32(r[l:l+4], surface.ID())
+		l += 4
+	}
+	client.PutUint32(r[l:l+4], uint32(method))
+	l += 4
+	if output == nil {
+		client.PutUint32(r[l:l+4], 0)
+		l += 4
+	} else {
+		client.PutUint32(r[l:l+4], output.ID())
+		l += 4
+	}
+	err := i.Context().WriteMsg(r, nil)
 	return err
 }
 
@@ -206,7 +233,23 @@ func (i *FullscreenShell) PresentSurface(surface *client.Surface, method uint32,
 //
 func (i *FullscreenShell) PresentSurfaceForMode(surface *client.Surface, output *client.Output, framerate int32) (*FullscreenShellModeFeedback, error) {
 	feedback := NewFullscreenShellModeFeedback(i.Context())
-	err := i.Context().SendRequest(i, 2, surface, output, framerate, feedback)
+	const opcode = 2
+	const rLen = 8 + 4 + 4 + 4 + 4
+	r := make([]byte, rLen)
+	l := 0
+	client.PutUint32(r[l:4], i.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	l += 4
+	client.PutUint32(r[l:l+4], surface.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], output.ID())
+	l += 4
+	client.PutUint32(r[l:l+4], uint32(framerate))
+	l += 4
+	client.PutUint32(r[l:l+4], feedback.ID())
+	l += 4
+	err := i.Context().WriteMsg(r, nil)
 	return feedback, err
 }
 
@@ -388,15 +431,10 @@ func (i *FullscreenShell) AddCapabilityHandler(h FullscreenShellCapabilityHandle
 		return
 	}
 
-	i.mu.Lock()
 	i.capabilityHandlers = append(i.capabilityHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *FullscreenShell) RemoveCapabilityHandler(h FullscreenShellCapabilityHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.capabilityHandlers {
 		if e == h {
 			i.capabilityHandlers = append(i.capabilityHandlers[:j], i.capabilityHandlers[j+1:]...)
@@ -408,33 +446,22 @@ func (i *FullscreenShell) RemoveCapabilityHandler(h FullscreenShellCapabilityHan
 func (i *FullscreenShell) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.capabilityHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := FullscreenShellCapabilityEvent{
 			Capability: event.Uint32(),
 		}
 
-		i.mu.RLock()
 		for _, h := range i.capabilityHandlers {
-			i.mu.RUnlock()
-
 			h.HandleFullscreenShellCapability(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
 
 // FullscreenShellModeFeedback :
 type FullscreenShellModeFeedback struct {
 	client.BaseProxy
-	mu                       sync.RWMutex
 	modeSuccessfulHandlers   []FullscreenShellModeFeedbackModeSuccessfulHandler
 	modeFailedHandlers       []FullscreenShellModeFeedbackModeFailedHandler
 	presentCancelledHandlers []FullscreenShellModeFeedbackPresentCancelledHandler
@@ -471,15 +498,10 @@ func (i *FullscreenShellModeFeedback) AddModeSuccessfulHandler(h FullscreenShell
 		return
 	}
 
-	i.mu.Lock()
 	i.modeSuccessfulHandlers = append(i.modeSuccessfulHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *FullscreenShellModeFeedback) RemoveModeSuccessfulHandler(h FullscreenShellModeFeedbackModeSuccessfulHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.modeSuccessfulHandlers {
 		if e == h {
 			i.modeSuccessfulHandlers = append(i.modeSuccessfulHandlers[:j], i.modeSuccessfulHandlers[j+1:]...)
@@ -507,15 +529,10 @@ func (i *FullscreenShellModeFeedback) AddModeFailedHandler(h FullscreenShellMode
 		return
 	}
 
-	i.mu.Lock()
 	i.modeFailedHandlers = append(i.modeFailedHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *FullscreenShellModeFeedback) RemoveModeFailedHandler(h FullscreenShellModeFeedbackModeFailedHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.modeFailedHandlers {
 		if e == h {
 			i.modeFailedHandlers = append(i.modeFailedHandlers[:j], i.modeFailedHandlers[j+1:]...)
@@ -543,15 +560,10 @@ func (i *FullscreenShellModeFeedback) AddPresentCancelledHandler(h FullscreenShe
 		return
 	}
 
-	i.mu.Lock()
 	i.presentCancelledHandlers = append(i.presentCancelledHandlers, h)
-	i.mu.Unlock()
 }
 
 func (i *FullscreenShellModeFeedback) RemovePresentCancelledHandler(h FullscreenShellModeFeedbackPresentCancelledHandler) {
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
 	for j, e := range i.presentCancelledHandlers {
 		if e == h {
 			i.presentCancelledHandlers = append(i.presentCancelledHandlers[:j], i.presentCancelledHandlers[j+1:]...)
@@ -563,61 +575,31 @@ func (i *FullscreenShellModeFeedback) RemovePresentCancelledHandler(h Fullscreen
 func (i *FullscreenShellModeFeedback) Dispatch(event *client.Event) {
 	switch event.Opcode {
 	case 0:
-		i.mu.RLock()
 		if len(i.modeSuccessfulHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := FullscreenShellModeFeedbackModeSuccessfulEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.modeSuccessfulHandlers {
-			i.mu.RUnlock()
-
 			h.HandleFullscreenShellModeFeedbackModeSuccessful(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 1:
-		i.mu.RLock()
 		if len(i.modeFailedHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := FullscreenShellModeFeedbackModeFailedEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.modeFailedHandlers {
-			i.mu.RUnlock()
-
 			h.HandleFullscreenShellModeFeedbackModeFailed(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	case 2:
-		i.mu.RLock()
 		if len(i.presentCancelledHandlers) == 0 {
-			i.mu.RUnlock()
 			break
 		}
-		i.mu.RUnlock()
-
 		e := FullscreenShellModeFeedbackPresentCancelledEvent{}
 
-		i.mu.RLock()
 		for _, h := range i.presentCancelledHandlers {
-			i.mu.RUnlock()
-
 			h.HandleFullscreenShellModeFeedbackPresentCancelled(e)
-
-			i.mu.RLock()
 		}
-		i.mu.RUnlock()
 	}
 }
