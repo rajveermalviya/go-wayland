@@ -1,18 +1,18 @@
 package client
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/rajveermalviya/go-wayland/wayland/internal/byteorder"
 )
 
 func (ctx *Context) WriteMsg(b []byte, oob []byte) error {
-	n, oobn, err := ctx.Conn.WriteMsgUnix(b, oob, nil)
+	n, oobn, err := ctx.conn.WriteMsgUnix(b, oob, nil)
 	if err != nil {
 		return err
 	}
 	if n != len(b) || oobn != len(oob) {
-		return errors.New("unable to write request")
+		return fmt.Errorf("ctx.WriteMsg: incorrect number of bytes written (n=%d oobn=%d)", n, oobn)
 	}
 
 	return nil
@@ -22,14 +22,23 @@ func PutUint32(dst []byte, v uint32) {
 	byteorder.NativeEndian.PutUint32(dst, v)
 }
 
+func PutFloat32(dst []byte, f float32) {
+	fx := float64ToFixed(float64(f))
+	byteorder.NativeEndian.PutUint32(dst, uint32(fx))
+}
+
 func PutString(dst []byte, v string, l int) {
+	_ = dst[:4+len(v)] // early bounds check
+
 	byteorder.NativeEndian.PutUint32(dst[:4], uint32(l))
 
 	v += "\x00"
 	copy(dst[4:4+len(v)], []byte(v))
 }
 
-func StringPaddedLen(s string) int {
-	stringLen := len(s) + 1
-	return (stringLen + (4 - (stringLen & 0x3)))
+func PaddedLen(l int) int {
+	if (l & 0x3) != 0 {
+		return l + (4 - (l & 0x3))
+	}
+	return l
 }

@@ -443,16 +443,16 @@ func (i *FullscreenShell) RemoveCapabilityHandler(h FullscreenShellCapabilityHan
 	}
 }
 
-func (i *FullscreenShell) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *FullscreenShell) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.capabilityHandlers) == 0 {
-			break
+			return
 		}
-		e := FullscreenShellCapabilityEvent{
-			Capability: event.Uint32(),
-		}
-
+		var e FullscreenShellCapabilityEvent
+		l := 0
+		e.Capability = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.capabilityHandlers {
 			h.HandleFullscreenShellCapability(e)
 		}
@@ -572,32 +572,29 @@ func (i *FullscreenShellModeFeedback) RemovePresentCancelledHandler(h Fullscreen
 	}
 }
 
-func (i *FullscreenShellModeFeedback) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *FullscreenShellModeFeedback) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.modeSuccessfulHandlers) == 0 {
-			break
+			return
 		}
-		e := FullscreenShellModeFeedbackModeSuccessfulEvent{}
-
+		var e FullscreenShellModeFeedbackModeSuccessfulEvent
 		for _, h := range i.modeSuccessfulHandlers {
 			h.HandleFullscreenShellModeFeedbackModeSuccessful(e)
 		}
 	case 1:
 		if len(i.modeFailedHandlers) == 0 {
-			break
+			return
 		}
-		e := FullscreenShellModeFeedbackModeFailedEvent{}
-
+		var e FullscreenShellModeFeedbackModeFailedEvent
 		for _, h := range i.modeFailedHandlers {
 			h.HandleFullscreenShellModeFeedbackModeFailed(e)
 		}
 	case 2:
 		if len(i.presentCancelledHandlers) == 0 {
-			break
+			return
 		}
-		e := FullscreenShellModeFeedbackPresentCancelledEvent{}
-
+		var e FullscreenShellModeFeedbackPresentCancelledEvent
 		for _, h := range i.presentCancelledHandlers {
 			h.HandleFullscreenShellModeFeedbackPresentCancelled(e)
 		}

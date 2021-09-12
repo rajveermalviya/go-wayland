@@ -355,16 +355,16 @@ func (i *ToplevelDecoration) RemoveConfigureHandler(h ToplevelDecorationConfigur
 	}
 }
 
-func (i *ToplevelDecoration) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *ToplevelDecoration) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {
-			break
+			return
 		}
-		e := ToplevelDecorationConfigureEvent{
-			Mode: event.Uint32(),
-		}
-
+		var e ToplevelDecorationConfigureEvent
+		l := 0
+		e.Mode = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.configureHandlers {
 			h.HandleToplevelDecorationConfigure(e)
 		}

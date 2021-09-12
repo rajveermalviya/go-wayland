@@ -56,7 +56,7 @@ func (app *appState) attachPointer() {
 	pointer.AddAxisDiscreteHandler(app)
 	pointer.AddFrameHandler(app)
 
-	log.Print("pointer interface registered")
+	logPrintln("pointer interface registered")
 }
 
 func (app *appState) releasePointer() {
@@ -71,11 +71,11 @@ func (app *appState) releasePointer() {
 	app.pointer.RemoveFrameHandler(app)
 
 	if err := app.pointer.Release(); err != nil {
-		log.Println("unable to release pointer interface")
+		logPrintln("unable to release pointer interface")
 	}
 	app.pointer = nil
 
-	log.Print("pointer interface released")
+	logPrintln("pointer interface released")
 }
 
 func (app *appState) HandlePointerEnter(e client.PointerEnterEvent) {
@@ -145,10 +145,10 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 	e := app.pointerEvent
 
 	if (e.eventMask & pointerEventEnter) != 0 {
-		log.Printf("entered %v, %v", e.surfaceX, e.surfaceY)
+		logPrintf("entered %v, %v", e.surfaceX, e.surfaceY)
 
 		edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
-		log.Print(edge.Name())
+		logPrintln(edge.Name())
 		cursorName, ok := cursorMap[edge]
 		if ok {
 			app.setCursor(e.serial, cursorName)
@@ -156,17 +156,17 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 	}
 
 	if (e.eventMask & pointerEventLeave) != 0 {
-		log.Print("leave")
+		logPrintln("leave")
 
 		if err := app.pointer.SetCursor(e.serial, nil, 0, 0); err != nil {
-			log.Print("unable to set cursor")
+			logPrintln("unable to set cursor")
 		}
 	}
 	if (e.eventMask & pointerEventMotion) != 0 {
-		log.Printf("motion %v, %v", e.surfaceX, e.surfaceY)
+		logPrintf("motion %v, %v", e.surfaceX, e.surfaceY)
 
 		edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
-		log.Print(edge.Name())
+		logPrintln(edge.Name())
 		cursorName, ok := cursorMap[edge]
 		if ok {
 			app.setCursor(e.serial, cursorName)
@@ -174,25 +174,25 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 	}
 	if (e.eventMask & pointerEventButton) != 0 {
 		if e.state == uint32(client.PointerButtonStateReleased) {
-			log.Printf("button %d released", e.button)
+			logPrintf("button %d released", e.button)
 		} else {
-			log.Printf("button %d pressed", e.button)
+			logPrintf("button %d pressed", e.button)
 
 			switch e.button {
 			case BtnLeft:
 				edge := componentEdge(uint32(app.width), uint32(app.height), e.surfaceX, e.surfaceY, 8)
 				if edge != xdg_shell.ToplevelResizeEdgeNone {
 					if err := app.xdgTopLevel.Resize(app.seat, e.serial, uint32(edge)); err != nil {
-						log.Println("unable to start resize")
+						logPrintln("unable to start resize")
 					}
 				} else {
 					if err := app.xdgTopLevel.Move(app.seat, e.serial); err != nil {
-						log.Println("unable to start move")
+						logPrintln("unable to start move")
 					}
 				}
 			case BtnRight:
 				if err := app.xdgTopLevel.ShowWindowMenu(app.seat, e.serial, int32(e.surfaceX), int32(e.surfaceY)); err != nil {
-					log.Println("unable to show window menu")
+					logPrintln("unable to show window menu")
 				}
 			}
 		}
@@ -205,18 +205,18 @@ func (app *appState) HandlePointerFrame(_ client.PointerFrameEvent) {
 			if !e.axes[i].valid {
 				continue
 			}
-			log.Printf("%s axis ", client.PointerAxis(i).Name())
+			logPrintf("%s axis ", client.PointerAxis(i).Name())
 			if (e.eventMask & pointerEventAxis) != 0 {
-				log.Printf("value %v", e.axes[i].value)
+				logPrintf("value %v", e.axes[i].value)
 			}
 			if (e.eventMask & pointerEventAxisDiscrete) != 0 {
-				log.Printf("discrete %d ", e.axes[i].discrete)
+				logPrintf("discrete %d ", e.axes[i].discrete)
 			}
 			if (e.eventMask & pointerEventAxisSource) != 0 {
-				log.Printf("via %s", client.PointerAxisSource(e.axisSource).Name())
+				logPrintf("via %s", client.PointerAxisSource(e.axisSource).Name())
 			}
 			if (e.eventMask & pointerEventAxisStop) != 0 {
-				log.Printf("(stopped)")
+				logPrintf("(stopped)")
 			}
 		}
 	}
@@ -266,9 +266,9 @@ type cursorData struct {
 
 func (c *cursorData) Destory() {
 	if err := c.surface.Destroy(); err != nil {
-		log.Println("unable to destory current cursor surface:", err)
+		logPrintln("unable to destory current cursor surface:", err)
 	}
-	log.Print("destroyed wl_surface for cursor: ", c.name)
+	logPrintln("destroyed wl_surface for cursor: ", c.name)
 }
 
 func (app *appState) setCursor(serial uint32, cursorName string) {
@@ -291,7 +291,7 @@ func (app *appState) setCursor(serial uint32, cursorName string) {
 	if err != nil {
 		log.Fatalf("unable to create compositor surface: %v", err)
 	}
-	log.Print("created new wl_surface for cursor: ", cursorName)
+	logPrintln("created new wl_surface for cursor: ", cursorName)
 
 	// For now get the first image (there are multiple images because of animated cursors)
 	// will figure out cursor animation afterwards
@@ -315,7 +315,7 @@ func (app *appState) setCursor(serial uint32, cursorName string) {
 		serial, surface,
 		int32(image.HotspotX), int32(image.HotspotY),
 	); err != nil {
-		log.Print("unable to set cursor")
+		logPrintln("unable to set cursor")
 	}
 
 	app.currentCursor = &cursorData{name: cursorName, surface: surface}

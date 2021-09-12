@@ -83,7 +83,7 @@ func main() {
 		app.dispatch()
 	}
 
-	log.Println("closing")
+	logPrintln("closing")
 	app.cleanup()
 }
 
@@ -111,7 +111,7 @@ func (app *appState) initWindow() {
 	// Wait for handler events
 	app.displayRoundTrip()
 
-	log.Print("all interfaces registered")
+	logPrintln("all interfaces registered")
 
 	// Create a wl_surface for toplevel window
 	surface, err := app.compositor.CreateSurface()
@@ -119,7 +119,7 @@ func (app *appState) initWindow() {
 		log.Fatalf("unable to create compositor surface: %v", err)
 	}
 	app.surface = surface
-	log.Print("created new wl_surface")
+	logPrintln("created new wl_surface")
 
 	// attach wl_surface to xdg_wmbase to get toplevel
 	// handle
@@ -128,11 +128,11 @@ func (app *appState) initWindow() {
 		log.Fatalf("unable to get xdg_surface: %v", err)
 	}
 	app.xdgSurface = xdgSurface
-	log.Print("got xdg_surface")
+	logPrintln("got xdg_surface")
 
 	// Add xdg_surface configure handler `app.HandleSurfaceConfigure`
 	xdgSurface.AddConfigureHandler(app)
-	log.Print("added configure handler")
+	logPrintln("added configure handler")
 
 	// Get toplevel
 	xdgTopLevel, err := xdgSurface.GetToplevel()
@@ -140,7 +140,7 @@ func (app *appState) initWindow() {
 		log.Fatalf("unable to get xdg_toplevel: %v", err)
 	}
 	app.xdgTopLevel = xdgTopLevel
-	log.Print("got xdg_toplevel")
+	logPrintln("got xdg_toplevel")
 
 	// Add xdg_toplevel configure handler for window resizing
 	xdgTopLevel.AddConfigureHandler(app)
@@ -177,7 +177,7 @@ func (app *appState) context() *client.Context {
 }
 
 func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
-	log.Printf("discovered an interface: %q\n", e.Interface)
+	logPrintf("discovered an interface: %q\n", e.Interface)
 
 	switch e.Interface {
 	case "wl_compositor":
@@ -219,7 +219,7 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 }
 
 func (app *appState) HandleShmFormat(e client.ShmFormatEvent) {
-	log.Printf("supported pixel format: %v\n", client.ShmFormat(e.Format))
+	logPrintf("supported pixel format: %v\n", client.ShmFormat(e.Format))
 }
 
 func (app *appState) HandleSurfaceConfigure(e xdg_shell.SurfaceConfigureEvent) {
@@ -257,9 +257,9 @@ func (app *appState) HandleToplevelConfigure(e xdg_shell.ToplevelConfigureEvent)
 
 	// Resize the proxy image to new frame size
 	// and set it to frame image
-	log.Print("resizing frame")
+	logPrintln("resizing frame")
 	app.frame = resize.Resize(uint(width), uint(height), app.pImage, resize.Bilinear).(*image.RGBA)
-	log.Print("done resizing frame")
+	logPrintln("done resizing frame")
 
 	// Update app size
 	app.width = width
@@ -267,7 +267,7 @@ func (app *appState) HandleToplevelConfigure(e xdg_shell.ToplevelConfigureEvent)
 }
 
 func (app *appState) drawFrame() *client.Buffer {
-	log.Print("drawing frame")
+	logPrintln("drawing frame")
 
 	stride := app.width * 4
 	size := stride * app.height
@@ -278,7 +278,7 @@ func (app *appState) drawFrame() *client.Buffer {
 	}
 	defer func() {
 		if err2 := file.Close(); err2 != nil {
-			log.Printf("unable to close file: %v", err2)
+			logPrintf("unable to close file: %v", err2)
 		}
 	}()
 
@@ -288,7 +288,7 @@ func (app *appState) drawFrame() *client.Buffer {
 	}
 	defer func() {
 		if err2 := unix.Munmap(data); err2 != nil {
-			log.Printf("unable to delete mapping: %v", err2)
+			logPrintf("unable to delete mapping: %v", err2)
 		}
 	}()
 
@@ -298,7 +298,7 @@ func (app *appState) drawFrame() *client.Buffer {
 	}
 	defer func() {
 		if err2 := pool.Destroy(); err2 != nil {
-			log.Printf("unable to destroy shm pool: %v", err2)
+			logPrintf("unable to destroy shm pool: %v", err2)
 		}
 	}()
 
@@ -313,7 +313,7 @@ func (app *appState) drawFrame() *client.Buffer {
 
 	buf.AddReleaseHandler(bufferReleaser{buf: buf})
 
-	log.Print("drawing frame complete")
+	logPrintln("drawing frame complete")
 	return buf
 }
 
@@ -323,7 +323,7 @@ type bufferReleaser struct {
 
 func (b bufferReleaser) HandleBufferRelease(e client.BufferReleaseEvent) {
 	if err := b.buf.Destroy(); err != nil {
-		log.Printf("unable to destroy buffer: %v", err)
+		logPrintf("unable to destroy buffer: %v", err)
 	}
 }
 
@@ -346,7 +346,7 @@ func (app *appState) HandleSeatCapabilities(e client.SeatCapabilitiesEvent) {
 }
 
 func (*appState) HandleSeatName(e client.SeatNameEvent) {
-	log.Printf("seat name: %v", e.Name)
+	logPrintf("seat name: %v", e.Name)
 }
 
 // HandleDisplayError handles client.Display errors
@@ -357,9 +357,9 @@ func (*appState) HandleDisplayError(e client.DisplayErrorEvent) {
 
 // HandleWmBasePing handles xdg ping by doing a Pong request
 func (app *appState) HandleWmBasePing(e xdg_shell.WmBasePingEvent) {
-	log.Printf("xdg_wmbase ping: serial=%v", e.Serial)
+	logPrintf("xdg_wmbase ping: serial=%v", e.Serial)
 	app.xdgWmBase.Pong(e.Serial)
-	log.Print("xdg_wmbase pong sent")
+	logPrintln("xdg_wmbase pong sent")
 }
 
 func (app *appState) HandleToplevelClose(_ xdg_shell.ToplevelCloseEvent) {
@@ -384,7 +384,7 @@ func (app *appState) displayRoundTrip() {
 	}
 	defer func() {
 		if err2 := callback.Destroy(); err2 != nil {
-			log.Println("unable to destroy callback:", err2)
+			logPrintln("unable to destroy callback:", err2)
 		}
 	}()
 
@@ -415,28 +415,28 @@ func (app *appState) cleanup() {
 
 	if app.cursorTheme != nil {
 		if err := app.cursorTheme.Destroy(); err != nil {
-			log.Println("unable to destroy cursor theme:", err)
+			logPrintln("unable to destroy cursor theme:", err)
 		}
 		app.cursorTheme = nil
 	}
 
 	if app.xdgTopLevel != nil {
 		if err := app.xdgTopLevel.Destroy(); err != nil {
-			log.Println("unable to destroy xdg_toplevel:", err)
+			logPrintln("unable to destroy xdg_toplevel:", err)
 		}
 		app.xdgTopLevel = nil
 	}
 
 	if app.xdgSurface != nil {
 		if err := app.xdgSurface.Destroy(); err != nil {
-			log.Println("unable to destroy xdg_surface:", err)
+			logPrintln("unable to destroy xdg_surface:", err)
 		}
 		app.xdgSurface = nil
 	}
 
 	if app.surface != nil {
 		if err := app.surface.Destroy(); err != nil {
-			log.Println("unable to destroy wl_surface:", err)
+			logPrintln("unable to destroy wl_surface:", err)
 		}
 		app.surface = nil
 	}
@@ -444,7 +444,7 @@ func (app *appState) cleanup() {
 	// Release wl_seat handlers
 	if app.seat != nil {
 		if err := app.seat.Release(); err != nil {
-			log.Println("unable to destroy wl_seat:", err)
+			logPrintln("unable to destroy wl_seat:", err)
 		}
 		app.seat = nil
 	}
@@ -452,40 +452,40 @@ func (app *appState) cleanup() {
 	// Release xdg_wmbase
 	if app.xdgWmBase != nil {
 		if err := app.xdgWmBase.Destroy(); err != nil {
-			log.Println("unable to destroy xdg_wm_base:", err)
+			logPrintln("unable to destroy xdg_wm_base:", err)
 		}
 		app.xdgWmBase = nil
 	}
 
 	if app.shm != nil {
 		if err := app.shm.Destroy(); err != nil {
-			log.Println("unable to destroy wl_shm:", err)
+			logPrintln("unable to destroy wl_shm:", err)
 		}
 		app.shm = nil
 	}
 
 	if app.compositor != nil {
 		if err := app.compositor.Destroy(); err != nil {
-			log.Println("unable to destroy wl_compositor:", err)
+			logPrintln("unable to destroy wl_compositor:", err)
 		}
 		app.compositor = nil
 	}
 
 	if app.registry != nil {
 		if err := app.registry.Destroy(); err != nil {
-			log.Println("unable to destroy wl_registry:", err)
+			logPrintln("unable to destroy wl_registry:", err)
 		}
 		app.registry = nil
 	}
 
 	if app.display != nil {
 		if err := app.display.Destroy(); err != nil {
-			log.Println("unable to destroy wl_display:", err)
+			logPrintln("unable to destroy wl_display:", err)
 		}
 	}
 
 	// Close the wayland server connection
 	if err := app.context().Close(); err != nil {
-		log.Println("unable to close wayland context:", err)
+		logPrintln("unable to close wayland context:", err)
 	}
 }

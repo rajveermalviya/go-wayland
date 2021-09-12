@@ -2,14 +2,13 @@ package client
 
 import (
 	"errors"
-	"io"
-	"log"
+	"fmt"
 	"net"
 	"os"
 )
 
 type Context struct {
-	Conn      *net.UnixConn
+	conn      *net.UnixConn
 	objects   map[uint32]Proxy
 	currentID uint32
 }
@@ -25,31 +24,32 @@ func (ctx *Context) Unregister(p Proxy) {
 	delete(ctx.objects, p.ID())
 }
 
-func (ctx *Context) Close() error {
-	return ctx.Conn.Close()
+func (ctx *Context) GetProxy(id uint32) Proxy {
+	return ctx.objects[id]
 }
 
-func (ctx *Context) Dispatch() {
-	e, err := ctx.readEvent()
-	if err != nil {
-		if errors.Is(err, io.EOF) {
-			// connection closed
-			return
-		}
+func (ctx *Context) Close() error {
+	return ctx.conn.Close()
+}
 
-		log.Printf("unable to read event: %v", err)
+func (ctx *Context) Dispatch() error {
+	senderID, opcode, fd, data, err := ctx.ReadMsg()
+	if err != nil {
+		return fmt.Errorf("ctx.Dispatch: unable to read msg: %w", err)
 	}
 
-	proxy, ok := ctx.objects[e.SenderID]
+	sender, ok := ctx.objects[senderID]
 	if ok {
-		if dispatcher, ok := proxy.(Dispatcher); ok {
-			dispatcher.Dispatch(e)
+		if sender, ok := sender.(Dispatcher); ok {
+			sender.Dispatch(opcode, fd, data)
 		} else {
-			log.Print("not dispatched")
+			return fmt.Errorf("ctx.Dispatch: sender doesn't implement Dispatch method (senderID=%d)", senderID)
 		}
 	} else {
-		log.Print("unable to find proxy for proxyID=", e.SenderID)
+		return fmt.Errorf("ctx.Dispatch: unable find sender (senderID=%d)", senderID)
 	}
+
+	return nil
 }
 
 func Connect(addr string) (*Display, error) {
@@ -75,7 +75,7 @@ func Connect(addr string) (*Display, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx.Conn = conn
+	ctx.conn = conn
 
 	return NewDisplay(ctx), nil
 }

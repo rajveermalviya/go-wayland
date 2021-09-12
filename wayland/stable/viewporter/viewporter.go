@@ -313,13 +313,13 @@ func (i *Viewport) SetSource(x, y, width, height float32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	client.PutUint32(r[l:l+4], uint32(x))
+	client.PutFloat32(r[l:l+4], x)
 	l += 4
-	client.PutUint32(r[l:l+4], uint32(y))
+	client.PutFloat32(r[l:l+4], y)
 	l += 4
-	client.PutUint32(r[l:l+4], uint32(width))
+	client.PutFloat32(r[l:l+4], width)
 	l += 4
-	client.PutUint32(r[l:l+4], uint32(height))
+	client.PutFloat32(r[l:l+4], height)
 	l += 4
 	err := i.Context().WriteMsg(r, nil)
 	return err

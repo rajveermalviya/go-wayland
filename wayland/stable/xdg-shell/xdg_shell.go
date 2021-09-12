@@ -257,16 +257,16 @@ func (i *WmBase) RemovePingHandler(h WmBasePingHandler) {
 	}
 }
 
-func (i *WmBase) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *WmBase) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.pingHandlers) == 0 {
-			break
+			return
 		}
-		e := WmBasePingEvent{
-			Serial: event.Uint32(),
-		}
-
+		var e WmBasePingEvent
+		l := 0
+		e.Serial = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.pingHandlers {
 			h.HandleWmBasePing(e)
 		}
@@ -1192,16 +1192,16 @@ func (i *Surface) RemoveConfigureHandler(h SurfaceConfigureHandler) {
 	}
 }
 
-func (i *Surface) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {
-			break
+			return
 		}
-		e := SurfaceConfigureEvent{
-			Serial: event.Uint32(),
-		}
-
+		var e SurfaceConfigureEvent
+		l := 0
+		e.Serial = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.configureHandlers {
 			h.HandleSurfaceConfigure(e)
 		}
@@ -1328,7 +1328,7 @@ func (i *Toplevel) SetParent(parent *Toplevel) error {
 //
 func (i *Toplevel) SetTitle(title string) error {
 	const opcode = 2
-	titleLen := client.StringPaddedLen(title)
+	titleLen := client.PaddedLen(len(title) + 1)
 	rLen := 8 + (4 + titleLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -1370,7 +1370,7 @@ func (i *Toplevel) SetTitle(title string) error {
 //
 func (i *Toplevel) SetAppID(appID string) error {
 	const opcode = 3
-	appIDLen := client.StringPaddedLen(appID)
+	appIDLen := client.PaddedLen(len(appID) + 1)
 	rLen := 8 + (4 + appIDLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -2029,27 +2029,30 @@ func (i *Toplevel) RemoveCloseHandler(h ToplevelCloseHandler) {
 	}
 }
 
-func (i *Toplevel) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *Toplevel) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {
-			break
+			return
 		}
-		e := ToplevelConfigureEvent{
-			Width:  event.Int32(),
-			Height: event.Int32(),
-			States: event.Array(),
-		}
-
+		var e ToplevelConfigureEvent
+		l := 0
+		e.Width = int32(client.Uint32(data[l : l+4]))
+		l += 4
+		e.Height = int32(client.Uint32(data[l : l+4]))
+		l += 4
+		statesLen := int(client.Uint32(data[l : l+4]))
+		l += 4
+		e.States = client.Array(data[l : l+statesLen])
+		l += statesLen
 		for _, h := range i.configureHandlers {
 			h.HandleToplevelConfigure(e)
 		}
 	case 1:
 		if len(i.closeHandlers) == 0 {
-			break
+			return
 		}
-		e := ToplevelCloseEvent{}
-
+		var e ToplevelCloseEvent
 		for _, h := range i.closeHandlers {
 			h.HandleToplevelClose(e)
 		}
@@ -2394,39 +2397,41 @@ func (i *Popup) RemoveRepositionedHandler(h PopupRepositionedHandler) {
 	}
 }
 
-func (i *Popup) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *Popup) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {
-			break
+			return
 		}
-		e := PopupConfigureEvent{
-			X:      event.Int32(),
-			Y:      event.Int32(),
-			Width:  event.Int32(),
-			Height: event.Int32(),
-		}
-
+		var e PopupConfigureEvent
+		l := 0
+		e.X = int32(client.Uint32(data[l : l+4]))
+		l += 4
+		e.Y = int32(client.Uint32(data[l : l+4]))
+		l += 4
+		e.Width = int32(client.Uint32(data[l : l+4]))
+		l += 4
+		e.Height = int32(client.Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.configureHandlers {
 			h.HandlePopupConfigure(e)
 		}
 	case 1:
 		if len(i.popupDoneHandlers) == 0 {
-			break
+			return
 		}
-		e := PopupPopupDoneEvent{}
-
+		var e PopupPopupDoneEvent
 		for _, h := range i.popupDoneHandlers {
 			h.HandlePopupPopupDone(e)
 		}
 	case 2:
 		if len(i.repositionedHandlers) == 0 {
-			break
+			return
 		}
-		e := PopupRepositionedEvent{
-			Token: event.Uint32(),
-		}
-
+		var e PopupRepositionedEvent
+		l := 0
+		e.Token = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.repositionedHandlers {
 			h.HandlePopupRepositioned(e)
 		}

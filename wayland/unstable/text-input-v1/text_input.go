@@ -225,7 +225,7 @@ func (i *TextInput) Reset() error {
 //
 func (i *TextInput) SetSurroundingText(text string, cursor, anchor uint32) error {
 	const opcode = 5
-	textLen := client.StringPaddedLen(text)
+	textLen := client.PaddedLen(len(text) + 1)
 	rLen := 8 + (4 + textLen) + 4 + 4
 	r := make([]byte, rLen)
 	l := 0
@@ -305,7 +305,7 @@ func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
 //
 func (i *TextInput) SetPreferredLanguage(language string) error {
 	const opcode = 8
-	languageLen := client.StringPaddedLen(language)
+	languageLen := client.PaddedLen(len(language) + 1)
 	rLen := 8 + (4 + languageLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -1118,159 +1118,181 @@ func (i *TextInput) RemoveTextDirectionHandler(h TextInputTextDirectionHandler) 
 	}
 }
 
-func (i *TextInput) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *TextInput) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.enterHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputEnterEvent{
-			Surface: event.Proxy(i.Context()).(*client.Surface),
-		}
-
+		var e TextInputEnterEvent
+		l := 0
+		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
+		l += 4
 		for _, h := range i.enterHandlers {
 			h.HandleTextInputEnter(e)
 		}
 	case 1:
 		if len(i.leaveHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputLeaveEvent{}
-
+		var e TextInputLeaveEvent
 		for _, h := range i.leaveHandlers {
 			h.HandleTextInputLeave(e)
 		}
 	case 2:
 		if len(i.modifiersMapHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputModifiersMapEvent{
-			Map: event.Array(),
-		}
-
+		var e TextInputModifiersMapEvent
+		l := 0
+		mapLen := int(client.Uint32(data[l : l+4]))
+		l += 4
+		e.Map = client.Array(data[l : l+mapLen])
+		l += mapLen
 		for _, h := range i.modifiersMapHandlers {
 			h.HandleTextInputModifiersMap(e)
 		}
 	case 3:
 		if len(i.inputPanelStateHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputInputPanelStateEvent{
-			State: event.Uint32(),
-		}
-
+		var e TextInputInputPanelStateEvent
+		l := 0
+		e.State = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.inputPanelStateHandlers {
 			h.HandleTextInputInputPanelState(e)
 		}
 	case 4:
 		if len(i.preeditStringHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputPreeditStringEvent{
-			Serial: event.Uint32(),
-			Text:   event.String(),
-			Commit: event.String(),
-		}
-
+		var e TextInputPreeditStringEvent
+		l := 0
+		e.Serial = client.Uint32(data[l : l+4])
+		l += 4
+		textLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Text = client.String(data[l : l+textLen])
+		l += textLen
+		commitLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Commit = client.String(data[l : l+commitLen])
+		l += commitLen
 		for _, h := range i.preeditStringHandlers {
 			h.HandleTextInputPreeditString(e)
 		}
 	case 5:
 		if len(i.preeditStylingHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputPreeditStylingEvent{
-			Index:  event.Uint32(),
-			Length: event.Uint32(),
-			Style:  event.Uint32(),
-		}
-
+		var e TextInputPreeditStylingEvent
+		l := 0
+		e.Index = client.Uint32(data[l : l+4])
+		l += 4
+		e.Length = client.Uint32(data[l : l+4])
+		l += 4
+		e.Style = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.preeditStylingHandlers {
 			h.HandleTextInputPreeditStyling(e)
 		}
 	case 6:
 		if len(i.preeditCursorHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputPreeditCursorEvent{
-			Index: event.Int32(),
-		}
-
+		var e TextInputPreeditCursorEvent
+		l := 0
+		e.Index = int32(client.Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.preeditCursorHandlers {
 			h.HandleTextInputPreeditCursor(e)
 		}
 	case 7:
 		if len(i.commitStringHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputCommitStringEvent{
-			Serial: event.Uint32(),
-			Text:   event.String(),
-		}
-
+		var e TextInputCommitStringEvent
+		l := 0
+		e.Serial = client.Uint32(data[l : l+4])
+		l += 4
+		textLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Text = client.String(data[l : l+textLen])
+		l += textLen
 		for _, h := range i.commitStringHandlers {
 			h.HandleTextInputCommitString(e)
 		}
 	case 8:
 		if len(i.cursorPositionHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputCursorPositionEvent{
-			Index:  event.Int32(),
-			Anchor: event.Int32(),
-		}
-
+		var e TextInputCursorPositionEvent
+		l := 0
+		e.Index = int32(client.Uint32(data[l : l+4]))
+		l += 4
+		e.Anchor = int32(client.Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.cursorPositionHandlers {
 			h.HandleTextInputCursorPosition(e)
 		}
 	case 9:
 		if len(i.deleteSurroundingTextHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputDeleteSurroundingTextEvent{
-			Index:  event.Int32(),
-			Length: event.Uint32(),
-		}
-
+		var e TextInputDeleteSurroundingTextEvent
+		l := 0
+		e.Index = int32(client.Uint32(data[l : l+4]))
+		l += 4
+		e.Length = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.deleteSurroundingTextHandlers {
 			h.HandleTextInputDeleteSurroundingText(e)
 		}
 	case 10:
 		if len(i.keysymHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputKeysymEvent{
-			Serial:    event.Uint32(),
-			Time:      event.Uint32(),
-			Sym:       event.Uint32(),
-			State:     event.Uint32(),
-			Modifiers: event.Uint32(),
-		}
-
+		var e TextInputKeysymEvent
+		l := 0
+		e.Serial = client.Uint32(data[l : l+4])
+		l += 4
+		e.Time = client.Uint32(data[l : l+4])
+		l += 4
+		e.Sym = client.Uint32(data[l : l+4])
+		l += 4
+		e.State = client.Uint32(data[l : l+4])
+		l += 4
+		e.Modifiers = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.keysymHandlers {
 			h.HandleTextInputKeysym(e)
 		}
 	case 11:
 		if len(i.languageHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputLanguageEvent{
-			Serial:   event.Uint32(),
-			Language: event.String(),
-		}
-
+		var e TextInputLanguageEvent
+		l := 0
+		e.Serial = client.Uint32(data[l : l+4])
+		l += 4
+		languageLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Language = client.String(data[l : l+languageLen])
+		l += languageLen
 		for _, h := range i.languageHandlers {
 			h.HandleTextInputLanguage(e)
 		}
 	case 12:
 		if len(i.textDirectionHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputTextDirectionEvent{
-			Serial:    event.Uint32(),
-			Direction: event.Uint32(),
-		}
-
+		var e TextInputTextDirectionEvent
+		l := 0
+		e.Serial = client.Uint32(data[l : l+4])
+		l += 4
+		e.Direction = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.textDirectionHandlers {
 			h.HandleTextInputTextDirection(e)
 		}

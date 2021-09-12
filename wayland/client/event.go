@@ -2,116 +2,82 @@ package client
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/rajveermalviya/go-wayland/wayland/internal/byteorder"
 	"golang.org/x/sys/unix"
 )
 
-type Event struct {
-	data     *bytes.Buffer
-	scms     []unix.SocketControlMessage
-	SenderID uint32
-	Opcode   uint16
-}
+var oobSpace = unix.CmsgSpace(4)
 
-func (ctx *Context) readEvent() (*Event, error) {
+func (ctx *Context) ReadMsg() (senderID uint32, opcode uint16, fd uintptr, data []byte, err error) {
 	header := make([]byte, 8)
-	oob := make([]byte, 24)
+	oob := make([]byte, oobSpace)
 
-	n, oobn, _, _, err := ctx.Conn.ReadMsgUnix(header, oob)
+	nh, oobn, _, _, err := ctx.conn.ReadMsgUnix(header, oob)
 	if err != nil {
-		return nil, err
+		return senderID, opcode, fd, data, err
 	}
-	if n != 8 {
-		return nil, errors.New("unable to read message header")
+	if nh != 8 {
+		return senderID, opcode, fd, data, fmt.Errorf("ctx.ReadMsg: incorrect number of bytes read for header (n=%d)", nh)
 	}
-	e := &Event{}
+
 	if oobn > 0 {
 		if oobn > len(oob) {
-			return nil, errors.New("insufficient control msg buffer")
+			return senderID, opcode, fd, data, fmt.Errorf("ctx.ReadMsg: incorrect number of bytes read for oob (oobn=%d)", oobn)
 		}
 		scms, err2 := unix.ParseSocketControlMessage(oob)
 		if err2 != nil {
-			return nil, fmt.Errorf("control message parse error: %w", err)
+			return senderID, opcode, fd, data, fmt.Errorf("ctx.ReadMsg: unable to parse control message: %w", err)
 		}
-		e.scms = scms
+		if len(scms) > 0 {
+			fds, err2 := unix.ParseUnixRights(&scms[0])
+			if err2 != nil {
+				return senderID, opcode, fd, data, fmt.Errorf("ctx.ReadMsg: unable to parse unix rights: %w", err2)
+			}
+			if len(fds) > 0 {
+				fd = uintptr(fds[0])
+			}
+		}
 	}
 
-	headerBuf := bytes.NewBuffer(header)
+	senderID = byteorder.NativeEndian.Uint32(header[:4])
+	opcode = byteorder.NativeEndian.Uint16(header[4:6])
+	size := byteorder.NativeEndian.Uint16(header[6:8])
 
-	e.SenderID = byteorder.NativeEndian.Uint32(headerBuf.Next(4))
-	e.Opcode = byteorder.NativeEndian.Uint16(headerBuf.Next(2))
-	size := byteorder.NativeEndian.Uint16(headerBuf.Next(2))
-
-	// subtract 8 bytes from header
 	msgSize := int(size) - 8
+	data = make([]byte, msgSize)
 
-	data := make([]byte, msgSize)
-	n, err = ctx.Conn.Read(data)
+	nm, err := ctx.conn.Read(data)
 	if err != nil {
-		return nil, err
+		return senderID, opcode, fd, data, err
 	}
-	if n != msgSize {
-		return nil, errors.New("unable to read message")
+	if int(nm) != msgSize {
+		return senderID, opcode, fd, data, fmt.Errorf("ctx.ReadMsg: incorrect number of bytes read for msg (n=%d)", nm)
 	}
 
-	e.data = bytes.NewBuffer(data)
-
-	return e, nil
+	return senderID, opcode, fd, data, nil
 }
 
-func (e *Event) FD() uintptr {
-	if len(e.scms) == 0 {
-		return 0
-	}
-	fds, err := unix.ParseUnixRights(&e.scms[0])
-	if err != nil {
-		panic("unable to parse unix rights")
-	}
-	return uintptr(fds[0])
+func Uint32(src []byte) uint32 {
+	return byteorder.NativeEndian.Uint32(src)
 }
 
-func (e *Event) Uint32() uint32 {
-	buf := e.data.Next(4)
-	if len(buf) != 4 {
-		panic("unable to read unsigned int")
-	}
-	return byteorder.NativeEndian.Uint32(buf)
+func String(src []byte) string {
+	return string(bytes.TrimRight(src, "\x00"))
 }
 
-func (e *Event) Proxy(ctx *Context) Proxy {
-	return ctx.objects[e.Uint32()]
+func Float32(src []byte) float32 {
+	i := int32(byteorder.NativeEndian.Uint32(src))
+	return float32(fixedToFloat64(i))
 }
 
-func (e *Event) String() string {
-	l := int(e.Uint32())
-	buf := e.data.Next(l)
-	if len(buf) != l {
-		panic("unable to read string")
-	}
-	ret := string(bytes.TrimRight(buf, "\u0000"))
-	// padding to 32 bit boundary
-	if (l & 0x3) != 0 {
-		e.data.Next(4 - (l & 0x3))
-	}
-	return ret
-}
-
-func (e *Event) Int32() int32 {
-	return int32(e.Uint32())
-}
-
-func (e *Event) Float32() float32 {
-	return float32(fixedToFloat64(e.Int32()))
-}
-
-func (e *Event) Array() []int32 {
-	l := int(e.Uint32())
-	arr := make([]int32, l/4)
+func Array(src []byte) []int32 {
+	l := 0
+	arr := make([]int32, len(src)/4)
 	for i := range arr {
-		arr[i] = e.Int32()
+		arr[i] = int32(byteorder.NativeEndian.Uint32(src[l : l+4]))
+		l += 4
 	}
 	return arr
 }

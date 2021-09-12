@@ -15,18 +15,18 @@ func (app *appState) attachKeyboard() {
 
 	keyboard.AddKeyHandler(app)
 
-	log.Print("keyboard interface registered")
+	logPrintln("keyboard interface registered")
 }
 
 func (app *appState) releaseKeyboard() {
 	app.keyboard.RemoveKeyHandler(app)
 
 	if err := app.keyboard.Release(); err != nil {
-		log.Println("unable to release keyboard interface")
+		logPrintln("unable to release keyboard interface")
 	}
 	app.keyboard = nil
 
-	log.Print("keyboard interface released")
+	logPrintln("keyboard interface released")
 }
 
 func (app *appState) HandleKeyboardKey(e client.KeyboardKeyEvent) {

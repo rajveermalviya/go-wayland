@@ -293,45 +293,41 @@ func (i *DrmLeaseDevice) RemoveReleasedHandler(h DrmLeaseDeviceReleasedHandler) 
 	}
 }
 
-func (i *DrmLeaseDevice) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *DrmLeaseDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.drmFdHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseDeviceDrmFdEvent{
-			Fd: event.FD(),
-		}
-
+		var e DrmLeaseDeviceDrmFdEvent
+		e.Fd = fd
 		for _, h := range i.drmFdHandlers {
 			h.HandleDrmLeaseDeviceDrmFd(e)
 		}
 	case 1:
 		if len(i.connectorHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseDeviceConnectorEvent{
-			ID: event.Proxy(i.Context()).(*DrmLeaseConnector),
-		}
-
+		var e DrmLeaseDeviceConnectorEvent
+		l := 0
+		e.ID = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*DrmLeaseConnector)
+		l += 4
 		for _, h := range i.connectorHandlers {
 			h.HandleDrmLeaseDeviceConnector(e)
 		}
 	case 2:
 		if len(i.doneHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseDeviceDoneEvent{}
-
+		var e DrmLeaseDeviceDoneEvent
 		for _, h := range i.doneHandlers {
 			h.HandleDrmLeaseDeviceDone(e)
 		}
 	case 3:
 		if len(i.releasedHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseDeviceReleasedEvent{}
-
+		var e DrmLeaseDeviceReleasedEvent
 		for _, h := range i.releasedHandlers {
 			h.HandleDrmLeaseDeviceReleased(e)
 		}
@@ -549,56 +545,58 @@ func (i *DrmLeaseConnector) RemoveWithdrawnHandler(h DrmLeaseConnectorWithdrawnH
 	}
 }
 
-func (i *DrmLeaseConnector) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *DrmLeaseConnector) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.nameHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseConnectorNameEvent{
-			Name: event.String(),
-		}
-
+		var e DrmLeaseConnectorNameEvent
+		l := 0
+		nameLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Name = client.String(data[l : l+nameLen])
+		l += nameLen
 		for _, h := range i.nameHandlers {
 			h.HandleDrmLeaseConnectorName(e)
 		}
 	case 1:
 		if len(i.descriptionHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseConnectorDescriptionEvent{
-			Description: event.String(),
-		}
-
+		var e DrmLeaseConnectorDescriptionEvent
+		l := 0
+		descriptionLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Description = client.String(data[l : l+descriptionLen])
+		l += descriptionLen
 		for _, h := range i.descriptionHandlers {
 			h.HandleDrmLeaseConnectorDescription(e)
 		}
 	case 2:
 		if len(i.connectorIDHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseConnectorConnectorIDEvent{
-			ConnectorID: event.Uint32(),
-		}
-
+		var e DrmLeaseConnectorConnectorIDEvent
+		l := 0
+		e.ConnectorID = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.connectorIDHandlers {
 			h.HandleDrmLeaseConnectorConnectorID(e)
 		}
 	case 3:
 		if len(i.doneHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseConnectorDoneEvent{}
-
+		var e DrmLeaseConnectorDoneEvent
 		for _, h := range i.doneHandlers {
 			h.HandleDrmLeaseConnectorDone(e)
 		}
 	case 4:
 		if len(i.withdrawnHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseConnectorWithdrawnEvent{}
-
+		var e DrmLeaseConnectorWithdrawnEvent
 		for _, h := range i.withdrawnHandlers {
 			h.HandleDrmLeaseConnectorWithdrawn(e)
 		}
@@ -847,25 +845,22 @@ func (i *DrmLease) RemoveFinishedHandler(h DrmLeaseFinishedHandler) {
 	}
 }
 
-func (i *DrmLease) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *DrmLease) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.leaseFdHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseLeaseFdEvent{
-			LeasedFd: event.FD(),
-		}
-
+		var e DrmLeaseLeaseFdEvent
+		e.LeasedFd = fd
 		for _, h := range i.leaseFdHandlers {
 			h.HandleDrmLeaseLeaseFd(e)
 		}
 	case 1:
 		if len(i.finishedHandlers) == 0 {
-			break
+			return
 		}
-		e := DrmLeaseFinishedEvent{}
-
+		var e DrmLeaseFinishedEvent
 		for _, h := range i.finishedHandlers {
 			h.HandleDrmLeaseFinished(e)
 		}

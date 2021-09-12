@@ -367,9 +367,9 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 			} else {
 				canBeConst = false
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "ifaceLen := StringPaddedLen(iface)\n")
+					fmt.Fprintf(w, "ifaceLen := PaddedLen(len(iface)+1)\n")
 				} else {
-					fmt.Fprintf(w, "ifaceLen := client.StringPaddedLen(iface)\n")
+					fmt.Fprintf(w, "ifaceLen := client.PaddedLen(len(iface)+1)\n")
 				}
 				sizes = append(sizes, "(4 + ifaceLen)", "4", "4")
 			}
@@ -380,9 +380,9 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 		case "string":
 			canBeConst = false
 			if protocol.Name == "wayland" {
-				fmt.Fprintf(w, "%sLen := StringPaddedLen(%s)\n", argNameLower, argNameLower)
+				fmt.Fprintf(w, "%sLen := PaddedLen(len(%s)+1)\n", argNameLower, argNameLower)
 			} else {
-				fmt.Fprintf(w, "%sLen := client.StringPaddedLen(%s)\n", argNameLower, argNameLower)
+				fmt.Fprintf(w, "%sLen := client.PaddedLen(len(%s)+1)\n", argNameLower, argNameLower)
 			}
 			sizes = append(sizes, fmt.Sprintf("(4 + %sLen)", argNameLower))
 		}
@@ -471,11 +471,19 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 				fmt.Fprintf(w, "l += 4\n")
 			}
 
-		case "int", "uint", "fixed":
+		case "int", "uint":
 			if protocol.Name == "wayland" {
 				fmt.Fprintf(w, "PutUint32(r[l:l+4], uint32(%s))\n", argNameLower)
 			} else {
 				fmt.Fprintf(w, "client.PutUint32(r[l:l+4], uint32(%s))\n", argNameLower)
+			}
+			fmt.Fprintf(w, "l += 4\n")
+
+		case "fixed":
+			if protocol.Name == "wayland" {
+				fmt.Fprintf(w, "PutFloat32(r[l:l+4], %s)\n", argNameLower)
+			} else {
+				fmt.Fprintf(w, "client.PutFloat32(r[l:l+4], %s)\n", argNameLower)
 			}
 			fmt.Fprintf(w, "l += 4\n")
 
@@ -625,26 +633,30 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 		return
 	}
 
-	if protocol.Name != "wayland" {
-		fmt.Fprintf(w, "func (i *%s) Dispatch(event *client.Event) {\n", ifaceName)
-	} else {
-		fmt.Fprintf(w, "func (i *%s) Dispatch(event *Event) {\n", ifaceName)
-	}
-	fmt.Fprintf(w, "switch event.Opcode {\n")
+	fmt.Fprintf(w, "func (i *%s) Dispatch(opcode uint16, fd uintptr, data []byte) {\n", ifaceName)
+	fmt.Fprintf(w, "switch opcode {\n")
 	for i, e := range v.Events {
 		eventName := toCamel(e.Name)
 		eventNameLower := toLowerCamel(e.Name)
 
 		fmt.Fprintf(w, "case %d:\n", i)
 		fmt.Fprintf(w, "if len(i.%sHandlers) == 0 {\n", eventNameLower)
-		fmt.Fprintf(w, "break\n")
+		fmt.Fprintf(w, "return\n")
 		fmt.Fprintf(w, "}\n")
-		fmt.Fprintf(w, "e := %s%sEvent{\n", ifaceName, eventName)
+
+		fmt.Fprintf(w, "var e  %s%sEvent\n", ifaceName, eventName)
+
+		if len(e.Args) > 0 && (len(e.Args) != 1 || e.Args[0].Type != "fd") {
+			fmt.Fprintf(w, "l := 0\n")
+		}
+
 		for _, arg := range e.Args {
+			argName := toCamel(arg.Name)
+			argNameLower := toLowerCamel(arg.Name)
+
 			switch arg.Type {
 			case "object", "new_id":
 				if arg.Interface != "" {
-					argName := toCamel(arg.Name)
 					argIface := toCamel(arg.Interface)
 
 					if !isLocalInterface(arg.Interface) {
@@ -655,17 +667,77 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 						}
 					}
 
-					fmt.Fprintf(w, "%s: event.Proxy(i.Context()).(*%s),\n", argName, argIface)
+					if protocol.Name == "wayland" {
+						fmt.Fprintf(w, "e.%s = i.Context().GetProxy(Uint32(data[l :l+4])).(*%s)\n", argName, argIface)
+					} else {
+						fmt.Fprintf(w, "e.%s = i.Context().GetProxy(client.Uint32(data[l :l+4])).(*%s)\n", argName, argIface)
+					}
 				} else {
-					fmt.Fprintf(w, "%s: event.Proxy(i.Context()),\n", toCamel(arg.Name))
+					if protocol.Name == "wayland" {
+						fmt.Fprintf(w, "e.%s = i.Context().GetProxy(Uint32(data[l :l+4]))\n", argName)
+					} else {
+						fmt.Fprintf(w, "e.%s = i.Context().GetProxy(client.Uint32(data[l :l+4]))\n", argName)
+					}
 				}
+				fmt.Fprintf(w, "l += 4\n")
 
-			case "int", "uint", "fixed",
-				"string", "array", "fd":
-				fmt.Fprintf(w, "%s: event.%s(),\n", toCamel(arg.Name), typeToGetterMap[arg.Type])
+			case "fd":
+				fmt.Fprintf(w, "e.%s = fd\n", argName)
+
+			case "uint":
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "e.%s = Uint32(data[l : l+4])\n", argName)
+				} else {
+					fmt.Fprintf(w, "e.%s = client.Uint32(data[l : l+4])\n", argName)
+				}
+				fmt.Fprintf(w, "l += 4\n")
+
+			case "int":
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "e.%s = int32(Uint32(data[l : l+4]))\n", argName)
+				} else {
+					fmt.Fprintf(w, "e.%s = int32(client.Uint32(data[l : l+4]))\n", argName)
+				}
+				fmt.Fprintf(w, "l += 4\n")
+
+			case "fixed":
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "e.%s = Float32(data[l : l+4])\n", argName)
+				} else {
+					fmt.Fprintf(w, "e.%s = client.Float32(data[l : l+4])\n", argName)
+				}
+				fmt.Fprintf(w, "l += 4\n")
+
+			case "string":
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "%sLen := PaddedLen(int(Uint32(data[l : l+4])))\n", argNameLower)
+				} else {
+					fmt.Fprintf(w, "%sLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))\n", argNameLower)
+				}
+				fmt.Fprintf(w, "l += 4\n")
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "e.%s = String(data[l : l+%sLen])\n", argName, argNameLower)
+				} else {
+					fmt.Fprintf(w, "e.%s = client.String(data[l : l+%sLen])\n", argName, argNameLower)
+				}
+				fmt.Fprintf(w, "l += %sLen\n", argNameLower)
+
+			case "array":
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "%sLen := int(Uint32(data[l : l+4]))\n", argNameLower)
+				} else {
+					fmt.Fprintf(w, "%sLen := int(client.Uint32(data[l : l+4]))\n", argNameLower)
+				}
+				fmt.Fprintf(w, "l += 4\n")
+				if protocol.Name == "wayland" {
+					fmt.Fprintf(w, "e.%s = Array(data[l : l+%sLen])\n", argName, argNameLower)
+				} else {
+					fmt.Fprintf(w, "e.%s = client.Array(data[l : l+%sLen])\n", argName, argNameLower)
+				}
+				fmt.Fprintf(w, "l += %sLen\n", argNameLower)
 			}
 		}
-		fmt.Fprintf(w, "}\n\n")
+
 		fmt.Fprintf(w, "for _, h := range i.%sHandlers {\n", eventNameLower)
 		fmt.Fprintf(w, "h.Handle%s%s(e)\n\n", ifaceName, eventName)
 		fmt.Fprintf(w, "}\n")

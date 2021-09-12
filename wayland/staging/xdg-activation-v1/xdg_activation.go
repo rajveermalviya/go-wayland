@@ -111,7 +111,7 @@ func (i *Activation) GetActivationToken() (*ActivationToken, error) {
 //  surface: the wl_surface to activate
 func (i *Activation) Activate(token string, surface *client.Surface) error {
 	const opcode = 2
-	tokenLen := client.StringPaddedLen(token)
+	tokenLen := client.PaddedLen(len(token) + 1)
 	rLen := 8 + (4 + tokenLen) + 4
 	r := make([]byte, rLen)
 	l := 0
@@ -202,7 +202,7 @@ func (i *ActivationToken) SetSerial(serial uint32, seat *client.Seat) error {
 //  appID: the application id of the client being activated.
 func (i *ActivationToken) SetAppID(appID string) error {
 	const opcode = 1
-	appIDLen := client.StringPaddedLen(appID)
+	appIDLen := client.PaddedLen(len(appID) + 1)
 	rLen := 8 + (4 + appIDLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -339,16 +339,18 @@ func (i *ActivationToken) RemoveDoneHandler(h ActivationTokenDoneHandler) {
 	}
 }
 
-func (i *ActivationToken) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *ActivationToken) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.doneHandlers) == 0 {
-			break
+			return
 		}
-		e := ActivationTokenDoneEvent{
-			Token: event.String(),
-		}
-
+		var e ActivationTokenDoneEvent
+		l := 0
+		tokenLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Token = client.String(data[l : l+tokenLen])
+		l += tokenLen
 		for _, h := range i.doneHandlers {
 			h.HandleActivationTokenDone(e)
 		}

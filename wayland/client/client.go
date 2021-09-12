@@ -237,29 +237,33 @@ func (i *Display) RemoveDeleteIDHandler(h DisplayDeleteIDHandler) {
 	}
 }
 
-func (i *Display) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Display) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.errorHandlers) == 0 {
-			break
+			return
 		}
-		e := DisplayErrorEvent{
-			ObjectID: event.Proxy(i.Context()),
-			Code:     event.Uint32(),
-			Message:  event.String(),
-		}
-
+		var e DisplayErrorEvent
+		l := 0
+		e.ObjectID = i.Context().GetProxy(Uint32(data[l : l+4]))
+		l += 4
+		e.Code = Uint32(data[l : l+4])
+		l += 4
+		messageLen := PaddedLen(int(Uint32(data[l : l+4])))
+		l += 4
+		e.Message = String(data[l : l+messageLen])
+		l += messageLen
 		for _, h := range i.errorHandlers {
 			h.HandleDisplayError(e)
 		}
 	case 1:
 		if len(i.deleteIDHandlers) == 0 {
-			break
+			return
 		}
-		e := DisplayDeleteIDEvent{
-			ID: event.Uint32(),
-		}
-
+		var e DisplayDeleteIDEvent
+		l := 0
+		e.ID = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.deleteIDHandlers {
 			h.HandleDisplayDeleteID(e)
 		}
@@ -330,7 +334,7 @@ func NewRegistry(ctx *Context) *Registry {
 //  name: unique numeric name of the object
 func (i *Registry) Bind(name uint32, iface string, version uint32, id Proxy) error {
 	const opcode = 0
-	ifaceLen := StringPaddedLen(iface)
+	ifaceLen := PaddedLen(len(iface) + 1)
 	rLen := 8 + 4 + (4 + ifaceLen) + 4 + 4
 	r := make([]byte, rLen)
 	l := 0
@@ -428,29 +432,33 @@ func (i *Registry) RemoveGlobalRemoveHandler(h RegistryGlobalRemoveHandler) {
 	}
 }
 
-func (i *Registry) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Registry) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.globalHandlers) == 0 {
-			break
+			return
 		}
-		e := RegistryGlobalEvent{
-			Name:      event.Uint32(),
-			Interface: event.String(),
-			Version:   event.Uint32(),
-		}
-
+		var e RegistryGlobalEvent
+		l := 0
+		e.Name = Uint32(data[l : l+4])
+		l += 4
+		interfaceLen := PaddedLen(int(Uint32(data[l : l+4])))
+		l += 4
+		e.Interface = String(data[l : l+interfaceLen])
+		l += interfaceLen
+		e.Version = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.globalHandlers {
 			h.HandleRegistryGlobal(e)
 		}
 	case 1:
 		if len(i.globalRemoveHandlers) == 0 {
-			break
+			return
 		}
-		e := RegistryGlobalRemoveEvent{
-			Name: event.Uint32(),
-		}
-
+		var e RegistryGlobalRemoveEvent
+		l := 0
+		e.Name = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.globalRemoveHandlers {
 			h.HandleRegistryGlobalRemove(e)
 		}
@@ -510,16 +518,16 @@ func (i *Callback) RemoveDoneHandler(h CallbackDoneHandler) {
 	}
 }
 
-func (i *Callback) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Callback) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.doneHandlers) == 0 {
-			break
+			return
 		}
-		e := CallbackDoneEvent{
-			CallbackData: event.Uint32(),
-		}
-
+		var e CallbackDoneEvent
+		l := 0
+		e.CallbackData = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.doneHandlers {
 			h.HandleCallbackDone(e)
 		}
@@ -1497,16 +1505,16 @@ func (i *Shm) RemoveFormatHandler(h ShmFormatHandler) {
 	}
 }
 
-func (i *Shm) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Shm) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.formatHandlers) == 0 {
-			break
+			return
 		}
-		e := ShmFormatEvent{
-			Format: event.Uint32(),
-		}
-
+		var e ShmFormatEvent
+		l := 0
+		e.Format = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.formatHandlers {
 			h.HandleShmFormat(e)
 		}
@@ -1596,14 +1604,13 @@ func (i *Buffer) RemoveReleaseHandler(h BufferReleaseHandler) {
 	}
 }
 
-func (i *Buffer) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Buffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.releaseHandlers) == 0 {
-			break
+			return
 		}
-		e := BufferReleaseEvent{}
-
+		var e BufferReleaseEvent
 		for _, h := range i.releaseHandlers {
 			h.HandleBufferRelease(e)
 		}
@@ -1660,7 +1667,7 @@ func NewDataOffer(ctx *Context) *DataOffer {
 //  mimeType: mime type accepted by the client
 func (i *DataOffer) Accept(serial uint32, mimeType string) error {
 	const opcode = 0
-	mimeTypeLen := StringPaddedLen(mimeType)
+	mimeTypeLen := PaddedLen(len(mimeType) + 1)
 	rLen := 8 + 4 + (4 + mimeTypeLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -1698,7 +1705,7 @@ func (i *DataOffer) Accept(serial uint32, mimeType string) error {
 //  fd: file descriptor for data transfer
 func (i *DataOffer) Receive(mimeType string, fd uintptr) error {
 	const opcode = 1
-	mimeTypeLen := StringPaddedLen(mimeType)
+	mimeTypeLen := PaddedLen(len(mimeType) + 1)
 	rLen := 8 + (4 + mimeTypeLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -1986,38 +1993,40 @@ func (i *DataOffer) RemoveActionHandler(h DataOfferActionHandler) {
 	}
 }
 
-func (i *DataOffer) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *DataOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.offerHandlers) == 0 {
-			break
+			return
 		}
-		e := DataOfferOfferEvent{
-			MimeType: event.String(),
-		}
-
+		var e DataOfferOfferEvent
+		l := 0
+		mimeTypeLen := PaddedLen(int(Uint32(data[l : l+4])))
+		l += 4
+		e.MimeType = String(data[l : l+mimeTypeLen])
+		l += mimeTypeLen
 		for _, h := range i.offerHandlers {
 			h.HandleDataOfferOffer(e)
 		}
 	case 1:
 		if len(i.sourceActionsHandlers) == 0 {
-			break
+			return
 		}
-		e := DataOfferSourceActionsEvent{
-			SourceActions: event.Uint32(),
-		}
-
+		var e DataOfferSourceActionsEvent
+		l := 0
+		e.SourceActions = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.sourceActionsHandlers {
 			h.HandleDataOfferSourceActions(e)
 		}
 	case 2:
 		if len(i.actionHandlers) == 0 {
-			break
+			return
 		}
-		e := DataOfferActionEvent{
-			DndAction: event.Uint32(),
-		}
-
+		var e DataOfferActionEvent
+		l := 0
+		e.DndAction = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.actionHandlers {
 			h.HandleDataOfferAction(e)
 		}
@@ -2061,7 +2070,7 @@ func NewDataSource(ctx *Context) *DataSource {
 //  mimeType: mime type offered by the data source
 func (i *DataSource) Offer(mimeType string) error {
 	const opcode = 0
-	mimeTypeLen := StringPaddedLen(mimeType)
+	mimeTypeLen := PaddedLen(len(mimeType) + 1)
 	rLen := 8 + (4 + mimeTypeLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -2388,66 +2397,67 @@ func (i *DataSource) RemoveActionHandler(h DataSourceActionHandler) {
 	}
 }
 
-func (i *DataSource) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *DataSource) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.targetHandlers) == 0 {
-			break
+			return
 		}
-		e := DataSourceTargetEvent{
-			MimeType: event.String(),
-		}
-
+		var e DataSourceTargetEvent
+		l := 0
+		mimeTypeLen := PaddedLen(int(Uint32(data[l : l+4])))
+		l += 4
+		e.MimeType = String(data[l : l+mimeTypeLen])
+		l += mimeTypeLen
 		for _, h := range i.targetHandlers {
 			h.HandleDataSourceTarget(e)
 		}
 	case 1:
 		if len(i.sendHandlers) == 0 {
-			break
+			return
 		}
-		e := DataSourceSendEvent{
-			MimeType: event.String(),
-			Fd:       event.FD(),
-		}
-
+		var e DataSourceSendEvent
+		l := 0
+		mimeTypeLen := PaddedLen(int(Uint32(data[l : l+4])))
+		l += 4
+		e.MimeType = String(data[l : l+mimeTypeLen])
+		l += mimeTypeLen
+		e.Fd = fd
 		for _, h := range i.sendHandlers {
 			h.HandleDataSourceSend(e)
 		}
 	case 2:
 		if len(i.cancelledHandlers) == 0 {
-			break
+			return
 		}
-		e := DataSourceCancelledEvent{}
-
+		var e DataSourceCancelledEvent
 		for _, h := range i.cancelledHandlers {
 			h.HandleDataSourceCancelled(e)
 		}
 	case 3:
 		if len(i.dndDropPerformedHandlers) == 0 {
-			break
+			return
 		}
-		e := DataSourceDndDropPerformedEvent{}
-
+		var e DataSourceDndDropPerformedEvent
 		for _, h := range i.dndDropPerformedHandlers {
 			h.HandleDataSourceDndDropPerformed(e)
 		}
 	case 4:
 		if len(i.dndFinishedHandlers) == 0 {
-			break
+			return
 		}
-		e := DataSourceDndFinishedEvent{}
-
+		var e DataSourceDndFinishedEvent
 		for _, h := range i.dndFinishedHandlers {
 			h.HandleDataSourceDndFinished(e)
 		}
 	case 5:
 		if len(i.actionHandlers) == 0 {
-			break
+			return
 		}
-		e := DataSourceActionEvent{
-			DndAction: event.Uint32(),
-		}
-
+		var e DataSourceActionEvent
+		l := 0
+		e.DndAction = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.actionHandlers {
 			h.HandleDataSourceAction(e)
 		}
@@ -2839,73 +2849,77 @@ func (i *DataDevice) RemoveSelectionHandler(h DataDeviceSelectionHandler) {
 	}
 }
 
-func (i *DataDevice) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.dataOfferHandlers) == 0 {
-			break
+			return
 		}
-		e := DataDeviceDataOfferEvent{
-			ID: event.Proxy(i.Context()).(*DataOffer),
-		}
-
+		var e DataDeviceDataOfferEvent
+		l := 0
+		e.ID = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
+		l += 4
 		for _, h := range i.dataOfferHandlers {
 			h.HandleDataDeviceDataOffer(e)
 		}
 	case 1:
 		if len(i.enterHandlers) == 0 {
-			break
+			return
 		}
-		e := DataDeviceEnterEvent{
-			Serial:  event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*Surface),
-			X:       event.Float32(),
-			Y:       event.Float32(),
-			ID:      event.Proxy(i.Context()).(*DataOffer),
-		}
-
+		var e DataDeviceEnterEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
+		l += 4
+		e.X = Float32(data[l : l+4])
+		l += 4
+		e.Y = Float32(data[l : l+4])
+		l += 4
+		e.ID = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
+		l += 4
 		for _, h := range i.enterHandlers {
 			h.HandleDataDeviceEnter(e)
 		}
 	case 2:
 		if len(i.leaveHandlers) == 0 {
-			break
+			return
 		}
-		e := DataDeviceLeaveEvent{}
-
+		var e DataDeviceLeaveEvent
 		for _, h := range i.leaveHandlers {
 			h.HandleDataDeviceLeave(e)
 		}
 	case 3:
 		if len(i.motionHandlers) == 0 {
-			break
+			return
 		}
-		e := DataDeviceMotionEvent{
-			Time: event.Uint32(),
-			X:    event.Float32(),
-			Y:    event.Float32(),
-		}
-
+		var e DataDeviceMotionEvent
+		l := 0
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.X = Float32(data[l : l+4])
+		l += 4
+		e.Y = Float32(data[l : l+4])
+		l += 4
 		for _, h := range i.motionHandlers {
 			h.HandleDataDeviceMotion(e)
 		}
 	case 4:
 		if len(i.dropHandlers) == 0 {
-			break
+			return
 		}
-		e := DataDeviceDropEvent{}
-
+		var e DataDeviceDropEvent
 		for _, h := range i.dropHandlers {
 			h.HandleDataDeviceDrop(e)
 		}
 	case 5:
 		if len(i.selectionHandlers) == 0 {
-			break
+			return
 		}
-		e := DataDeviceSelectionEvent{
-			ID: event.Proxy(i.Context()).(*DataOffer),
-		}
-
+		var e DataDeviceSelectionEvent
+		l := 0
+		e.ID = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
+		l += 4
 		for _, h := range i.selectionHandlers {
 			h.HandleDataDeviceSelection(e)
 		}
@@ -3500,7 +3514,7 @@ func (i *ShellSurface) SetMaximized(output *Output) error {
 //  title: surface title
 func (i *ShellSurface) SetTitle(title string) error {
 	const opcode = 8
-	titleLen := StringPaddedLen(title)
+	titleLen := PaddedLen(len(title) + 1)
 	rLen := 8 + (4 + titleLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -3526,7 +3540,7 @@ func (i *ShellSurface) SetTitle(title string) error {
 //  class: surface class
 func (i *ShellSurface) SetClass(class string) error {
 	const opcode = 9
-	classLen := StringPaddedLen(class)
+	classLen := PaddedLen(len(class) + 1)
 	rLen := 8 + (4 + classLen)
 	r := make([]byte, rLen)
 	l := 0
@@ -3818,38 +3832,39 @@ func (i *ShellSurface) RemovePopupDoneHandler(h ShellSurfacePopupDoneHandler) {
 	}
 }
 
-func (i *ShellSurface) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *ShellSurface) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.pingHandlers) == 0 {
-			break
+			return
 		}
-		e := ShellSurfacePingEvent{
-			Serial: event.Uint32(),
-		}
-
+		var e ShellSurfacePingEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.pingHandlers {
 			h.HandleShellSurfacePing(e)
 		}
 	case 1:
 		if len(i.configureHandlers) == 0 {
-			break
+			return
 		}
-		e := ShellSurfaceConfigureEvent{
-			Edges:  event.Uint32(),
-			Width:  event.Int32(),
-			Height: event.Int32(),
-		}
-
+		var e ShellSurfaceConfigureEvent
+		l := 0
+		e.Edges = Uint32(data[l : l+4])
+		l += 4
+		e.Width = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.Height = int32(Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.configureHandlers {
 			h.HandleShellSurfaceConfigure(e)
 		}
 	case 2:
 		if len(i.popupDoneHandlers) == 0 {
-			break
+			return
 		}
-		e := ShellSurfacePopupDoneEvent{}
-
+		var e ShellSurfacePopupDoneEvent
 		for _, h := range i.popupDoneHandlers {
 			h.HandleShellSurfacePopupDone(e)
 		}
@@ -4539,27 +4554,27 @@ func (i *Surface) RemoveLeaveHandler(h SurfaceLeaveHandler) {
 	}
 }
 
-func (i *Surface) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.enterHandlers) == 0 {
-			break
+			return
 		}
-		e := SurfaceEnterEvent{
-			Output: event.Proxy(i.Context()).(*Output),
-		}
-
+		var e SurfaceEnterEvent
+		l := 0
+		e.Output = i.Context().GetProxy(Uint32(data[l : l+4])).(*Output)
+		l += 4
 		for _, h := range i.enterHandlers {
 			h.HandleSurfaceEnter(e)
 		}
 	case 1:
 		if len(i.leaveHandlers) == 0 {
-			break
+			return
 		}
-		e := SurfaceLeaveEvent{
-			Output: event.Proxy(i.Context()).(*Output),
-		}
-
+		var e SurfaceLeaveEvent
+		l := 0
+		e.Output = i.Context().GetProxy(Uint32(data[l : l+4])).(*Output)
+		l += 4
 		for _, h := range i.leaveHandlers {
 			h.HandleSurfaceLeave(e)
 		}
@@ -4850,27 +4865,29 @@ func (i *Seat) RemoveNameHandler(h SeatNameHandler) {
 	}
 }
 
-func (i *Seat) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Seat) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.capabilitiesHandlers) == 0 {
-			break
+			return
 		}
-		e := SeatCapabilitiesEvent{
-			Capabilities: event.Uint32(),
-		}
-
+		var e SeatCapabilitiesEvent
+		l := 0
+		e.Capabilities = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.capabilitiesHandlers {
 			h.HandleSeatCapabilities(e)
 		}
 	case 1:
 		if len(i.nameHandlers) == 0 {
-			break
+			return
 		}
-		e := SeatNameEvent{
-			Name: event.String(),
-		}
-
+		var e SeatNameEvent
+		l := 0
+		nameLen := PaddedLen(int(Uint32(data[l : l+4])))
+		l += 4
+		e.Name = String(data[l : l+nameLen])
+		l += nameLen
 		for _, h := range i.nameHandlers {
 			h.HandleSeatName(e)
 		}
@@ -5579,115 +5596,127 @@ func (i *Pointer) RemoveAxisDiscreteHandler(h PointerAxisDiscreteHandler) {
 	}
 }
 
-func (i *Pointer) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.enterHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerEnterEvent{
-			Serial:   event.Uint32(),
-			Surface:  event.Proxy(i.Context()).(*Surface),
-			SurfaceX: event.Float32(),
-			SurfaceY: event.Float32(),
-		}
-
+		var e PointerEnterEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
+		l += 4
+		e.SurfaceX = Float32(data[l : l+4])
+		l += 4
+		e.SurfaceY = Float32(data[l : l+4])
+		l += 4
 		for _, h := range i.enterHandlers {
 			h.HandlePointerEnter(e)
 		}
 	case 1:
 		if len(i.leaveHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerLeaveEvent{
-			Serial:  event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*Surface),
-		}
-
+		var e PointerLeaveEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
+		l += 4
 		for _, h := range i.leaveHandlers {
 			h.HandlePointerLeave(e)
 		}
 	case 2:
 		if len(i.motionHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerMotionEvent{
-			Time:     event.Uint32(),
-			SurfaceX: event.Float32(),
-			SurfaceY: event.Float32(),
-		}
-
+		var e PointerMotionEvent
+		l := 0
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.SurfaceX = Float32(data[l : l+4])
+		l += 4
+		e.SurfaceY = Float32(data[l : l+4])
+		l += 4
 		for _, h := range i.motionHandlers {
 			h.HandlePointerMotion(e)
 		}
 	case 3:
 		if len(i.buttonHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerButtonEvent{
-			Serial: event.Uint32(),
-			Time:   event.Uint32(),
-			Button: event.Uint32(),
-			State:  event.Uint32(),
-		}
-
+		var e PointerButtonEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.Button = Uint32(data[l : l+4])
+		l += 4
+		e.State = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.buttonHandlers {
 			h.HandlePointerButton(e)
 		}
 	case 4:
 		if len(i.axisHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerAxisEvent{
-			Time:  event.Uint32(),
-			Axis:  event.Uint32(),
-			Value: event.Float32(),
-		}
-
+		var e PointerAxisEvent
+		l := 0
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.Axis = Uint32(data[l : l+4])
+		l += 4
+		e.Value = Float32(data[l : l+4])
+		l += 4
 		for _, h := range i.axisHandlers {
 			h.HandlePointerAxis(e)
 		}
 	case 5:
 		if len(i.frameHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerFrameEvent{}
-
+		var e PointerFrameEvent
 		for _, h := range i.frameHandlers {
 			h.HandlePointerFrame(e)
 		}
 	case 6:
 		if len(i.axisSourceHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerAxisSourceEvent{
-			AxisSource: event.Uint32(),
-		}
-
+		var e PointerAxisSourceEvent
+		l := 0
+		e.AxisSource = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.axisSourceHandlers {
 			h.HandlePointerAxisSource(e)
 		}
 	case 7:
 		if len(i.axisStopHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerAxisStopEvent{
-			Time: event.Uint32(),
-			Axis: event.Uint32(),
-		}
-
+		var e PointerAxisStopEvent
+		l := 0
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.Axis = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.axisStopHandlers {
 			h.HandlePointerAxisStop(e)
 		}
 	case 8:
 		if len(i.axisDiscreteHandlers) == 0 {
-			break
+			return
 		}
-		e := PointerAxisDiscreteEvent{
-			Axis:     event.Uint32(),
-			Discrete: event.Int32(),
-		}
-
+		var e PointerAxisDiscreteEvent
+		l := 0
+		e.Axis = Uint32(data[l : l+4])
+		l += 4
+		e.Discrete = int32(Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.axisDiscreteHandlers {
 			h.HandlePointerAxisDiscrete(e)
 		}
@@ -6033,84 +6062,98 @@ func (i *Keyboard) RemoveRepeatInfoHandler(h KeyboardRepeatInfoHandler) {
 	}
 }
 
-func (i *Keyboard) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.keymapHandlers) == 0 {
-			break
+			return
 		}
-		e := KeyboardKeymapEvent{
-			Format: event.Uint32(),
-			Fd:     event.FD(),
-			Size:   event.Uint32(),
-		}
-
+		var e KeyboardKeymapEvent
+		l := 0
+		e.Format = Uint32(data[l : l+4])
+		l += 4
+		e.Fd = fd
+		e.Size = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.keymapHandlers {
 			h.HandleKeyboardKeymap(e)
 		}
 	case 1:
 		if len(i.enterHandlers) == 0 {
-			break
+			return
 		}
-		e := KeyboardEnterEvent{
-			Serial:  event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*Surface),
-			Keys:    event.Array(),
-		}
-
+		var e KeyboardEnterEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
+		l += 4
+		keysLen := int(Uint32(data[l : l+4]))
+		l += 4
+		e.Keys = Array(data[l : l+keysLen])
+		l += keysLen
 		for _, h := range i.enterHandlers {
 			h.HandleKeyboardEnter(e)
 		}
 	case 2:
 		if len(i.leaveHandlers) == 0 {
-			break
+			return
 		}
-		e := KeyboardLeaveEvent{
-			Serial:  event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*Surface),
-		}
-
+		var e KeyboardLeaveEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
+		l += 4
 		for _, h := range i.leaveHandlers {
 			h.HandleKeyboardLeave(e)
 		}
 	case 3:
 		if len(i.keyHandlers) == 0 {
-			break
+			return
 		}
-		e := KeyboardKeyEvent{
-			Serial: event.Uint32(),
-			Time:   event.Uint32(),
-			Key:    event.Uint32(),
-			State:  event.Uint32(),
-		}
-
+		var e KeyboardKeyEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.Key = Uint32(data[l : l+4])
+		l += 4
+		e.State = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.keyHandlers {
 			h.HandleKeyboardKey(e)
 		}
 	case 4:
 		if len(i.modifiersHandlers) == 0 {
-			break
+			return
 		}
-		e := KeyboardModifiersEvent{
-			Serial:        event.Uint32(),
-			ModsDepressed: event.Uint32(),
-			ModsLatched:   event.Uint32(),
-			ModsLocked:    event.Uint32(),
-			Group:         event.Uint32(),
-		}
-
+		var e KeyboardModifiersEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.ModsDepressed = Uint32(data[l : l+4])
+		l += 4
+		e.ModsLatched = Uint32(data[l : l+4])
+		l += 4
+		e.ModsLocked = Uint32(data[l : l+4])
+		l += 4
+		e.Group = Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.modifiersHandlers {
 			h.HandleKeyboardModifiers(e)
 		}
 	case 5:
 		if len(i.repeatInfoHandlers) == 0 {
-			break
+			return
 		}
-		e := KeyboardRepeatInfoEvent{
-			Rate:  event.Int32(),
-			Delay: event.Int32(),
-		}
-
+		var e KeyboardRepeatInfoEvent
+		l := 0
+		e.Rate = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.Delay = int32(Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.repeatInfoHandlers {
 			h.HandleKeyboardRepeatInfo(e)
 		}
@@ -6443,91 +6486,102 @@ func (i *Touch) RemoveOrientationHandler(h TouchOrientationHandler) {
 	}
 }
 
-func (i *Touch) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.downHandlers) == 0 {
-			break
+			return
 		}
-		e := TouchDownEvent{
-			Serial:  event.Uint32(),
-			Time:    event.Uint32(),
-			Surface: event.Proxy(i.Context()).(*Surface),
-			ID:      event.Int32(),
-			X:       event.Float32(),
-			Y:       event.Float32(),
-		}
-
+		var e TouchDownEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
+		l += 4
+		e.ID = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.X = Float32(data[l : l+4])
+		l += 4
+		e.Y = Float32(data[l : l+4])
+		l += 4
 		for _, h := range i.downHandlers {
 			h.HandleTouchDown(e)
 		}
 	case 1:
 		if len(i.upHandlers) == 0 {
-			break
+			return
 		}
-		e := TouchUpEvent{
-			Serial: event.Uint32(),
-			Time:   event.Uint32(),
-			ID:     event.Int32(),
-		}
-
+		var e TouchUpEvent
+		l := 0
+		e.Serial = Uint32(data[l : l+4])
+		l += 4
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.ID = int32(Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.upHandlers {
 			h.HandleTouchUp(e)
 		}
 	case 2:
 		if len(i.motionHandlers) == 0 {
-			break
+			return
 		}
-		e := TouchMotionEvent{
-			Time: event.Uint32(),
-			ID:   event.Int32(),
-			X:    event.Float32(),
-			Y:    event.Float32(),
-		}
-
+		var e TouchMotionEvent
+		l := 0
+		e.Time = Uint32(data[l : l+4])
+		l += 4
+		e.ID = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.X = Float32(data[l : l+4])
+		l += 4
+		e.Y = Float32(data[l : l+4])
+		l += 4
 		for _, h := range i.motionHandlers {
 			h.HandleTouchMotion(e)
 		}
 	case 3:
 		if len(i.frameHandlers) == 0 {
-			break
+			return
 		}
-		e := TouchFrameEvent{}
-
+		var e TouchFrameEvent
 		for _, h := range i.frameHandlers {
 			h.HandleTouchFrame(e)
 		}
 	case 4:
 		if len(i.cancelHandlers) == 0 {
-			break
+			return
 		}
-		e := TouchCancelEvent{}
-
+		var e TouchCancelEvent
 		for _, h := range i.cancelHandlers {
 			h.HandleTouchCancel(e)
 		}
 	case 5:
 		if len(i.shapeHandlers) == 0 {
-			break
+			return
 		}
-		e := TouchShapeEvent{
-			ID:    event.Int32(),
-			Major: event.Float32(),
-			Minor: event.Float32(),
-		}
-
+		var e TouchShapeEvent
+		l := 0
+		e.ID = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.Major = Float32(data[l : l+4])
+		l += 4
+		e.Minor = Float32(data[l : l+4])
+		l += 4
 		for _, h := range i.shapeHandlers {
 			h.HandleTouchShape(e)
 		}
 	case 6:
 		if len(i.orientationHandlers) == 0 {
-			break
+			return
 		}
-		e := TouchOrientationEvent{
-			ID:          event.Int32(),
-			Orientation: event.Float32(),
-		}
-
+		var e TouchOrientationEvent
+		l := 0
+		e.ID = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.Orientation = Float32(data[l : l+4])
+		l += 4
 		for _, h := range i.orientationHandlers {
 			h.HandleTouchOrientation(e)
 		}
@@ -6954,57 +7008,70 @@ func (i *Output) RemoveScaleHandler(h OutputScaleHandler) {
 	}
 }
 
-func (i *Output) Dispatch(event *Event) {
-	switch event.Opcode {
+func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.geometryHandlers) == 0 {
-			break
+			return
 		}
-		e := OutputGeometryEvent{
-			X:              event.Int32(),
-			Y:              event.Int32(),
-			PhysicalWidth:  event.Int32(),
-			PhysicalHeight: event.Int32(),
-			Subpixel:       event.Int32(),
-			Make:           event.String(),
-			Model:          event.String(),
-			Transform:      event.Int32(),
-		}
-
+		var e OutputGeometryEvent
+		l := 0
+		e.X = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.Y = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.PhysicalWidth = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.PhysicalHeight = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.Subpixel = int32(Uint32(data[l : l+4]))
+		l += 4
+		makeLen := PaddedLen(int(Uint32(data[l : l+4])))
+		l += 4
+		e.Make = String(data[l : l+makeLen])
+		l += makeLen
+		modelLen := PaddedLen(int(Uint32(data[l : l+4])))
+		l += 4
+		e.Model = String(data[l : l+modelLen])
+		l += modelLen
+		e.Transform = int32(Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.geometryHandlers {
 			h.HandleOutputGeometry(e)
 		}
 	case 1:
 		if len(i.modeHandlers) == 0 {
-			break
+			return
 		}
-		e := OutputModeEvent{
-			Flags:   event.Uint32(),
-			Width:   event.Int32(),
-			Height:  event.Int32(),
-			Refresh: event.Int32(),
-		}
-
+		var e OutputModeEvent
+		l := 0
+		e.Flags = Uint32(data[l : l+4])
+		l += 4
+		e.Width = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.Height = int32(Uint32(data[l : l+4]))
+		l += 4
+		e.Refresh = int32(Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.modeHandlers {
 			h.HandleOutputMode(e)
 		}
 	case 2:
 		if len(i.doneHandlers) == 0 {
-			break
+			return
 		}
-		e := OutputDoneEvent{}
-
+		var e OutputDoneEvent
 		for _, h := range i.doneHandlers {
 			h.HandleOutputDone(e)
 		}
 	case 3:
 		if len(i.scaleHandlers) == 0 {
-			break
+			return
 		}
-		e := OutputScaleEvent{
-			Factor: event.Int32(),
-		}
-
+		var e OutputScaleEvent
+		l := 0
+		e.Factor = int32(Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.scaleHandlers {
 			h.HandleOutputScale(e)
 		}

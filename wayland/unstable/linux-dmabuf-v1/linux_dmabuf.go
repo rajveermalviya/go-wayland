@@ -307,29 +307,31 @@ func (i *LinuxDmabuf) RemoveModifierHandler(h LinuxDmabufModifierHandler) {
 	}
 }
 
-func (i *LinuxDmabuf) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *LinuxDmabuf) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.formatHandlers) == 0 {
-			break
+			return
 		}
-		e := LinuxDmabufFormatEvent{
-			Format: event.Uint32(),
-		}
-
+		var e LinuxDmabufFormatEvent
+		l := 0
+		e.Format = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.formatHandlers {
 			h.HandleLinuxDmabufFormat(e)
 		}
 	case 1:
 		if len(i.modifierHandlers) == 0 {
-			break
+			return
 		}
-		e := LinuxDmabufModifierEvent{
-			Format:     event.Uint32(),
-			ModifierHi: event.Uint32(),
-			ModifierLo: event.Uint32(),
-		}
-
+		var e LinuxDmabufModifierEvent
+		l := 0
+		e.Format = client.Uint32(data[l : l+4])
+		l += 4
+		e.ModifierHi = client.Uint32(data[l : l+4])
+		l += 4
+		e.ModifierLo = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.modifierHandlers {
 			h.HandleLinuxDmabufModifier(e)
 		}
@@ -769,25 +771,24 @@ func (i *LinuxBufferParams) RemoveFailedHandler(h LinuxBufferParamsFailedHandler
 	}
 }
 
-func (i *LinuxBufferParams) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *LinuxBufferParams) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.createdHandlers) == 0 {
-			break
+			return
 		}
-		e := LinuxBufferParamsCreatedEvent{
-			Buffer: event.Proxy(i.Context()).(*client.Buffer),
-		}
-
+		var e LinuxBufferParamsCreatedEvent
+		l := 0
+		e.Buffer = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Buffer)
+		l += 4
 		for _, h := range i.createdHandlers {
 			h.HandleLinuxBufferParamsCreated(e)
 		}
 	case 1:
 		if len(i.failedHandlers) == 0 {
-			break
+			return
 		}
-		e := LinuxBufferParamsFailedEvent{}
-
+		var e LinuxBufferParamsFailedEvent
 		for _, h := range i.failedHandlers {
 			h.HandleLinuxBufferParamsFailed(e)
 		}

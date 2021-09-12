@@ -227,7 +227,7 @@ func (i *TextInput) Disable() error {
 //
 func (i *TextInput) SetSurroundingText(text string, cursor, anchor int32) error {
 	const opcode = 3
-	textLen := client.StringPaddedLen(text)
+	textLen := client.PaddedLen(len(text) + 1)
 	rLen := 8 + (4 + textLen) + 4 + 4
 	r := make([]byte, rLen)
 	l := 0
@@ -885,74 +885,81 @@ func (i *TextInput) RemoveDoneHandler(h TextInputDoneHandler) {
 	}
 }
 
-func (i *TextInput) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *TextInput) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.enterHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputEnterEvent{
-			Surface: event.Proxy(i.Context()).(*client.Surface),
-		}
-
+		var e TextInputEnterEvent
+		l := 0
+		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
+		l += 4
 		for _, h := range i.enterHandlers {
 			h.HandleTextInputEnter(e)
 		}
 	case 1:
 		if len(i.leaveHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputLeaveEvent{
-			Surface: event.Proxy(i.Context()).(*client.Surface),
-		}
-
+		var e TextInputLeaveEvent
+		l := 0
+		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
+		l += 4
 		for _, h := range i.leaveHandlers {
 			h.HandleTextInputLeave(e)
 		}
 	case 2:
 		if len(i.preeditStringHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputPreeditStringEvent{
-			Text:        event.String(),
-			CursorBegin: event.Int32(),
-			CursorEnd:   event.Int32(),
-		}
-
+		var e TextInputPreeditStringEvent
+		l := 0
+		textLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Text = client.String(data[l : l+textLen])
+		l += textLen
+		e.CursorBegin = int32(client.Uint32(data[l : l+4]))
+		l += 4
+		e.CursorEnd = int32(client.Uint32(data[l : l+4]))
+		l += 4
 		for _, h := range i.preeditStringHandlers {
 			h.HandleTextInputPreeditString(e)
 		}
 	case 3:
 		if len(i.commitStringHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputCommitStringEvent{
-			Text: event.String(),
-		}
-
+		var e TextInputCommitStringEvent
+		l := 0
+		textLen := client.PaddedLen(int(client.Uint32(data[l : l+4])))
+		l += 4
+		e.Text = client.String(data[l : l+textLen])
+		l += textLen
 		for _, h := range i.commitStringHandlers {
 			h.HandleTextInputCommitString(e)
 		}
 	case 4:
 		if len(i.deleteSurroundingTextHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputDeleteSurroundingTextEvent{
-			BeforeLength: event.Uint32(),
-			AfterLength:  event.Uint32(),
-		}
-
+		var e TextInputDeleteSurroundingTextEvent
+		l := 0
+		e.BeforeLength = client.Uint32(data[l : l+4])
+		l += 4
+		e.AfterLength = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.deleteSurroundingTextHandlers {
 			h.HandleTextInputDeleteSurroundingText(e)
 		}
 	case 5:
 		if len(i.doneHandlers) == 0 {
-			break
+			return
 		}
-		e := TextInputDoneEvent{
-			Serial: event.Uint32(),
-		}
-
+		var e TextInputDoneEvent
+		l := 0
+		e.Serial = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.doneHandlers {
 			h.HandleTextInputDone(e)
 		}

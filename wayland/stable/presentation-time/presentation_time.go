@@ -234,16 +234,16 @@ func (i *Presentation) RemoveClockIDHandler(h PresentationClockIDHandler) {
 	}
 }
 
-func (i *Presentation) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *Presentation) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.clockIDHandlers) == 0 {
-			break
+			return
 		}
-		e := PresentationClockIDEvent{
-			ClkID: event.Uint32(),
-		}
-
+		var e PresentationClockIDEvent
+		l := 0
+		e.ClkID = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.clockIDHandlers {
 			h.HandlePresentationClockID(e)
 		}
@@ -480,42 +480,47 @@ func (i *PresentationFeedback) RemoveDiscardedHandler(h PresentationFeedbackDisc
 	}
 }
 
-func (i *PresentationFeedback) Dispatch(event *client.Event) {
-	switch event.Opcode {
+func (i *PresentationFeedback) Dispatch(opcode uint16, fd uintptr, data []byte) {
+	switch opcode {
 	case 0:
 		if len(i.syncOutputHandlers) == 0 {
-			break
+			return
 		}
-		e := PresentationFeedbackSyncOutputEvent{
-			Output: event.Proxy(i.Context()).(*client.Output),
-		}
-
+		var e PresentationFeedbackSyncOutputEvent
+		l := 0
+		e.Output = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Output)
+		l += 4
 		for _, h := range i.syncOutputHandlers {
 			h.HandlePresentationFeedbackSyncOutput(e)
 		}
 	case 1:
 		if len(i.presentedHandlers) == 0 {
-			break
+			return
 		}
-		e := PresentationFeedbackPresentedEvent{
-			TvSecHi: event.Uint32(),
-			TvSecLo: event.Uint32(),
-			TvNsec:  event.Uint32(),
-			Refresh: event.Uint32(),
-			SeqHi:   event.Uint32(),
-			SeqLo:   event.Uint32(),
-			Flags:   event.Uint32(),
-		}
-
+		var e PresentationFeedbackPresentedEvent
+		l := 0
+		e.TvSecHi = client.Uint32(data[l : l+4])
+		l += 4
+		e.TvSecLo = client.Uint32(data[l : l+4])
+		l += 4
+		e.TvNsec = client.Uint32(data[l : l+4])
+		l += 4
+		e.Refresh = client.Uint32(data[l : l+4])
+		l += 4
+		e.SeqHi = client.Uint32(data[l : l+4])
+		l += 4
+		e.SeqLo = client.Uint32(data[l : l+4])
+		l += 4
+		e.Flags = client.Uint32(data[l : l+4])
+		l += 4
 		for _, h := range i.presentedHandlers {
 			h.HandlePresentationFeedbackPresented(e)
 		}
 	case 2:
 		if len(i.discardedHandlers) == 0 {
-			break
+			return
 		}
-		e := PresentationFeedbackDiscardedEvent{}
-
+		var e PresentationFeedbackDiscardedEvent
 		for _, h := range i.discardedHandlers {
 			h.HandlePresentationFeedbackDiscarded(e)
 		}
