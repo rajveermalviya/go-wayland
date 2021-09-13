@@ -304,7 +304,7 @@ func (i *Viewport) Destroy() error {
 //  y: source rectangle y
 //  width: source rectangle width
 //  height: source rectangle height
-func (i *Viewport) SetSource(x, y, width, height float32) error {
+func (i *Viewport) SetSource(x, y, width, height float64) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4 + 4
 	r := make([]byte, rLen)
@@ -313,13 +313,13 @@ func (i *Viewport) SetSource(x, y, width, height float32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	client.PutFloat32(r[l:l+4], x)
+	client.PutFixed(r[l:l+4], x)
 	l += 4
-	client.PutFloat32(r[l:l+4], y)
+	client.PutFixed(r[l:l+4], y)
 	l += 4
-	client.PutFloat32(r[l:l+4], width)
+	client.PutFixed(r[l:l+4], width)
 	l += 4
-	client.PutFloat32(r[l:l+4], height)
+	client.PutFixed(r[l:l+4], height)
 	l += 4
 	err := i.Context().WriteMsg(r, nil)
 	return err

@@ -2683,8 +2683,8 @@ func (i *DataDevice) RemoveDataOfferHandler(h DataDeviceDataOfferHandler) {
 type DataDeviceEnterEvent struct {
 	Serial  uint32
 	Surface *Surface
-	X       float32
-	Y       float32
+	X       float64
+	Y       float64
 	ID      *DataOffer
 }
 
@@ -2746,8 +2746,8 @@ func (i *DataDevice) RemoveLeaveHandler(h DataDeviceLeaveHandler) {
 // coordinates.
 type DataDeviceMotionEvent struct {
 	Time uint32
-	X    float32
-	Y    float32
+	X    float64
+	Y    float64
 }
 
 type DataDeviceMotionHandler interface {
@@ -2872,9 +2872,9 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
 		l += 4
-		e.X = Float32(data[l : l+4])
+		e.X = Fixed(data[l : l+4])
 		l += 4
-		e.Y = Float32(data[l : l+4])
+		e.Y = Fixed(data[l : l+4])
 		l += 4
 		e.ID = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
@@ -2897,9 +2897,9 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Time = Uint32(data[l : l+4])
 		l += 4
-		e.X = Float32(data[l : l+4])
+		e.X = Fixed(data[l : l+4])
 		l += 4
-		e.Y = Float32(data[l : l+4])
+		e.Y = Fixed(data[l : l+4])
 		l += 4
 		for _, h := range i.motionHandlers {
 			h.HandleDataDeviceMotion(e)
@@ -5202,8 +5202,8 @@ func (e PointerAxisSource) String() string {
 type PointerEnterEvent struct {
 	Serial   uint32
 	Surface  *Surface
-	SurfaceX float32
-	SurfaceY float32
+	SurfaceX float64
+	SurfaceY float64
 }
 
 type PointerEnterHandler interface {
@@ -5269,8 +5269,8 @@ func (i *Pointer) RemoveLeaveHandler(h PointerLeaveHandler) {
 // focused surface.
 type PointerMotionEvent struct {
 	Time     uint32
-	SurfaceX float32
-	SurfaceY float32
+	SurfaceX float64
+	SurfaceY float64
 }
 
 type PointerMotionHandler interface {
@@ -5361,7 +5361,7 @@ func (i *Pointer) RemoveButtonHandler(h PointerButtonHandler) {
 type PointerAxisEvent struct {
 	Time  uint32
 	Axis  uint32
-	Value float32
+	Value float64
 }
 
 type PointerAxisHandler interface {
@@ -5608,9 +5608,9 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
 		l += 4
-		e.SurfaceX = Float32(data[l : l+4])
+		e.SurfaceX = Fixed(data[l : l+4])
 		l += 4
-		e.SurfaceY = Float32(data[l : l+4])
+		e.SurfaceY = Fixed(data[l : l+4])
 		l += 4
 		for _, h := range i.enterHandlers {
 			h.HandlePointerEnter(e)
@@ -5636,9 +5636,9 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Time = Uint32(data[l : l+4])
 		l += 4
-		e.SurfaceX = Float32(data[l : l+4])
+		e.SurfaceX = Fixed(data[l : l+4])
 		l += 4
-		e.SurfaceY = Float32(data[l : l+4])
+		e.SurfaceY = Fixed(data[l : l+4])
 		l += 4
 		for _, h := range i.motionHandlers {
 			h.HandlePointerMotion(e)
@@ -5670,7 +5670,7 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Axis = Uint32(data[l : l+4])
 		l += 4
-		e.Value = Float32(data[l : l+4])
+		e.Value = Fixed(data[l : l+4])
 		l += 4
 		for _, h := range i.axisHandlers {
 			h.HandlePointerAxis(e)
@@ -6224,8 +6224,8 @@ type TouchDownEvent struct {
 	Time    uint32
 	Surface *Surface
 	ID      int32
-	X       float32
-	Y       float32
+	X       float64
+	Y       float64
 }
 
 type TouchDownHandler interface {
@@ -6289,8 +6289,8 @@ func (i *Touch) RemoveUpHandler(h TouchUpHandler) {
 type TouchMotionEvent struct {
 	Time uint32
 	ID   int32
-	X    float32
-	Y    float32
+	X    float64
+	Y    float64
 }
 
 type TouchMotionHandler interface {
@@ -6408,8 +6408,8 @@ func (i *Touch) RemoveCancelHandler(h TouchCancelHandler) {
 // shape if it did not receive this event.
 type TouchShapeEvent struct {
 	ID    int32
-	Major float32
-	Minor float32
+	Major float64
+	Minor float64
 }
 
 type TouchShapeHandler interface {
@@ -6461,7 +6461,7 @@ func (i *Touch) RemoveShapeHandler(h TouchShapeHandler) {
 // orientation reports.
 type TouchOrientationEvent struct {
 	ID          int32
-	Orientation float32
+	Orientation float64
 }
 
 type TouchOrientationHandler interface {
@@ -6502,9 +6502,9 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.ID = int32(Uint32(data[l : l+4]))
 		l += 4
-		e.X = Float32(data[l : l+4])
+		e.X = Fixed(data[l : l+4])
 		l += 4
-		e.Y = Float32(data[l : l+4])
+		e.Y = Fixed(data[l : l+4])
 		l += 4
 		for _, h := range i.downHandlers {
 			h.HandleTouchDown(e)
@@ -6534,9 +6534,9 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.ID = int32(Uint32(data[l : l+4]))
 		l += 4
-		e.X = Float32(data[l : l+4])
+		e.X = Fixed(data[l : l+4])
 		l += 4
-		e.Y = Float32(data[l : l+4])
+		e.Y = Fixed(data[l : l+4])
 		l += 4
 		for _, h := range i.motionHandlers {
 			h.HandleTouchMotion(e)
@@ -6565,9 +6565,9 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.ID = int32(Uint32(data[l : l+4]))
 		l += 4
-		e.Major = Float32(data[l : l+4])
+		e.Major = Fixed(data[l : l+4])
 		l += 4
-		e.Minor = Float32(data[l : l+4])
+		e.Minor = Fixed(data[l : l+4])
 		l += 4
 		for _, h := range i.shapeHandlers {
 			h.HandleTouchShape(e)
@@ -6580,7 +6580,7 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.ID = int32(Uint32(data[l : l+4]))
 		l += 4
-		e.Orientation = Float32(data[l : l+4])
+		e.Orientation = Fixed(data[l : l+4])
 		l += 4
 		for _, h := range i.orientationHandlers {
 			h.HandleTouchOrientation(e)

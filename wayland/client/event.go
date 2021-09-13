@@ -67,9 +67,9 @@ func String(src []byte) string {
 	return string(bytes.TrimRight(src, "\x00"))
 }
 
-func Float32(src []byte) float32 {
+func Fixed(src []byte) float64 {
 	i := int32(byteorder.NativeEndian.Uint32(src))
-	return float32(fixedToFloat64(i))
+	return fixedToFloat64(i)
 }
 
 func Array(src []byte) []int32 {

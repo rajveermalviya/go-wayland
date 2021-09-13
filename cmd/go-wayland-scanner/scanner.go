@@ -200,25 +200,15 @@ func fmtFile(b []byte) []byte {
 	return b
 }
 
-var (
-	typeToGoTypeMap map[string]string = map[string]string{
-		"int":    "int32",
-		"uint":   "uint32",
-		"fixed":  "float32",
-		"string": "string",
-		"object": "Proxy",
-		"array":  "[]int32",
-		"fd":     "uintptr",
-	}
-	typeToGetterMap map[string]string = map[string]string{
-		"int":    "Int32",
-		"uint":   "Uint32",
-		"fixed":  "Float32",
-		"string": "String",
-		"array":  "Array",
-		"fd":     "FD",
-	}
-)
+var typeToGoTypeMap map[string]string = map[string]string{
+	"int":    "int32",
+	"uint":   "uint32",
+	"fixed":  "float64",
+	"string": "string",
+	"object": "Proxy",
+	"array":  "[]int32",
+	"fd":     "uintptr",
+}
 
 func writeInterface(w io.Writer, v Interface) {
 	ifaceName := toCamel(v.Name)
@@ -481,9 +471,9 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 
 		case "fixed":
 			if protocol.Name == "wayland" {
-				fmt.Fprintf(w, "PutFloat32(r[l:l+4], %s)\n", argNameLower)
+				fmt.Fprintf(w, "PutFixed(r[l:l+4], %s)\n", argNameLower)
 			} else {
-				fmt.Fprintf(w, "client.PutFloat32(r[l:l+4], %s)\n", argNameLower)
+				fmt.Fprintf(w, "client.PutFixed(r[l:l+4], %s)\n", argNameLower)
 			}
 			fmt.Fprintf(w, "l += 4\n")
 
@@ -702,9 +692,9 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 
 			case "fixed":
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "e.%s = Float32(data[l : l+4])\n", argName)
+					fmt.Fprintf(w, "e.%s = Fixed(data[l : l+4])\n", argName)
 				} else {
-					fmt.Fprintf(w, "e.%s = client.Float32(data[l : l+4])\n", argName)
+					fmt.Fprintf(w, "e.%s = client.Fixed(data[l : l+4])\n", argName)
 				}
 				fmt.Fprintf(w, "l += 4\n")
 

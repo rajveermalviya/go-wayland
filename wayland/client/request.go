@@ -22,8 +22,8 @@ func PutUint32(dst []byte, v uint32) {
 	byteorder.NativeEndian.PutUint32(dst, v)
 }
 
-func PutFloat32(dst []byte, f float32) {
-	fx := float64ToFixed(float64(f))
+func PutFixed(dst []byte, f float64) {
+	fx := fixedFromfloat64(f)
 	byteorder.NativeEndian.PutUint32(dst, uint32(fx))
 }
 
