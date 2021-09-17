@@ -746,7 +746,7 @@ func (i *TextInput) RemoveLeaveHandler(h TextInputLeaveHandler) {
 // the array is the index of the modifier as used in the modifiers
 // bitmask in the keysym event.
 type TextInputModifiersMapEvent struct {
-	Map []int32
+	Map []byte
 }
 
 type TextInputModifiersMapHandler interface {
@@ -1145,10 +1145,11 @@ func (i *TextInput) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		}
 		var e TextInputModifiersMapEvent
 		l := 0
-		mapLen := int(client.Uint32(data[l : l+4]))
+		_mapLen := int(client.Uint32(data[l : l+4]))
 		l += 4
-		e.Map = client.Array(data[l : l+mapLen])
-		l += mapLen
+		e.Map = make([]byte, _mapLen)
+		copy(e.Map, data[l:l+_mapLen])
+		l += _mapLen
 		for _, h := range i.modifiersMapHandlers {
 			h.HandleTextInputModifiersMap(e)
 		}

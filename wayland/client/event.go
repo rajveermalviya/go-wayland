@@ -71,13 +71,3 @@ func Fixed(src []byte) float64 {
 	i := int32(byteorder.NativeEndian.Uint32(src))
 	return fixedToFloat64(i)
 }
-
-func Array(src []byte) []int32 {
-	l := 0
-	arr := make([]int32, len(src)/4)
-	for i := range arr {
-		arr[i] = int32(byteorder.NativeEndian.Uint32(src[l : l+4]))
-		l += 4
-	}
-	return arr
-}

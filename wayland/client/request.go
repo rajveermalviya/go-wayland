@@ -28,11 +28,14 @@ func PutFixed(dst []byte, f float64) {
 }
 
 func PutString(dst []byte, v string, l int) {
-	_ = dst[:4+len(v)] // early bounds check
-
 	byteorder.NativeEndian.PutUint32(dst[:4], uint32(l))
 
 	v += "\x00"
 	copy(dst[4:4+len(v)], []byte(v))
 }
 
+func PutArray(dst []byte, a []byte) {
+	byteorder.NativeEndian.PutUint32(dst[:4], uint32(len(a)))
+
+	copy(dst[4:4+len(a)], []byte(a))
+}

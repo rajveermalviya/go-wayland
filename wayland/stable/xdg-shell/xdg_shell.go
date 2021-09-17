@@ -1971,7 +1971,7 @@ func (e ToplevelState) String() string {
 type ToplevelConfigureEvent struct {
 	Width  int32
 	Height int32
-	States []int32
+	States []byte
 }
 
 type ToplevelConfigureHandler interface {
@@ -2043,7 +2043,8 @@ func (i *Toplevel) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		statesLen := int(client.Uint32(data[l : l+4]))
 		l += 4
-		e.States = client.Array(data[l : l+statesLen])
+		e.States = make([]byte, statesLen)
+		copy(e.States, data[l:l+statesLen])
 		l += statesLen
 		for _, h := range i.configureHandlers {
 			h.HandleToplevelConfigure(e)

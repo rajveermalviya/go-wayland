@@ -206,7 +206,7 @@ var typeToGoTypeMap map[string]string = map[string]string{
 	"fixed":  "float64",
 	"string": "string",
 	"object": "Proxy",
-	"array":  "[]int32",
+	"array":  "[]byte",
 	"fd":     "uintptr",
 }
 
@@ -298,7 +298,7 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 			params = append(params, argNameLower+" *"+argIface)
 
 		case "int", "uint", "fixed",
-			"string", "fd":
+			"string", "array", "fd":
 			params = append(params, argNameLower+" "+typeToGoTypeMap[arg.Type])
 		}
 	}
@@ -375,6 +375,11 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 				fmt.Fprintf(w, "%sLen := client.PaddedLen(len(%s)+1)\n", argNameLower, argNameLower)
 			}
 			sizes = append(sizes, fmt.Sprintf("(4 + %sLen)", argNameLower))
+
+		case "array":
+			canBeConst = false
+			fmt.Fprintf(w, "%sLen := len(%s)\n", argNameLower, argNameLower)
+			sizes = append(sizes, fmt.Sprintf("%sLen", argNameLower))
 		}
 	}
 
@@ -484,6 +489,14 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 				fmt.Fprintf(w, "client.PutString(r[l:l+(4 + %sLen)], %s, %sLen)\n", argNameLower, argNameLower, argNameLower)
 			}
 			fmt.Fprintf(w, "l += (4 + %sLen)\n", argNameLower)
+
+		case "array":
+			if protocol.Name == "wayland" {
+				fmt.Fprintf(w, "PutArray(r[l:l+(4 + %sLen)], %s)\n", argNameLower, argNameLower)
+			} else {
+				fmt.Fprintf(w, "client.PutArray(r[l:l+(4 + %sLen)], %s)\n", argNameLower, argNameLower)
+			}
+			fmt.Fprintf(w, "l += %sLen\n", argNameLower)
 
 		case "fd":
 			fdIndex = i
@@ -719,11 +732,8 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 					fmt.Fprintf(w, "%sLen := int(client.Uint32(data[l : l+4]))\n", argNameLower)
 				}
 				fmt.Fprintf(w, "l += 4\n")
-				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "e.%s = Array(data[l : l+%sLen])\n", argName, argNameLower)
-				} else {
-					fmt.Fprintf(w, "e.%s = client.Array(data[l : l+%sLen])\n", argName, argNameLower)
-				}
+				fmt.Fprintf(w, "e.%s = make([]byte, %sLen)\n", argName, argNameLower)
+				fmt.Fprintf(w, "copy(e.%s, data[l:l+%sLen])\n", argName, argNameLower)
 				fmt.Fprintf(w, "l += %sLen\n", argNameLower)
 			}
 		}
@@ -752,6 +762,9 @@ func toCamelPrefix(s string, prefix string) string {
 
 func toLowerCamel(s string) string {
 	s = strcase.ToLowerCamel(s)
+	if s == "map" {
+		s = "_map"
+	}
 	return s
 }
 

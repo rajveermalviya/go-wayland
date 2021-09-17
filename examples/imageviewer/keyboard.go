@@ -30,8 +30,8 @@ func (app *appState) releaseKeyboard() {
 }
 
 func (app *appState) HandleKeyboardKey(e client.KeyboardKeyEvent) {
-	// close on "q"
-	if e.Key == 16 {
+	// close on "esc"
+	if e.Key == 1 {
 		app.exit = true
 	}
 }

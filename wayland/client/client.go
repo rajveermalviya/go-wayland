@@ -5885,7 +5885,7 @@ func (i *Keyboard) RemoveKeymapHandler(h KeyboardKeymapHandler) {
 type KeyboardEnterEvent struct {
 	Serial  uint32
 	Surface *Surface
-	Keys    []int32
+	Keys    []byte
 }
 
 type KeyboardEnterHandler interface {
@@ -6090,7 +6090,8 @@ func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		keysLen := int(Uint32(data[l : l+4]))
 		l += 4
-		e.Keys = Array(data[l : l+keysLen])
+		e.Keys = make([]byte, keysLen)
+		copy(e.Keys, data[l:l+keysLen])
 		l += keysLen
 		for _, h := range i.enterHandlers {
 			h.HandleKeyboardEnter(e)
