@@ -28,6 +28,8 @@
 package primary_selection
 
 import (
+	"reflect"
+
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	"golang.org/x/sys/unix"
 )
@@ -117,8 +119,8 @@ func (i *PrimarySelectionDeviceManager) Destroy() error {
 // PrimarySelectionDevice :
 type PrimarySelectionDevice struct {
 	client.BaseProxy
-	dataOfferHandlers []PrimarySelectionDeviceDataOfferHandler
-	selectionHandlers []PrimarySelectionDeviceSelectionHandler
+	dataOfferHandlers []PrimarySelectionDeviceDataOfferHandlerFunc
+	selectionHandlers []PrimarySelectionDeviceSelectionHandlerFunc
 }
 
 // NewPrimarySelectionDevice :
@@ -186,25 +188,22 @@ func (i *PrimarySelectionDevice) Destroy() error {
 type PrimarySelectionDeviceDataOfferEvent struct {
 	Offer *PrimarySelectionOffer
 }
-
-type PrimarySelectionDeviceDataOfferHandler interface {
-	HandlePrimarySelectionDeviceDataOffer(PrimarySelectionDeviceDataOfferEvent)
-}
+type PrimarySelectionDeviceDataOfferHandlerFunc func(PrimarySelectionDeviceDataOfferEvent)
 
 // AddDataOfferHandler : adds handler for PrimarySelectionDeviceDataOfferEvent
-func (i *PrimarySelectionDevice) AddDataOfferHandler(h PrimarySelectionDeviceDataOfferHandler) {
-	if h == nil {
+func (i *PrimarySelectionDevice) AddDataOfferHandler(f PrimarySelectionDeviceDataOfferHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.dataOfferHandlers = append(i.dataOfferHandlers, h)
+	i.dataOfferHandlers = append(i.dataOfferHandlers, f)
 }
 
-func (i *PrimarySelectionDevice) RemoveDataOfferHandler(h PrimarySelectionDeviceDataOfferHandler) {
+func (i *PrimarySelectionDevice) RemoveDataOfferHandler(f PrimarySelectionDeviceDataOfferHandlerFunc) {
 	for j, e := range i.dataOfferHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.dataOfferHandlers = append(i.dataOfferHandlers[:j], i.dataOfferHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -223,25 +222,22 @@ func (i *PrimarySelectionDevice) RemoveDataOfferHandler(h PrimarySelectionDevice
 type PrimarySelectionDeviceSelectionEvent struct {
 	Id *PrimarySelectionOffer
 }
-
-type PrimarySelectionDeviceSelectionHandler interface {
-	HandlePrimarySelectionDeviceSelection(PrimarySelectionDeviceSelectionEvent)
-}
+type PrimarySelectionDeviceSelectionHandlerFunc func(PrimarySelectionDeviceSelectionEvent)
 
 // AddSelectionHandler : adds handler for PrimarySelectionDeviceSelectionEvent
-func (i *PrimarySelectionDevice) AddSelectionHandler(h PrimarySelectionDeviceSelectionHandler) {
-	if h == nil {
+func (i *PrimarySelectionDevice) AddSelectionHandler(f PrimarySelectionDeviceSelectionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.selectionHandlers = append(i.selectionHandlers, h)
+	i.selectionHandlers = append(i.selectionHandlers, f)
 }
 
-func (i *PrimarySelectionDevice) RemoveSelectionHandler(h PrimarySelectionDeviceSelectionHandler) {
+func (i *PrimarySelectionDevice) RemoveSelectionHandler(f PrimarySelectionDeviceSelectionHandlerFunc) {
 	for j, e := range i.selectionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.selectionHandlers = append(i.selectionHandlers[:j], i.selectionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -256,8 +252,8 @@ func (i *PrimarySelectionDevice) Dispatch(opcode uint16, fd uintptr, data []byte
 		l := 0
 		e.Offer = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*PrimarySelectionOffer)
 		l += 4
-		for _, h := range i.dataOfferHandlers {
-			h.HandlePrimarySelectionDeviceDataOffer(e)
+		for _, f := range i.dataOfferHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.selectionHandlers) == 0 {
@@ -267,8 +263,8 @@ func (i *PrimarySelectionDevice) Dispatch(opcode uint16, fd uintptr, data []byte
 		l := 0
 		e.Id = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*PrimarySelectionOffer)
 		l += 4
-		for _, h := range i.selectionHandlers {
-			h.HandlePrimarySelectionDeviceSelection(e)
+		for _, f := range i.selectionHandlers {
+			f(e)
 		}
 	}
 }
@@ -282,7 +278,7 @@ func (i *PrimarySelectionDevice) Dispatch(opcode uint16, fd uintptr, data []byte
 // directly to the client.
 type PrimarySelectionOffer struct {
 	client.BaseProxy
-	offerHandlers []PrimarySelectionOfferOfferHandler
+	offerHandlers []PrimarySelectionOfferOfferHandlerFunc
 }
 
 // NewPrimarySelectionOffer : offer to transfer primary selection contents
@@ -354,25 +350,22 @@ func (i *PrimarySelectionOffer) Destroy() error {
 type PrimarySelectionOfferOfferEvent struct {
 	MimeType string
 }
-
-type PrimarySelectionOfferOfferHandler interface {
-	HandlePrimarySelectionOfferOffer(PrimarySelectionOfferOfferEvent)
-}
+type PrimarySelectionOfferOfferHandlerFunc func(PrimarySelectionOfferOfferEvent)
 
 // AddOfferHandler : adds handler for PrimarySelectionOfferOfferEvent
-func (i *PrimarySelectionOffer) AddOfferHandler(h PrimarySelectionOfferOfferHandler) {
-	if h == nil {
+func (i *PrimarySelectionOffer) AddOfferHandler(f PrimarySelectionOfferOfferHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.offerHandlers = append(i.offerHandlers, h)
+	i.offerHandlers = append(i.offerHandlers, f)
 }
 
-func (i *PrimarySelectionOffer) RemoveOfferHandler(h PrimarySelectionOfferOfferHandler) {
+func (i *PrimarySelectionOffer) RemoveOfferHandler(f PrimarySelectionOfferOfferHandlerFunc) {
 	for j, e := range i.offerHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.offerHandlers = append(i.offerHandlers[:j], i.offerHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -389,8 +382,8 @@ func (i *PrimarySelectionOffer) Dispatch(opcode uint16, fd uintptr, data []byte)
 		l += 4
 		e.MimeType = client.String(data[l : l+mimeTypeLen])
 		l += mimeTypeLen
-		for _, h := range i.offerHandlers {
-			h.HandlePrimarySelectionOfferOffer(e)
+		for _, f := range i.offerHandlers {
+			f(e)
 		}
 	}
 }
@@ -402,8 +395,8 @@ func (i *PrimarySelectionOffer) Dispatch(opcode uint16, fd uintptr, data []byte)
 // requested contents of the primary selection clipboard.
 type PrimarySelectionSource struct {
 	client.BaseProxy
-	sendHandlers      []PrimarySelectionSourceSendHandler
-	cancelledHandlers []PrimarySelectionSourceCancelledHandler
+	sendHandlers      []PrimarySelectionSourceSendHandlerFunc
+	cancelledHandlers []PrimarySelectionSourceCancelledHandlerFunc
 }
 
 // NewPrimarySelectionSource : offer to replace the contents of the primary selection
@@ -465,25 +458,22 @@ type PrimarySelectionSourceSendEvent struct {
 	MimeType string
 	Fd       uintptr
 }
-
-type PrimarySelectionSourceSendHandler interface {
-	HandlePrimarySelectionSourceSend(PrimarySelectionSourceSendEvent)
-}
+type PrimarySelectionSourceSendHandlerFunc func(PrimarySelectionSourceSendEvent)
 
 // AddSendHandler : adds handler for PrimarySelectionSourceSendEvent
-func (i *PrimarySelectionSource) AddSendHandler(h PrimarySelectionSourceSendHandler) {
-	if h == nil {
+func (i *PrimarySelectionSource) AddSendHandler(f PrimarySelectionSourceSendHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.sendHandlers = append(i.sendHandlers, h)
+	i.sendHandlers = append(i.sendHandlers, f)
 }
 
-func (i *PrimarySelectionSource) RemoveSendHandler(h PrimarySelectionSourceSendHandler) {
+func (i *PrimarySelectionSource) RemoveSendHandler(f PrimarySelectionSourceSendHandlerFunc) {
 	for j, e := range i.sendHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.sendHandlers = append(i.sendHandlers[:j], i.sendHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -493,24 +483,22 @@ func (i *PrimarySelectionSource) RemoveSendHandler(h PrimarySelectionSourceSendH
 // This primary selection source is no longer valid. The client should
 // clean up and destroy this primary selection source.
 type PrimarySelectionSourceCancelledEvent struct{}
-type PrimarySelectionSourceCancelledHandler interface {
-	HandlePrimarySelectionSourceCancelled(PrimarySelectionSourceCancelledEvent)
-}
+type PrimarySelectionSourceCancelledHandlerFunc func(PrimarySelectionSourceCancelledEvent)
 
 // AddCancelledHandler : adds handler for PrimarySelectionSourceCancelledEvent
-func (i *PrimarySelectionSource) AddCancelledHandler(h PrimarySelectionSourceCancelledHandler) {
-	if h == nil {
+func (i *PrimarySelectionSource) AddCancelledHandler(f PrimarySelectionSourceCancelledHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.cancelledHandlers = append(i.cancelledHandlers, h)
+	i.cancelledHandlers = append(i.cancelledHandlers, f)
 }
 
-func (i *PrimarySelectionSource) RemoveCancelledHandler(h PrimarySelectionSourceCancelledHandler) {
+func (i *PrimarySelectionSource) RemoveCancelledHandler(f PrimarySelectionSourceCancelledHandlerFunc) {
 	for j, e := range i.cancelledHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.cancelledHandlers = append(i.cancelledHandlers[:j], i.cancelledHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -528,16 +516,16 @@ func (i *PrimarySelectionSource) Dispatch(opcode uint16, fd uintptr, data []byte
 		e.MimeType = client.String(data[l : l+mimeTypeLen])
 		l += mimeTypeLen
 		e.Fd = fd
-		for _, h := range i.sendHandlers {
-			h.HandlePrimarySelectionSourceSend(e)
+		for _, f := range i.sendHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.cancelledHandlers) == 0 {
 			return
 		}
 		var e PrimarySelectionSourceCancelledEvent
-		for _, h := range i.cancelledHandlers {
-			h.HandlePrimarySelectionSourceCancelled(e)
+		for _, f := range i.cancelledHandlers {
+			f(e)
 		}
 	}
 }

@@ -29,7 +29,11 @@
 
 package fullscreen_shell
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // FullscreenShell : displays a single surface per output
 //
@@ -68,7 +72,7 @@ import "github.com/rajveermalviya/go-wayland/wayland/client"
 // interface version number is reset.
 type FullscreenShell struct {
 	client.BaseProxy
-	capabilityHandlers []FullscreenShellCapabilityHandler
+	capabilityHandlers []FullscreenShellCapabilityHandlerFunc
 }
 
 // NewFullscreenShell : displays a single surface per output
@@ -420,25 +424,22 @@ func (e FullscreenShellError) String() string {
 type FullscreenShellCapabilityEvent struct {
 	Capability uint32
 }
-
-type FullscreenShellCapabilityHandler interface {
-	HandleFullscreenShellCapability(FullscreenShellCapabilityEvent)
-}
+type FullscreenShellCapabilityHandlerFunc func(FullscreenShellCapabilityEvent)
 
 // AddCapabilityHandler : adds handler for FullscreenShellCapabilityEvent
-func (i *FullscreenShell) AddCapabilityHandler(h FullscreenShellCapabilityHandler) {
-	if h == nil {
+func (i *FullscreenShell) AddCapabilityHandler(f FullscreenShellCapabilityHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.capabilityHandlers = append(i.capabilityHandlers, h)
+	i.capabilityHandlers = append(i.capabilityHandlers, f)
 }
 
-func (i *FullscreenShell) RemoveCapabilityHandler(h FullscreenShellCapabilityHandler) {
+func (i *FullscreenShell) RemoveCapabilityHandler(f FullscreenShellCapabilityHandlerFunc) {
 	for j, e := range i.capabilityHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.capabilityHandlers = append(i.capabilityHandlers[:j], i.capabilityHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -453,8 +454,8 @@ func (i *FullscreenShell) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Capability = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.capabilityHandlers {
-			h.HandleFullscreenShellCapability(e)
+		for _, f := range i.capabilityHandlers {
+			f(e)
 		}
 	}
 }
@@ -462,9 +463,9 @@ func (i *FullscreenShell) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // FullscreenShellModeFeedback :
 type FullscreenShellModeFeedback struct {
 	client.BaseProxy
-	modeSuccessfulHandlers   []FullscreenShellModeFeedbackModeSuccessfulHandler
-	modeFailedHandlers       []FullscreenShellModeFeedbackModeFailedHandler
-	presentCancelledHandlers []FullscreenShellModeFeedbackPresentCancelledHandler
+	modeSuccessfulHandlers   []FullscreenShellModeFeedbackModeSuccessfulHandlerFunc
+	modeFailedHandlers       []FullscreenShellModeFeedbackModeFailedHandlerFunc
+	presentCancelledHandlers []FullscreenShellModeFeedbackPresentCancelledHandlerFunc
 }
 
 // NewFullscreenShellModeFeedback :
@@ -488,24 +489,22 @@ func (i *FullscreenShellModeFeedback) Destroy() error {
 // Upon receiving this event, the client should destroy the
 // wl_fullscreen_shell_mode_feedback object.
 type FullscreenShellModeFeedbackModeSuccessfulEvent struct{}
-type FullscreenShellModeFeedbackModeSuccessfulHandler interface {
-	HandleFullscreenShellModeFeedbackModeSuccessful(FullscreenShellModeFeedbackModeSuccessfulEvent)
-}
+type FullscreenShellModeFeedbackModeSuccessfulHandlerFunc func(FullscreenShellModeFeedbackModeSuccessfulEvent)
 
 // AddModeSuccessfulHandler : adds handler for FullscreenShellModeFeedbackModeSuccessfulEvent
-func (i *FullscreenShellModeFeedback) AddModeSuccessfulHandler(h FullscreenShellModeFeedbackModeSuccessfulHandler) {
-	if h == nil {
+func (i *FullscreenShellModeFeedback) AddModeSuccessfulHandler(f FullscreenShellModeFeedbackModeSuccessfulHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.modeSuccessfulHandlers = append(i.modeSuccessfulHandlers, h)
+	i.modeSuccessfulHandlers = append(i.modeSuccessfulHandlers, f)
 }
 
-func (i *FullscreenShellModeFeedback) RemoveModeSuccessfulHandler(h FullscreenShellModeFeedbackModeSuccessfulHandler) {
+func (i *FullscreenShellModeFeedback) RemoveModeSuccessfulHandler(f FullscreenShellModeFeedbackModeSuccessfulHandlerFunc) {
 	for j, e := range i.modeSuccessfulHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.modeSuccessfulHandlers = append(i.modeSuccessfulHandlers[:j], i.modeSuccessfulHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -519,24 +518,22 @@ func (i *FullscreenShellModeFeedback) RemoveModeSuccessfulHandler(h FullscreenSh
 // Upon receiving this event, the client should destroy the
 // wl_fullscreen_shell_mode_feedback object.
 type FullscreenShellModeFeedbackModeFailedEvent struct{}
-type FullscreenShellModeFeedbackModeFailedHandler interface {
-	HandleFullscreenShellModeFeedbackModeFailed(FullscreenShellModeFeedbackModeFailedEvent)
-}
+type FullscreenShellModeFeedbackModeFailedHandlerFunc func(FullscreenShellModeFeedbackModeFailedEvent)
 
 // AddModeFailedHandler : adds handler for FullscreenShellModeFeedbackModeFailedEvent
-func (i *FullscreenShellModeFeedback) AddModeFailedHandler(h FullscreenShellModeFeedbackModeFailedHandler) {
-	if h == nil {
+func (i *FullscreenShellModeFeedback) AddModeFailedHandler(f FullscreenShellModeFeedbackModeFailedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.modeFailedHandlers = append(i.modeFailedHandlers, h)
+	i.modeFailedHandlers = append(i.modeFailedHandlers, f)
 }
 
-func (i *FullscreenShellModeFeedback) RemoveModeFailedHandler(h FullscreenShellModeFeedbackModeFailedHandler) {
+func (i *FullscreenShellModeFeedback) RemoveModeFailedHandler(f FullscreenShellModeFeedbackModeFailedHandlerFunc) {
 	for j, e := range i.modeFailedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.modeFailedHandlers = append(i.modeFailedHandlers[:j], i.modeFailedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -550,24 +547,22 @@ func (i *FullscreenShellModeFeedback) RemoveModeFailedHandler(h FullscreenShellM
 // Upon receiving this event, the client should destroy the
 // wl_fullscreen_shell_mode_feedback object.
 type FullscreenShellModeFeedbackPresentCancelledEvent struct{}
-type FullscreenShellModeFeedbackPresentCancelledHandler interface {
-	HandleFullscreenShellModeFeedbackPresentCancelled(FullscreenShellModeFeedbackPresentCancelledEvent)
-}
+type FullscreenShellModeFeedbackPresentCancelledHandlerFunc func(FullscreenShellModeFeedbackPresentCancelledEvent)
 
 // AddPresentCancelledHandler : adds handler for FullscreenShellModeFeedbackPresentCancelledEvent
-func (i *FullscreenShellModeFeedback) AddPresentCancelledHandler(h FullscreenShellModeFeedbackPresentCancelledHandler) {
-	if h == nil {
+func (i *FullscreenShellModeFeedback) AddPresentCancelledHandler(f FullscreenShellModeFeedbackPresentCancelledHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.presentCancelledHandlers = append(i.presentCancelledHandlers, h)
+	i.presentCancelledHandlers = append(i.presentCancelledHandlers, f)
 }
 
-func (i *FullscreenShellModeFeedback) RemovePresentCancelledHandler(h FullscreenShellModeFeedbackPresentCancelledHandler) {
+func (i *FullscreenShellModeFeedback) RemovePresentCancelledHandler(f FullscreenShellModeFeedbackPresentCancelledHandlerFunc) {
 	for j, e := range i.presentCancelledHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.presentCancelledHandlers = append(i.presentCancelledHandlers[:j], i.presentCancelledHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -579,24 +574,24 @@ func (i *FullscreenShellModeFeedback) Dispatch(opcode uint16, fd uintptr, data [
 			return
 		}
 		var e FullscreenShellModeFeedbackModeSuccessfulEvent
-		for _, h := range i.modeSuccessfulHandlers {
-			h.HandleFullscreenShellModeFeedbackModeSuccessful(e)
+		for _, f := range i.modeSuccessfulHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.modeFailedHandlers) == 0 {
 			return
 		}
 		var e FullscreenShellModeFeedbackModeFailedEvent
-		for _, h := range i.modeFailedHandlers {
-			h.HandleFullscreenShellModeFeedbackModeFailed(e)
+		for _, f := range i.modeFailedHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.presentCancelledHandlers) == 0 {
 			return
 		}
 		var e FullscreenShellModeFeedbackPresentCancelledEvent
-		for _, h := range i.presentCancelledHandlers {
-			h.HandleFullscreenShellModeFeedbackPresentCancelled(e)
+		for _, f := range i.presentCancelledHandlers {
+			f(e)
 		}
 	}
 }

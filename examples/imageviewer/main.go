@@ -49,11 +49,6 @@ func main() {
 
 	fileName := os.Args[1]
 
-	const (
-		maxWidth  = 1920
-		maxHeight = 1080
-	)
-
 	// Read the image file to *image.RGBA
 	pImage, err := rgbaImageFromFile(fileName)
 	if err != nil {
@@ -73,7 +68,6 @@ func main() {
 		width:  int32(frameRect.Dx()),
 		height: int32(frameRect.Dy()),
 		frame:  frameImage,
-		exit:   false,
 	}
 
 	app.initWindow()
@@ -95,7 +89,7 @@ func (app *appState) initWindow() {
 	}
 	app.display = display
 
-	display.AddErrorHandler(app)
+	display.AddErrorHandler(app.HandleDisplayError)
 
 	// Get global interfaces registry
 	registry, err := app.display.GetRegistry()
@@ -105,7 +99,7 @@ func (app *appState) initWindow() {
 	app.registry = registry
 
 	// Add global interfaces registrar handler
-	registry.AddGlobalHandler(app)
+	registry.AddGlobalHandler(app.HandleRegistryGlobal)
 	// Wait for interfaces to register
 	app.displayRoundTrip()
 	// Wait for handler events
@@ -131,7 +125,7 @@ func (app *appState) initWindow() {
 	logPrintln("got xdg_surface")
 
 	// Add xdg_surface configure handler `app.HandleSurfaceConfigure`
-	xdgSurface.AddConfigureHandler(app)
+	xdgSurface.AddConfigureHandler(app.HandleSurfaceConfigure)
 	logPrintln("added configure handler")
 
 	// Get toplevel
@@ -143,9 +137,9 @@ func (app *appState) initWindow() {
 	logPrintln("got xdg_toplevel")
 
 	// Add xdg_toplevel configure handler for window resizing
-	xdgTopLevel.AddConfigureHandler(app)
+	xdgTopLevel.AddConfigureHandler(app.HandleToplevelConfigure)
 	// Add xdg_toplevel close handler
-	xdgTopLevel.AddCloseHandler(app)
+	xdgTopLevel.AddCloseHandler(app.HandleToplevelClose)
 
 	// Set title
 	if err2 := xdgTopLevel.SetTitle(app.title); err2 != nil {
@@ -195,7 +189,7 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 		}
 		app.shm = shm
 
-		shm.AddFormatHandler(app)
+		shm.AddFormatHandler(app.HandleShmFormat)
 	case "xdg_wm_base":
 		xdgWmBase := xdg_shell.NewWmBase(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, xdgWmBase)
@@ -204,7 +198,7 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 		}
 		app.xdgWmBase = xdgWmBase
 		// Add xdg_wmbase ping handler `app.HandleWmBasePing`
-		xdgWmBase.AddPingHandler(app)
+		xdgWmBase.AddPingHandler(app.HandleWmBasePing)
 	case "wl_seat":
 		seat := client.NewSeat(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, seat)
@@ -213,8 +207,8 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 		}
 		app.seat = seat
 		// Add Keyboard & Pointer handlers
-		seat.AddCapabilitiesHandler(app)
-		seat.AddNameHandler(app)
+		seat.AddCapabilitiesHandler(app.HandleSeatCapabilities)
+		seat.AddNameHandler(app.HandleSeatName)
 	}
 }
 
@@ -311,20 +305,14 @@ func (app *appState) drawFrame() *client.Buffer {
 	copy(data, app.frame.Pix)
 	swizzle.BGRA(data)
 
-	buf.AddReleaseHandler(bufferReleaser{buf: buf})
+	buf.AddReleaseHandler(func(_ client.BufferReleaseEvent) {
+		if err := buf.Destroy(); err != nil {
+			logPrintf("unable to destroy buffer: %v", err)
+		}
+	})
 
 	logPrintln("drawing frame complete")
 	return buf
-}
-
-type bufferReleaser struct {
-	buf *client.Buffer
-}
-
-func (b bufferReleaser) HandleBufferRelease(e client.BufferReleaseEvent) {
-	if err := b.buf.Destroy(); err != nil {
-		logPrintf("unable to destroy buffer: %v", err)
-	}
 }
 
 func (app *appState) HandleSeatCapabilities(e client.SeatCapabilitiesEvent) {
@@ -366,16 +354,6 @@ func (app *appState) HandleToplevelClose(_ xdg_shell.ToplevelCloseEvent) {
 	app.exit = true
 }
 
-type doner struct {
-	done bool
-	ev   client.CallbackDoneEvent
-}
-
-func (d *doner) HandleCallbackDone(e client.CallbackDoneEvent) {
-	d.done = true
-	d.ev = e
-}
-
 func (app *appState) displayRoundTrip() {
 	// Get display sync callback
 	callback, err := app.display.Sync()
@@ -388,11 +366,13 @@ func (app *appState) displayRoundTrip() {
 		}
 	}()
 
-	cdeHandler := &doner{}
-	callback.AddDoneHandler(cdeHandler)
+	done := false
+	callback.AddDoneHandler(func(_ client.CallbackDoneEvent) {
+		done = true
+	})
 
 	// Wait for callback to return
-	for !cdeHandler.done {
+	for !done {
 		app.dispatch()
 	}
 }

@@ -46,29 +46,29 @@ func (app *appState) attachPointer() {
 		log.Fatal("unable to register pointer interface")
 	}
 	app.pointer = pointer
-	pointer.AddEnterHandler(app)
-	pointer.AddLeaveHandler(app)
-	pointer.AddMotionHandler(app)
-	pointer.AddButtonHandler(app)
-	pointer.AddAxisHandler(app)
-	pointer.AddAxisSourceHandler(app)
-	pointer.AddAxisStopHandler(app)
-	pointer.AddAxisDiscreteHandler(app)
-	pointer.AddFrameHandler(app)
+	pointer.AddEnterHandler(app.HandlePointerEnter)
+	pointer.AddLeaveHandler(app.HandlePointerLeave)
+	pointer.AddMotionHandler(app.HandlePointerMotion)
+	pointer.AddButtonHandler(app.HandlePointerButton)
+	pointer.AddAxisHandler(app.HandlePointerAxis)
+	pointer.AddAxisSourceHandler(app.HandlePointerAxisSource)
+	pointer.AddAxisStopHandler(app.HandlePointerAxisStop)
+	pointer.AddAxisDiscreteHandler(app.HandlePointerAxisDiscrete)
+	pointer.AddFrameHandler(app.HandlePointerFrame)
 
 	logPrintln("pointer interface registered")
 }
 
 func (app *appState) releasePointer() {
-	app.pointer.RemoveEnterHandler(app)
-	app.pointer.RemoveLeaveHandler(app)
-	app.pointer.RemoveMotionHandler(app)
-	app.pointer.RemoveButtonHandler(app)
-	app.pointer.RemoveAxisHandler(app)
-	app.pointer.RemoveAxisSourceHandler(app)
-	app.pointer.RemoveAxisStopHandler(app)
-	app.pointer.RemoveAxisDiscreteHandler(app)
-	app.pointer.RemoveFrameHandler(app)
+	app.pointer.RemoveEnterHandler(app.HandlePointerEnter)
+	app.pointer.RemoveLeaveHandler(app.HandlePointerLeave)
+	app.pointer.RemoveMotionHandler(app.HandlePointerMotion)
+	app.pointer.RemoveButtonHandler(app.HandlePointerButton)
+	app.pointer.RemoveAxisHandler(app.HandlePointerAxis)
+	app.pointer.RemoveAxisSourceHandler(app.HandlePointerAxisSource)
+	app.pointer.RemoveAxisStopHandler(app.HandlePointerAxisStop)
+	app.pointer.RemoveAxisDiscreteHandler(app.HandlePointerAxisDiscrete)
+	app.pointer.RemoveFrameHandler(app.HandlePointerFrame)
 
 	if err := app.pointer.Release(); err != nil {
 		logPrintln("unable to release pointer interface")

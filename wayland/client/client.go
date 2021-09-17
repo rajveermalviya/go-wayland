@@ -31,7 +31,11 @@
 
 package client
 
-import "golang.org/x/sys/unix"
+import (
+	"reflect"
+
+	"golang.org/x/sys/unix"
+)
 
 // Display : core global object
 //
@@ -39,8 +43,8 @@ import "golang.org/x/sys/unix"
 // is used for internal Wayland protocol features.
 type Display struct {
 	BaseProxy
-	errorHandlers    []DisplayErrorHandler
-	deleteIdHandlers []DisplayDeleteIdHandler
+	errorHandlers    []DisplayErrorHandlerFunc
+	deleteIdHandlers []DisplayDeleteIdHandlerFunc
 }
 
 // NewDisplay : core global object
@@ -181,25 +185,22 @@ type DisplayErrorEvent struct {
 	Code     uint32
 	Message  string
 }
-
-type DisplayErrorHandler interface {
-	HandleDisplayError(DisplayErrorEvent)
-}
+type DisplayErrorHandlerFunc func(DisplayErrorEvent)
 
 // AddErrorHandler : adds handler for DisplayErrorEvent
-func (i *Display) AddErrorHandler(h DisplayErrorHandler) {
-	if h == nil {
+func (i *Display) AddErrorHandler(f DisplayErrorHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.errorHandlers = append(i.errorHandlers, h)
+	i.errorHandlers = append(i.errorHandlers, f)
 }
 
-func (i *Display) RemoveErrorHandler(h DisplayErrorHandler) {
+func (i *Display) RemoveErrorHandler(f DisplayErrorHandlerFunc) {
 	for j, e := range i.errorHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.errorHandlers = append(i.errorHandlers[:j], i.errorHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -214,25 +215,22 @@ func (i *Display) RemoveErrorHandler(h DisplayErrorHandler) {
 type DisplayDeleteIdEvent struct {
 	Id uint32
 }
-
-type DisplayDeleteIdHandler interface {
-	HandleDisplayDeleteId(DisplayDeleteIdEvent)
-}
+type DisplayDeleteIdHandlerFunc func(DisplayDeleteIdEvent)
 
 // AddDeleteIdHandler : adds handler for DisplayDeleteIdEvent
-func (i *Display) AddDeleteIdHandler(h DisplayDeleteIdHandler) {
-	if h == nil {
+func (i *Display) AddDeleteIdHandler(f DisplayDeleteIdHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.deleteIdHandlers = append(i.deleteIdHandlers, h)
+	i.deleteIdHandlers = append(i.deleteIdHandlers, f)
 }
 
-func (i *Display) RemoveDeleteIdHandler(h DisplayDeleteIdHandler) {
+func (i *Display) RemoveDeleteIdHandler(f DisplayDeleteIdHandlerFunc) {
 	for j, e := range i.deleteIdHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.deleteIdHandlers = append(i.deleteIdHandlers[:j], i.deleteIdHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -253,8 +251,8 @@ func (i *Display) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Message = String(data[l : l+messageLen])
 		l += messageLen
-		for _, h := range i.errorHandlers {
-			h.HandleDisplayError(e)
+		for _, f := range i.errorHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.deleteIdHandlers) == 0 {
@@ -264,8 +262,8 @@ func (i *Display) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Id = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.deleteIdHandlers {
-			h.HandleDisplayDeleteId(e)
+		for _, f := range i.deleteIdHandlers {
+			f(e)
 		}
 	}
 }
@@ -294,8 +292,8 @@ func (i *Display) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // the object.
 type Registry struct {
 	BaseProxy
-	globalHandlers       []RegistryGlobalHandler
-	globalRemoveHandlers []RegistryGlobalRemoveHandler
+	globalHandlers       []RegistryGlobalHandlerFunc
+	globalRemoveHandlers []RegistryGlobalRemoveHandlerFunc
 }
 
 // NewRegistry : global registry object
@@ -371,25 +369,22 @@ type RegistryGlobalEvent struct {
 	Interface string
 	Version   uint32
 }
-
-type RegistryGlobalHandler interface {
-	HandleRegistryGlobal(RegistryGlobalEvent)
-}
+type RegistryGlobalHandlerFunc func(RegistryGlobalEvent)
 
 // AddGlobalHandler : adds handler for RegistryGlobalEvent
-func (i *Registry) AddGlobalHandler(h RegistryGlobalHandler) {
-	if h == nil {
+func (i *Registry) AddGlobalHandler(f RegistryGlobalHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.globalHandlers = append(i.globalHandlers, h)
+	i.globalHandlers = append(i.globalHandlers, f)
 }
 
-func (i *Registry) RemoveGlobalHandler(h RegistryGlobalHandler) {
+func (i *Registry) RemoveGlobalHandler(f RegistryGlobalHandlerFunc) {
 	for j, e := range i.globalHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.globalHandlers = append(i.globalHandlers[:j], i.globalHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -409,25 +404,22 @@ func (i *Registry) RemoveGlobalHandler(h RegistryGlobalHandler) {
 type RegistryGlobalRemoveEvent struct {
 	Name uint32
 }
-
-type RegistryGlobalRemoveHandler interface {
-	HandleRegistryGlobalRemove(RegistryGlobalRemoveEvent)
-}
+type RegistryGlobalRemoveHandlerFunc func(RegistryGlobalRemoveEvent)
 
 // AddGlobalRemoveHandler : adds handler for RegistryGlobalRemoveEvent
-func (i *Registry) AddGlobalRemoveHandler(h RegistryGlobalRemoveHandler) {
-	if h == nil {
+func (i *Registry) AddGlobalRemoveHandler(f RegistryGlobalRemoveHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.globalRemoveHandlers = append(i.globalRemoveHandlers, h)
+	i.globalRemoveHandlers = append(i.globalRemoveHandlers, f)
 }
 
-func (i *Registry) RemoveGlobalRemoveHandler(h RegistryGlobalRemoveHandler) {
+func (i *Registry) RemoveGlobalRemoveHandler(f RegistryGlobalRemoveHandlerFunc) {
 	for j, e := range i.globalRemoveHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.globalRemoveHandlers = append(i.globalRemoveHandlers[:j], i.globalRemoveHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -448,8 +440,8 @@ func (i *Registry) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += interfaceLen
 		e.Version = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.globalHandlers {
-			h.HandleRegistryGlobal(e)
+		for _, f := range i.globalHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.globalRemoveHandlers) == 0 {
@@ -459,8 +451,8 @@ func (i *Registry) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Name = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.globalRemoveHandlers {
-			h.HandleRegistryGlobalRemove(e)
+		for _, f := range i.globalRemoveHandlers {
+			f(e)
 		}
 	}
 }
@@ -471,7 +463,7 @@ func (i *Registry) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // the related request is done.
 type Callback struct {
 	BaseProxy
-	doneHandlers []CallbackDoneHandler
+	doneHandlers []CallbackDoneHandlerFunc
 }
 
 // NewCallback : callback object
@@ -495,25 +487,22 @@ func (i *Callback) Destroy() error {
 type CallbackDoneEvent struct {
 	CallbackData uint32
 }
-
-type CallbackDoneHandler interface {
-	HandleCallbackDone(CallbackDoneEvent)
-}
+type CallbackDoneHandlerFunc func(CallbackDoneEvent)
 
 // AddDoneHandler : adds handler for CallbackDoneEvent
-func (i *Callback) AddDoneHandler(h CallbackDoneHandler) {
-	if h == nil {
+func (i *Callback) AddDoneHandler(f CallbackDoneHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.doneHandlers = append(i.doneHandlers, h)
+	i.doneHandlers = append(i.doneHandlers, f)
 }
 
-func (i *Callback) RemoveDoneHandler(h CallbackDoneHandler) {
+func (i *Callback) RemoveDoneHandler(f CallbackDoneHandlerFunc) {
 	for j, e := range i.doneHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -528,8 +517,8 @@ func (i *Callback) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.CallbackData = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.doneHandlers {
-			h.HandleCallbackDone(e)
+		for _, f := range i.doneHandlers {
+			f(e)
 		}
 	}
 }
@@ -730,7 +719,7 @@ func (i *ShmPool) Resize(size int32) error {
 // that can be used for buffers.
 type Shm struct {
 	BaseProxy
-	formatHandlers []ShmFormatHandler
+	formatHandlers []ShmFormatHandlerFunc
 }
 
 // NewShm : shared memory support
@@ -1482,25 +1471,22 @@ func (e ShmFormat) String() string {
 type ShmFormatEvent struct {
 	Format uint32
 }
-
-type ShmFormatHandler interface {
-	HandleShmFormat(ShmFormatEvent)
-}
+type ShmFormatHandlerFunc func(ShmFormatEvent)
 
 // AddFormatHandler : adds handler for ShmFormatEvent
-func (i *Shm) AddFormatHandler(h ShmFormatHandler) {
-	if h == nil {
+func (i *Shm) AddFormatHandler(f ShmFormatHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.formatHandlers = append(i.formatHandlers, h)
+	i.formatHandlers = append(i.formatHandlers, f)
 }
 
-func (i *Shm) RemoveFormatHandler(h ShmFormatHandler) {
+func (i *Shm) RemoveFormatHandler(f ShmFormatHandlerFunc) {
 	for j, e := range i.formatHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.formatHandlers = append(i.formatHandlers[:j], i.formatHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -1515,8 +1501,8 @@ func (i *Shm) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Format = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.formatHandlers {
-			h.HandleShmFormat(e)
+		for _, f := range i.formatHandlers {
+			f(e)
 		}
 	}
 }
@@ -1530,7 +1516,7 @@ func (i *Shm) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // updates the contents is defined by the buffer factory interface.
 type Buffer struct {
 	BaseProxy
-	releaseHandlers []BufferReleaseHandler
+	releaseHandlers []BufferReleaseHandlerFunc
 }
 
 // NewBuffer : content for a wl_surface
@@ -1582,24 +1568,22 @@ func (i *Buffer) Destroy() error {
 // wl_surface contents, e.g. as a GL texture. This is an important
 // optimization for GL(ES) compositors with wl_shm clients.
 type BufferReleaseEvent struct{}
-type BufferReleaseHandler interface {
-	HandleBufferRelease(BufferReleaseEvent)
-}
+type BufferReleaseHandlerFunc func(BufferReleaseEvent)
 
 // AddReleaseHandler : adds handler for BufferReleaseEvent
-func (i *Buffer) AddReleaseHandler(h BufferReleaseHandler) {
-	if h == nil {
+func (i *Buffer) AddReleaseHandler(f BufferReleaseHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.releaseHandlers = append(i.releaseHandlers, h)
+	i.releaseHandlers = append(i.releaseHandlers, f)
 }
 
-func (i *Buffer) RemoveReleaseHandler(h BufferReleaseHandler) {
+func (i *Buffer) RemoveReleaseHandler(f BufferReleaseHandlerFunc) {
 	for j, e := range i.releaseHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.releaseHandlers = append(i.releaseHandlers[:j], i.releaseHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -1611,8 +1595,8 @@ func (i *Buffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 			return
 		}
 		var e BufferReleaseEvent
-		for _, h := range i.releaseHandlers {
-			h.HandleBufferRelease(e)
+		for _, f := range i.releaseHandlers {
+			f(e)
 		}
 	}
 }
@@ -1627,9 +1611,9 @@ func (i *Buffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // data directly from the source client.
 type DataOffer struct {
 	BaseProxy
-	offerHandlers         []DataOfferOfferHandler
-	sourceActionsHandlers []DataOfferSourceActionsHandler
-	actionHandlers        []DataOfferActionHandler
+	offerHandlers         []DataOfferOfferHandlerFunc
+	sourceActionsHandlers []DataOfferSourceActionsHandlerFunc
+	actionHandlers        []DataOfferActionHandlerFunc
 }
 
 // NewDataOffer : offer to transfer data
@@ -1876,25 +1860,22 @@ func (e DataOfferError) String() string {
 type DataOfferOfferEvent struct {
 	MimeType string
 }
-
-type DataOfferOfferHandler interface {
-	HandleDataOfferOffer(DataOfferOfferEvent)
-}
+type DataOfferOfferHandlerFunc func(DataOfferOfferEvent)
 
 // AddOfferHandler : adds handler for DataOfferOfferEvent
-func (i *DataOffer) AddOfferHandler(h DataOfferOfferHandler) {
-	if h == nil {
+func (i *DataOffer) AddOfferHandler(f DataOfferOfferHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.offerHandlers = append(i.offerHandlers, h)
+	i.offerHandlers = append(i.offerHandlers, f)
 }
 
-func (i *DataOffer) RemoveOfferHandler(h DataOfferOfferHandler) {
+func (i *DataOffer) RemoveOfferHandler(f DataOfferOfferHandlerFunc) {
 	for j, e := range i.offerHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.offerHandlers = append(i.offerHandlers[:j], i.offerHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -1907,25 +1888,22 @@ func (i *DataOffer) RemoveOfferHandler(h DataOfferOfferHandler) {
 type DataOfferSourceActionsEvent struct {
 	SourceActions uint32
 }
-
-type DataOfferSourceActionsHandler interface {
-	HandleDataOfferSourceActions(DataOfferSourceActionsEvent)
-}
+type DataOfferSourceActionsHandlerFunc func(DataOfferSourceActionsEvent)
 
 // AddSourceActionsHandler : adds handler for DataOfferSourceActionsEvent
-func (i *DataOffer) AddSourceActionsHandler(h DataOfferSourceActionsHandler) {
-	if h == nil {
+func (i *DataOffer) AddSourceActionsHandler(f DataOfferSourceActionsHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.sourceActionsHandlers = append(i.sourceActionsHandlers, h)
+	i.sourceActionsHandlers = append(i.sourceActionsHandlers, f)
 }
 
-func (i *DataOffer) RemoveSourceActionsHandler(h DataOfferSourceActionsHandler) {
+func (i *DataOffer) RemoveSourceActionsHandler(f DataOfferSourceActionsHandlerFunc) {
 	for j, e := range i.sourceActionsHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.sourceActionsHandlers = append(i.sourceActionsHandlers[:j], i.sourceActionsHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -1970,25 +1948,22 @@ func (i *DataOffer) RemoveSourceActionsHandler(h DataOfferSourceActionsHandler) 
 type DataOfferActionEvent struct {
 	DndAction uint32
 }
-
-type DataOfferActionHandler interface {
-	HandleDataOfferAction(DataOfferActionEvent)
-}
+type DataOfferActionHandlerFunc func(DataOfferActionEvent)
 
 // AddActionHandler : adds handler for DataOfferActionEvent
-func (i *DataOffer) AddActionHandler(h DataOfferActionHandler) {
-	if h == nil {
+func (i *DataOffer) AddActionHandler(f DataOfferActionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.actionHandlers = append(i.actionHandlers, h)
+	i.actionHandlers = append(i.actionHandlers, f)
 }
 
-func (i *DataOffer) RemoveActionHandler(h DataOfferActionHandler) {
+func (i *DataOffer) RemoveActionHandler(f DataOfferActionHandlerFunc) {
 	for j, e := range i.actionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.actionHandlers = append(i.actionHandlers[:j], i.actionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2005,8 +1980,8 @@ func (i *DataOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.MimeType = String(data[l : l+mimeTypeLen])
 		l += mimeTypeLen
-		for _, h := range i.offerHandlers {
-			h.HandleDataOfferOffer(e)
+		for _, f := range i.offerHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.sourceActionsHandlers) == 0 {
@@ -2016,8 +1991,8 @@ func (i *DataOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.SourceActions = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.sourceActionsHandlers {
-			h.HandleDataOfferSourceActions(e)
+		for _, f := range i.sourceActionsHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.actionHandlers) == 0 {
@@ -2027,8 +2002,8 @@ func (i *DataOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.DndAction = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.actionHandlers {
-			h.HandleDataOfferAction(e)
+		for _, f := range i.actionHandlers {
+			f(e)
 		}
 	}
 }
@@ -2041,12 +2016,12 @@ func (i *DataOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // to requests to transfer the data.
 type DataSource struct {
 	BaseProxy
-	targetHandlers           []DataSourceTargetHandler
-	sendHandlers             []DataSourceSendHandler
-	cancelledHandlers        []DataSourceCancelledHandler
-	dndDropPerformedHandlers []DataSourceDndDropPerformedHandler
-	dndFinishedHandlers      []DataSourceDndFinishedHandler
-	actionHandlers           []DataSourceActionHandler
+	targetHandlers           []DataSourceTargetHandlerFunc
+	sendHandlers             []DataSourceSendHandlerFunc
+	cancelledHandlers        []DataSourceCancelledHandlerFunc
+	dndDropPerformedHandlers []DataSourceDndDropPerformedHandlerFunc
+	dndFinishedHandlers      []DataSourceDndFinishedHandlerFunc
+	actionHandlers           []DataSourceActionHandlerFunc
 }
 
 // NewDataSource : offer to transfer data
@@ -2179,25 +2154,22 @@ func (e DataSourceError) String() string {
 type DataSourceTargetEvent struct {
 	MimeType string
 }
-
-type DataSourceTargetHandler interface {
-	HandleDataSourceTarget(DataSourceTargetEvent)
-}
+type DataSourceTargetHandlerFunc func(DataSourceTargetEvent)
 
 // AddTargetHandler : adds handler for DataSourceTargetEvent
-func (i *DataSource) AddTargetHandler(h DataSourceTargetHandler) {
-	if h == nil {
+func (i *DataSource) AddTargetHandler(f DataSourceTargetHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.targetHandlers = append(i.targetHandlers, h)
+	i.targetHandlers = append(i.targetHandlers, f)
 }
 
-func (i *DataSource) RemoveTargetHandler(h DataSourceTargetHandler) {
+func (i *DataSource) RemoveTargetHandler(f DataSourceTargetHandlerFunc) {
 	for j, e := range i.targetHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.targetHandlers = append(i.targetHandlers[:j], i.targetHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2211,25 +2183,22 @@ type DataSourceSendEvent struct {
 	MimeType string
 	Fd       uintptr
 }
-
-type DataSourceSendHandler interface {
-	HandleDataSourceSend(DataSourceSendEvent)
-}
+type DataSourceSendHandlerFunc func(DataSourceSendEvent)
 
 // AddSendHandler : adds handler for DataSourceSendEvent
-func (i *DataSource) AddSendHandler(h DataSourceSendHandler) {
-	if h == nil {
+func (i *DataSource) AddSendHandler(f DataSourceSendHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.sendHandlers = append(i.sendHandlers, h)
+	i.sendHandlers = append(i.sendHandlers, f)
 }
 
-func (i *DataSource) RemoveSendHandler(h DataSourceSendHandler) {
+func (i *DataSource) RemoveSendHandler(f DataSourceSendHandlerFunc) {
 	for j, e := range i.sendHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.sendHandlers = append(i.sendHandlers[:j], i.sendHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2257,24 +2226,22 @@ func (i *DataSource) RemoveSendHandler(h DataSourceSendHandler) {
 // only be emitted if the data source was replaced by another data
 // source.
 type DataSourceCancelledEvent struct{}
-type DataSourceCancelledHandler interface {
-	HandleDataSourceCancelled(DataSourceCancelledEvent)
-}
+type DataSourceCancelledHandlerFunc func(DataSourceCancelledEvent)
 
 // AddCancelledHandler : adds handler for DataSourceCancelledEvent
-func (i *DataSource) AddCancelledHandler(h DataSourceCancelledHandler) {
-	if h == nil {
+func (i *DataSource) AddCancelledHandler(f DataSourceCancelledHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.cancelledHandlers = append(i.cancelledHandlers, h)
+	i.cancelledHandlers = append(i.cancelledHandlers, f)
 }
 
-func (i *DataSource) RemoveCancelledHandler(h DataSourceCancelledHandler) {
+func (i *DataSource) RemoveCancelledHandler(f DataSourceCancelledHandlerFunc) {
 	for j, e := range i.cancelledHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.cancelledHandlers = append(i.cancelledHandlers[:j], i.cancelledHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2291,24 +2258,22 @@ func (i *DataSource) RemoveCancelledHandler(h DataSourceCancelledHandler) {
 // Note that the data_source may still be used in the future and should
 // not be destroyed here.
 type DataSourceDndDropPerformedEvent struct{}
-type DataSourceDndDropPerformedHandler interface {
-	HandleDataSourceDndDropPerformed(DataSourceDndDropPerformedEvent)
-}
+type DataSourceDndDropPerformedHandlerFunc func(DataSourceDndDropPerformedEvent)
 
 // AddDndDropPerformedHandler : adds handler for DataSourceDndDropPerformedEvent
-func (i *DataSource) AddDndDropPerformedHandler(h DataSourceDndDropPerformedHandler) {
-	if h == nil {
+func (i *DataSource) AddDndDropPerformedHandler(f DataSourceDndDropPerformedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.dndDropPerformedHandlers = append(i.dndDropPerformedHandlers, h)
+	i.dndDropPerformedHandlers = append(i.dndDropPerformedHandlers, f)
 }
 
-func (i *DataSource) RemoveDndDropPerformedHandler(h DataSourceDndDropPerformedHandler) {
+func (i *DataSource) RemoveDndDropPerformedHandler(f DataSourceDndDropPerformedHandlerFunc) {
 	for j, e := range i.dndDropPerformedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.dndDropPerformedHandlers = append(i.dndDropPerformedHandlers[:j], i.dndDropPerformedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2322,24 +2287,22 @@ func (i *DataSource) RemoveDndDropPerformedHandler(h DataSourceDndDropPerformedH
 // If the action used to perform the operation was "move", the
 // source can now delete the transferred data.
 type DataSourceDndFinishedEvent struct{}
-type DataSourceDndFinishedHandler interface {
-	HandleDataSourceDndFinished(DataSourceDndFinishedEvent)
-}
+type DataSourceDndFinishedHandlerFunc func(DataSourceDndFinishedEvent)
 
 // AddDndFinishedHandler : adds handler for DataSourceDndFinishedEvent
-func (i *DataSource) AddDndFinishedHandler(h DataSourceDndFinishedHandler) {
-	if h == nil {
+func (i *DataSource) AddDndFinishedHandler(f DataSourceDndFinishedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.dndFinishedHandlers = append(i.dndFinishedHandlers, h)
+	i.dndFinishedHandlers = append(i.dndFinishedHandlers, f)
 }
 
-func (i *DataSource) RemoveDndFinishedHandler(h DataSourceDndFinishedHandler) {
+func (i *DataSource) RemoveDndFinishedHandler(f DataSourceDndFinishedHandlerFunc) {
 	for j, e := range i.dndFinishedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.dndFinishedHandlers = append(i.dndFinishedHandlers[:j], i.dndFinishedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2374,25 +2337,22 @@ func (i *DataSource) RemoveDndFinishedHandler(h DataSourceDndFinishedHandler) {
 type DataSourceActionEvent struct {
 	DndAction uint32
 }
-
-type DataSourceActionHandler interface {
-	HandleDataSourceAction(DataSourceActionEvent)
-}
+type DataSourceActionHandlerFunc func(DataSourceActionEvent)
 
 // AddActionHandler : adds handler for DataSourceActionEvent
-func (i *DataSource) AddActionHandler(h DataSourceActionHandler) {
-	if h == nil {
+func (i *DataSource) AddActionHandler(f DataSourceActionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.actionHandlers = append(i.actionHandlers, h)
+	i.actionHandlers = append(i.actionHandlers, f)
 }
 
-func (i *DataSource) RemoveActionHandler(h DataSourceActionHandler) {
+func (i *DataSource) RemoveActionHandler(f DataSourceActionHandlerFunc) {
 	for j, e := range i.actionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.actionHandlers = append(i.actionHandlers[:j], i.actionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2409,8 +2369,8 @@ func (i *DataSource) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.MimeType = String(data[l : l+mimeTypeLen])
 		l += mimeTypeLen
-		for _, h := range i.targetHandlers {
-			h.HandleDataSourceTarget(e)
+		for _, f := range i.targetHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.sendHandlers) == 0 {
@@ -2423,32 +2383,32 @@ func (i *DataSource) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		e.MimeType = String(data[l : l+mimeTypeLen])
 		l += mimeTypeLen
 		e.Fd = fd
-		for _, h := range i.sendHandlers {
-			h.HandleDataSourceSend(e)
+		for _, f := range i.sendHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.cancelledHandlers) == 0 {
 			return
 		}
 		var e DataSourceCancelledEvent
-		for _, h := range i.cancelledHandlers {
-			h.HandleDataSourceCancelled(e)
+		for _, f := range i.cancelledHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.dndDropPerformedHandlers) == 0 {
 			return
 		}
 		var e DataSourceDndDropPerformedEvent
-		for _, h := range i.dndDropPerformedHandlers {
-			h.HandleDataSourceDndDropPerformed(e)
+		for _, f := range i.dndDropPerformedHandlers {
+			f(e)
 		}
 	case 4:
 		if len(i.dndFinishedHandlers) == 0 {
 			return
 		}
 		var e DataSourceDndFinishedEvent
-		for _, h := range i.dndFinishedHandlers {
-			h.HandleDataSourceDndFinished(e)
+		for _, f := range i.dndFinishedHandlers {
+			f(e)
 		}
 	case 5:
 		if len(i.actionHandlers) == 0 {
@@ -2458,8 +2418,8 @@ func (i *DataSource) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.DndAction = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.actionHandlers {
-			h.HandleDataSourceAction(e)
+		for _, f := range i.actionHandlers {
+			f(e)
 		}
 	}
 }
@@ -2473,12 +2433,12 @@ func (i *DataSource) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // mechanisms such as copy-and-paste and drag-and-drop.
 type DataDevice struct {
 	BaseProxy
-	dataOfferHandlers []DataDeviceDataOfferHandler
-	enterHandlers     []DataDeviceEnterHandler
-	leaveHandlers     []DataDeviceLeaveHandler
-	motionHandlers    []DataDeviceMotionHandler
-	dropHandlers      []DataDeviceDropHandler
-	selectionHandlers []DataDeviceSelectionHandler
+	dataOfferHandlers []DataDeviceDataOfferHandlerFunc
+	enterHandlers     []DataDeviceEnterHandlerFunc
+	leaveHandlers     []DataDeviceLeaveHandlerFunc
+	motionHandlers    []DataDeviceMotionHandlerFunc
+	dropHandlers      []DataDeviceDropHandlerFunc
+	selectionHandlers []DataDeviceSelectionHandlerFunc
 }
 
 // NewDataDevice : data transfer device
@@ -2651,25 +2611,22 @@ func (e DataDeviceError) String() string {
 type DataDeviceDataOfferEvent struct {
 	Id *DataOffer
 }
-
-type DataDeviceDataOfferHandler interface {
-	HandleDataDeviceDataOffer(DataDeviceDataOfferEvent)
-}
+type DataDeviceDataOfferHandlerFunc func(DataDeviceDataOfferEvent)
 
 // AddDataOfferHandler : adds handler for DataDeviceDataOfferEvent
-func (i *DataDevice) AddDataOfferHandler(h DataDeviceDataOfferHandler) {
-	if h == nil {
+func (i *DataDevice) AddDataOfferHandler(f DataDeviceDataOfferHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.dataOfferHandlers = append(i.dataOfferHandlers, h)
+	i.dataOfferHandlers = append(i.dataOfferHandlers, f)
 }
 
-func (i *DataDevice) RemoveDataOfferHandler(h DataDeviceDataOfferHandler) {
+func (i *DataDevice) RemoveDataOfferHandler(f DataDeviceDataOfferHandlerFunc) {
 	for j, e := range i.dataOfferHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.dataOfferHandlers = append(i.dataOfferHandlers[:j], i.dataOfferHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2687,25 +2644,22 @@ type DataDeviceEnterEvent struct {
 	Y       float64
 	Id      *DataOffer
 }
-
-type DataDeviceEnterHandler interface {
-	HandleDataDeviceEnter(DataDeviceEnterEvent)
-}
+type DataDeviceEnterHandlerFunc func(DataDeviceEnterEvent)
 
 // AddEnterHandler : adds handler for DataDeviceEnterEvent
-func (i *DataDevice) AddEnterHandler(h DataDeviceEnterHandler) {
-	if h == nil {
+func (i *DataDevice) AddEnterHandler(f DataDeviceEnterHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.enterHandlers = append(i.enterHandlers, h)
+	i.enterHandlers = append(i.enterHandlers, f)
 }
 
-func (i *DataDevice) RemoveEnterHandler(h DataDeviceEnterHandler) {
+func (i *DataDevice) RemoveEnterHandler(f DataDeviceEnterHandlerFunc) {
 	for j, e := range i.enterHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2716,24 +2670,22 @@ func (i *DataDevice) RemoveEnterHandler(h DataDeviceEnterHandler) {
 // surface and the session ends.  The client must destroy the
 // wl_data_offer introduced at enter time at this point.
 type DataDeviceLeaveEvent struct{}
-type DataDeviceLeaveHandler interface {
-	HandleDataDeviceLeave(DataDeviceLeaveEvent)
-}
+type DataDeviceLeaveHandlerFunc func(DataDeviceLeaveEvent)
 
 // AddLeaveHandler : adds handler for DataDeviceLeaveEvent
-func (i *DataDevice) AddLeaveHandler(h DataDeviceLeaveHandler) {
-	if h == nil {
+func (i *DataDevice) AddLeaveHandler(f DataDeviceLeaveHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.leaveHandlers = append(i.leaveHandlers, h)
+	i.leaveHandlers = append(i.leaveHandlers, f)
 }
 
-func (i *DataDevice) RemoveLeaveHandler(h DataDeviceLeaveHandler) {
+func (i *DataDevice) RemoveLeaveHandler(f DataDeviceLeaveHandlerFunc) {
 	for j, e := range i.leaveHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2749,25 +2701,22 @@ type DataDeviceMotionEvent struct {
 	X    float64
 	Y    float64
 }
-
-type DataDeviceMotionHandler interface {
-	HandleDataDeviceMotion(DataDeviceMotionEvent)
-}
+type DataDeviceMotionHandlerFunc func(DataDeviceMotionEvent)
 
 // AddMotionHandler : adds handler for DataDeviceMotionEvent
-func (i *DataDevice) AddMotionHandler(h DataDeviceMotionHandler) {
-	if h == nil {
+func (i *DataDevice) AddMotionHandler(f DataDeviceMotionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.motionHandlers = append(i.motionHandlers, h)
+	i.motionHandlers = append(i.motionHandlers, f)
 }
 
-func (i *DataDevice) RemoveMotionHandler(h DataDeviceMotionHandler) {
+func (i *DataDevice) RemoveMotionHandler(f DataDeviceMotionHandlerFunc) {
 	for j, e := range i.motionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2788,24 +2737,22 @@ func (i *DataDevice) RemoveMotionHandler(h DataDeviceMotionHandler) {
 // wl_data_offer.set_actions request, or wl_data_offer.destroy in order
 // to cancel the operation.
 type DataDeviceDropEvent struct{}
-type DataDeviceDropHandler interface {
-	HandleDataDeviceDrop(DataDeviceDropEvent)
-}
+type DataDeviceDropHandlerFunc func(DataDeviceDropEvent)
 
 // AddDropHandler : adds handler for DataDeviceDropEvent
-func (i *DataDevice) AddDropHandler(h DataDeviceDropHandler) {
-	if h == nil {
+func (i *DataDevice) AddDropHandler(f DataDeviceDropHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.dropHandlers = append(i.dropHandlers, h)
+	i.dropHandlers = append(i.dropHandlers, f)
 }
 
-func (i *DataDevice) RemoveDropHandler(h DataDeviceDropHandler) {
+func (i *DataDevice) RemoveDropHandler(f DataDeviceDropHandlerFunc) {
 	for j, e := range i.dropHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.dropHandlers = append(i.dropHandlers[:j], i.dropHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2826,25 +2773,22 @@ func (i *DataDevice) RemoveDropHandler(h DataDeviceDropHandler) {
 type DataDeviceSelectionEvent struct {
 	Id *DataOffer
 }
-
-type DataDeviceSelectionHandler interface {
-	HandleDataDeviceSelection(DataDeviceSelectionEvent)
-}
+type DataDeviceSelectionHandlerFunc func(DataDeviceSelectionEvent)
 
 // AddSelectionHandler : adds handler for DataDeviceSelectionEvent
-func (i *DataDevice) AddSelectionHandler(h DataDeviceSelectionHandler) {
-	if h == nil {
+func (i *DataDevice) AddSelectionHandler(f DataDeviceSelectionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.selectionHandlers = append(i.selectionHandlers, h)
+	i.selectionHandlers = append(i.selectionHandlers, f)
 }
 
-func (i *DataDevice) RemoveSelectionHandler(h DataDeviceSelectionHandler) {
+func (i *DataDevice) RemoveSelectionHandler(f DataDeviceSelectionHandlerFunc) {
 	for j, e := range i.selectionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.selectionHandlers = append(i.selectionHandlers[:j], i.selectionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2859,8 +2803,8 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
-		for _, h := range i.dataOfferHandlers {
-			h.HandleDataDeviceDataOffer(e)
+		for _, f := range i.dataOfferHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.enterHandlers) == 0 {
@@ -2878,16 +2822,16 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
-		for _, h := range i.enterHandlers {
-			h.HandleDataDeviceEnter(e)
+		for _, f := range i.enterHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.leaveHandlers) == 0 {
 			return
 		}
 		var e DataDeviceLeaveEvent
-		for _, h := range i.leaveHandlers {
-			h.HandleDataDeviceLeave(e)
+		for _, f := range i.leaveHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.motionHandlers) == 0 {
@@ -2901,16 +2845,16 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Y = Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.motionHandlers {
-			h.HandleDataDeviceMotion(e)
+		for _, f := range i.motionHandlers {
+			f(e)
 		}
 	case 4:
 		if len(i.dropHandlers) == 0 {
 			return
 		}
 		var e DataDeviceDropEvent
-		for _, h := range i.dropHandlers {
-			h.HandleDataDeviceDrop(e)
+		for _, f := range i.dropHandlers {
+			f(e)
 		}
 	case 5:
 		if len(i.selectionHandlers) == 0 {
@@ -2920,8 +2864,8 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
-		for _, h := range i.selectionHandlers {
-			h.HandleDataDeviceSelection(e)
+		for _, f := range i.selectionHandlers {
+			f(e)
 		}
 	}
 }
@@ -3187,9 +3131,9 @@ func (e ShellError) String() string {
 // the wl_surface object.
 type ShellSurface struct {
 	BaseProxy
-	pingHandlers      []ShellSurfacePingHandler
-	configureHandlers []ShellSurfaceConfigureHandler
-	popupDoneHandlers []ShellSurfacePopupDoneHandler
+	pingHandlers      []ShellSurfacePingHandlerFunc
+	configureHandlers []ShellSurfaceConfigureHandlerFunc
+	popupDoneHandlers []ShellSurfacePopupDoneHandlerFunc
 }
 
 // NewShellSurface : desktop-style metadata interface
@@ -3734,25 +3678,22 @@ func (e ShellSurfaceFullscreenMethod) String() string {
 type ShellSurfacePingEvent struct {
 	Serial uint32
 }
-
-type ShellSurfacePingHandler interface {
-	HandleShellSurfacePing(ShellSurfacePingEvent)
-}
+type ShellSurfacePingHandlerFunc func(ShellSurfacePingEvent)
 
 // AddPingHandler : adds handler for ShellSurfacePingEvent
-func (i *ShellSurface) AddPingHandler(h ShellSurfacePingHandler) {
-	if h == nil {
+func (i *ShellSurface) AddPingHandler(f ShellSurfacePingHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.pingHandlers = append(i.pingHandlers, h)
+	i.pingHandlers = append(i.pingHandlers, f)
 }
 
-func (i *ShellSurface) RemovePingHandler(h ShellSurfacePingHandler) {
+func (i *ShellSurface) RemovePingHandler(f ShellSurfacePingHandlerFunc) {
 	for j, e := range i.pingHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.pingHandlers = append(i.pingHandlers[:j], i.pingHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -3781,25 +3722,22 @@ type ShellSurfaceConfigureEvent struct {
 	Width  int32
 	Height int32
 }
-
-type ShellSurfaceConfigureHandler interface {
-	HandleShellSurfaceConfigure(ShellSurfaceConfigureEvent)
-}
+type ShellSurfaceConfigureHandlerFunc func(ShellSurfaceConfigureEvent)
 
 // AddConfigureHandler : adds handler for ShellSurfaceConfigureEvent
-func (i *ShellSurface) AddConfigureHandler(h ShellSurfaceConfigureHandler) {
-	if h == nil {
+func (i *ShellSurface) AddConfigureHandler(f ShellSurfaceConfigureHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.configureHandlers = append(i.configureHandlers, h)
+	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *ShellSurface) RemoveConfigureHandler(h ShellSurfaceConfigureHandler) {
+func (i *ShellSurface) RemoveConfigureHandler(f ShellSurfaceConfigureHandlerFunc) {
 	for j, e := range i.configureHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -3810,24 +3748,22 @@ func (i *ShellSurface) RemoveConfigureHandler(h ShellSurfaceConfigureHandler) {
 // that is, when the user clicks a surface that doesn't belong
 // to the client owning the popup surface.
 type ShellSurfacePopupDoneEvent struct{}
-type ShellSurfacePopupDoneHandler interface {
-	HandleShellSurfacePopupDone(ShellSurfacePopupDoneEvent)
-}
+type ShellSurfacePopupDoneHandlerFunc func(ShellSurfacePopupDoneEvent)
 
 // AddPopupDoneHandler : adds handler for ShellSurfacePopupDoneEvent
-func (i *ShellSurface) AddPopupDoneHandler(h ShellSurfacePopupDoneHandler) {
-	if h == nil {
+func (i *ShellSurface) AddPopupDoneHandler(f ShellSurfacePopupDoneHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.popupDoneHandlers = append(i.popupDoneHandlers, h)
+	i.popupDoneHandlers = append(i.popupDoneHandlers, f)
 }
 
-func (i *ShellSurface) RemovePopupDoneHandler(h ShellSurfacePopupDoneHandler) {
+func (i *ShellSurface) RemovePopupDoneHandler(f ShellSurfacePopupDoneHandlerFunc) {
 	for j, e := range i.popupDoneHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.popupDoneHandlers = append(i.popupDoneHandlers[:j], i.popupDoneHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -3842,8 +3778,8 @@ func (i *ShellSurface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Serial = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.pingHandlers {
-			h.HandleShellSurfacePing(e)
+		for _, f := range i.pingHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.configureHandlers) == 0 {
@@ -3857,16 +3793,16 @@ func (i *ShellSurface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Height = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.configureHandlers {
-			h.HandleShellSurfaceConfigure(e)
+		for _, f := range i.configureHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.popupDoneHandlers) == 0 {
 			return
 		}
 		var e ShellSurfacePopupDoneEvent
-		for _, h := range i.popupDoneHandlers {
-			h.HandleShellSurfacePopupDone(e)
+		for _, f := range i.popupDoneHandlers {
+			f(e)
 		}
 	}
 }
@@ -3916,8 +3852,8 @@ func (i *ShellSurface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // switching is not allowed).
 type Surface struct {
 	BaseProxy
-	enterHandlers []SurfaceEnterHandler
-	leaveHandlers []SurfaceLeaveHandler
+	enterHandlers []SurfaceEnterHandlerFunc
+	leaveHandlers []SurfaceLeaveHandlerFunc
 }
 
 // NewSurface : an onscreen surface
@@ -4494,25 +4430,22 @@ func (e SurfaceError) String() string {
 type SurfaceEnterEvent struct {
 	Output *Output
 }
-
-type SurfaceEnterHandler interface {
-	HandleSurfaceEnter(SurfaceEnterEvent)
-}
+type SurfaceEnterHandlerFunc func(SurfaceEnterEvent)
 
 // AddEnterHandler : adds handler for SurfaceEnterEvent
-func (i *Surface) AddEnterHandler(h SurfaceEnterHandler) {
-	if h == nil {
+func (i *Surface) AddEnterHandler(f SurfaceEnterHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.enterHandlers = append(i.enterHandlers, h)
+	i.enterHandlers = append(i.enterHandlers, f)
 }
 
-func (i *Surface) RemoveEnterHandler(h SurfaceEnterHandler) {
+func (i *Surface) RemoveEnterHandler(f SurfaceEnterHandlerFunc) {
 	for j, e := range i.enterHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -4531,25 +4464,22 @@ func (i *Surface) RemoveEnterHandler(h SurfaceEnterHandler) {
 type SurfaceLeaveEvent struct {
 	Output *Output
 }
-
-type SurfaceLeaveHandler interface {
-	HandleSurfaceLeave(SurfaceLeaveEvent)
-}
+type SurfaceLeaveHandlerFunc func(SurfaceLeaveEvent)
 
 // AddLeaveHandler : adds handler for SurfaceLeaveEvent
-func (i *Surface) AddLeaveHandler(h SurfaceLeaveHandler) {
-	if h == nil {
+func (i *Surface) AddLeaveHandler(f SurfaceLeaveHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.leaveHandlers = append(i.leaveHandlers, h)
+	i.leaveHandlers = append(i.leaveHandlers, f)
 }
 
-func (i *Surface) RemoveLeaveHandler(h SurfaceLeaveHandler) {
+func (i *Surface) RemoveLeaveHandler(f SurfaceLeaveHandlerFunc) {
 	for j, e := range i.leaveHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -4564,8 +4494,8 @@ func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Output = i.Context().GetProxy(Uint32(data[l : l+4])).(*Output)
 		l += 4
-		for _, h := range i.enterHandlers {
-			h.HandleSurfaceEnter(e)
+		for _, f := range i.enterHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.leaveHandlers) == 0 {
@@ -4575,8 +4505,8 @@ func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Output = i.Context().GetProxy(Uint32(data[l : l+4])).(*Output)
 		l += 4
-		for _, h := range i.leaveHandlers {
-			h.HandleSurfaceLeave(e)
+		for _, f := range i.leaveHandlers {
+			f(e)
 		}
 	}
 }
@@ -4589,8 +4519,8 @@ func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // maintains a keyboard focus and a pointer focus.
 type Seat struct {
 	BaseProxy
-	capabilitiesHandlers []SeatCapabilitiesHandler
-	nameHandlers         []SeatNameHandler
+	capabilitiesHandlers []SeatCapabilitiesHandlerFunc
+	nameHandlers         []SeatNameHandlerFunc
 }
 
 // NewSeat : group of input devices
@@ -4811,25 +4741,22 @@ func (e SeatError) String() string {
 type SeatCapabilitiesEvent struct {
 	Capabilities uint32
 }
-
-type SeatCapabilitiesHandler interface {
-	HandleSeatCapabilities(SeatCapabilitiesEvent)
-}
+type SeatCapabilitiesHandlerFunc func(SeatCapabilitiesEvent)
 
 // AddCapabilitiesHandler : adds handler for SeatCapabilitiesEvent
-func (i *Seat) AddCapabilitiesHandler(h SeatCapabilitiesHandler) {
-	if h == nil {
+func (i *Seat) AddCapabilitiesHandler(f SeatCapabilitiesHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.capabilitiesHandlers = append(i.capabilitiesHandlers, h)
+	i.capabilitiesHandlers = append(i.capabilitiesHandlers, f)
 }
 
-func (i *Seat) RemoveCapabilitiesHandler(h SeatCapabilitiesHandler) {
+func (i *Seat) RemoveCapabilitiesHandler(f SeatCapabilitiesHandlerFunc) {
 	for j, e := range i.capabilitiesHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.capabilitiesHandlers = append(i.capabilitiesHandlers[:j], i.capabilitiesHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -4842,25 +4769,22 @@ func (i *Seat) RemoveCapabilitiesHandler(h SeatCapabilitiesHandler) {
 type SeatNameEvent struct {
 	Name string
 }
-
-type SeatNameHandler interface {
-	HandleSeatName(SeatNameEvent)
-}
+type SeatNameHandlerFunc func(SeatNameEvent)
 
 // AddNameHandler : adds handler for SeatNameEvent
-func (i *Seat) AddNameHandler(h SeatNameHandler) {
-	if h == nil {
+func (i *Seat) AddNameHandler(f SeatNameHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.nameHandlers = append(i.nameHandlers, h)
+	i.nameHandlers = append(i.nameHandlers, f)
 }
 
-func (i *Seat) RemoveNameHandler(h SeatNameHandler) {
+func (i *Seat) RemoveNameHandler(f SeatNameHandlerFunc) {
 	for j, e := range i.nameHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.nameHandlers = append(i.nameHandlers[:j], i.nameHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -4875,8 +4799,8 @@ func (i *Seat) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Capabilities = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.capabilitiesHandlers {
-			h.HandleSeatCapabilities(e)
+		for _, f := range i.capabilitiesHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.nameHandlers) == 0 {
@@ -4888,8 +4812,8 @@ func (i *Seat) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Name = String(data[l : l+nameLen])
 		l += nameLen
-		for _, h := range i.nameHandlers {
-			h.HandleSeatName(e)
+		for _, f := range i.nameHandlers {
+			f(e)
 		}
 	}
 }
@@ -4906,15 +4830,15 @@ func (i *Seat) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // and scrolling.
 type Pointer struct {
 	BaseProxy
-	enterHandlers        []PointerEnterHandler
-	leaveHandlers        []PointerLeaveHandler
-	motionHandlers       []PointerMotionHandler
-	buttonHandlers       []PointerButtonHandler
-	axisHandlers         []PointerAxisHandler
-	frameHandlers        []PointerFrameHandler
-	axisSourceHandlers   []PointerAxisSourceHandler
-	axisStopHandlers     []PointerAxisStopHandler
-	axisDiscreteHandlers []PointerAxisDiscreteHandler
+	enterHandlers        []PointerEnterHandlerFunc
+	leaveHandlers        []PointerLeaveHandlerFunc
+	motionHandlers       []PointerMotionHandlerFunc
+	buttonHandlers       []PointerButtonHandlerFunc
+	axisHandlers         []PointerAxisHandlerFunc
+	frameHandlers        []PointerFrameHandlerFunc
+	axisSourceHandlers   []PointerAxisSourceHandlerFunc
+	axisStopHandlers     []PointerAxisStopHandlerFunc
+	axisDiscreteHandlers []PointerAxisDiscreteHandlerFunc
 }
 
 // NewPointer : pointer input device
@@ -5205,25 +5129,22 @@ type PointerEnterEvent struct {
 	SurfaceX float64
 	SurfaceY float64
 }
-
-type PointerEnterHandler interface {
-	HandlePointerEnter(PointerEnterEvent)
-}
+type PointerEnterHandlerFunc func(PointerEnterEvent)
 
 // AddEnterHandler : adds handler for PointerEnterEvent
-func (i *Pointer) AddEnterHandler(h PointerEnterHandler) {
-	if h == nil {
+func (i *Pointer) AddEnterHandler(f PointerEnterHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.enterHandlers = append(i.enterHandlers, h)
+	i.enterHandlers = append(i.enterHandlers, f)
 }
 
-func (i *Pointer) RemoveEnterHandler(h PointerEnterHandler) {
+func (i *Pointer) RemoveEnterHandler(f PointerEnterHandlerFunc) {
 	for j, e := range i.enterHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5239,25 +5160,22 @@ type PointerLeaveEvent struct {
 	Serial  uint32
 	Surface *Surface
 }
-
-type PointerLeaveHandler interface {
-	HandlePointerLeave(PointerLeaveEvent)
-}
+type PointerLeaveHandlerFunc func(PointerLeaveEvent)
 
 // AddLeaveHandler : adds handler for PointerLeaveEvent
-func (i *Pointer) AddLeaveHandler(h PointerLeaveHandler) {
-	if h == nil {
+func (i *Pointer) AddLeaveHandler(f PointerLeaveHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.leaveHandlers = append(i.leaveHandlers, h)
+	i.leaveHandlers = append(i.leaveHandlers, f)
 }
 
-func (i *Pointer) RemoveLeaveHandler(h PointerLeaveHandler) {
+func (i *Pointer) RemoveLeaveHandler(f PointerLeaveHandlerFunc) {
 	for j, e := range i.leaveHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5272,25 +5190,22 @@ type PointerMotionEvent struct {
 	SurfaceX float64
 	SurfaceY float64
 }
-
-type PointerMotionHandler interface {
-	HandlePointerMotion(PointerMotionEvent)
-}
+type PointerMotionHandlerFunc func(PointerMotionEvent)
 
 // AddMotionHandler : adds handler for PointerMotionEvent
-func (i *Pointer) AddMotionHandler(h PointerMotionHandler) {
-	if h == nil {
+func (i *Pointer) AddMotionHandler(f PointerMotionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.motionHandlers = append(i.motionHandlers, h)
+	i.motionHandlers = append(i.motionHandlers, f)
 }
 
-func (i *Pointer) RemoveMotionHandler(h PointerMotionHandler) {
+func (i *Pointer) RemoveMotionHandler(f PointerMotionHandlerFunc) {
 	for j, e := range i.motionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5317,25 +5232,22 @@ type PointerButtonEvent struct {
 	Button uint32
 	State  uint32
 }
-
-type PointerButtonHandler interface {
-	HandlePointerButton(PointerButtonEvent)
-}
+type PointerButtonHandlerFunc func(PointerButtonEvent)
 
 // AddButtonHandler : adds handler for PointerButtonEvent
-func (i *Pointer) AddButtonHandler(h PointerButtonHandler) {
-	if h == nil {
+func (i *Pointer) AddButtonHandler(f PointerButtonHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.buttonHandlers = append(i.buttonHandlers, h)
+	i.buttonHandlers = append(i.buttonHandlers, f)
 }
 
-func (i *Pointer) RemoveButtonHandler(h PointerButtonHandler) {
+func (i *Pointer) RemoveButtonHandler(f PointerButtonHandlerFunc) {
 	for j, e := range i.buttonHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.buttonHandlers = append(i.buttonHandlers[:j], i.buttonHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5363,25 +5275,22 @@ type PointerAxisEvent struct {
 	Axis  uint32
 	Value float64
 }
-
-type PointerAxisHandler interface {
-	HandlePointerAxis(PointerAxisEvent)
-}
+type PointerAxisHandlerFunc func(PointerAxisEvent)
 
 // AddAxisHandler : adds handler for PointerAxisEvent
-func (i *Pointer) AddAxisHandler(h PointerAxisHandler) {
-	if h == nil {
+func (i *Pointer) AddAxisHandler(f PointerAxisHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.axisHandlers = append(i.axisHandlers, h)
+	i.axisHandlers = append(i.axisHandlers, f)
 }
 
-func (i *Pointer) RemoveAxisHandler(h PointerAxisHandler) {
+func (i *Pointer) RemoveAxisHandler(f PointerAxisHandlerFunc) {
 	for j, e := range i.axisHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.axisHandlers = append(i.axisHandlers[:j], i.axisHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5423,24 +5332,22 @@ func (i *Pointer) RemoveAxisHandler(h PointerAxisHandler) {
 // wl_pointer.enter event being split across multiple wl_pointer.frame
 // groups.
 type PointerFrameEvent struct{}
-type PointerFrameHandler interface {
-	HandlePointerFrame(PointerFrameEvent)
-}
+type PointerFrameHandlerFunc func(PointerFrameEvent)
 
 // AddFrameHandler : adds handler for PointerFrameEvent
-func (i *Pointer) AddFrameHandler(h PointerFrameHandler) {
-	if h == nil {
+func (i *Pointer) AddFrameHandler(f PointerFrameHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.frameHandlers = append(i.frameHandlers, h)
+	i.frameHandlers = append(i.frameHandlers, f)
 }
 
-func (i *Pointer) RemoveFrameHandler(h PointerFrameHandler) {
+func (i *Pointer) RemoveFrameHandler(f PointerFrameHandlerFunc) {
 	for j, e := range i.frameHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.frameHandlers = append(i.frameHandlers[:j], i.frameHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5475,25 +5382,22 @@ func (i *Pointer) RemoveFrameHandler(h PointerFrameHandler) {
 type PointerAxisSourceEvent struct {
 	AxisSource uint32
 }
-
-type PointerAxisSourceHandler interface {
-	HandlePointerAxisSource(PointerAxisSourceEvent)
-}
+type PointerAxisSourceHandlerFunc func(PointerAxisSourceEvent)
 
 // AddAxisSourceHandler : adds handler for PointerAxisSourceEvent
-func (i *Pointer) AddAxisSourceHandler(h PointerAxisSourceHandler) {
-	if h == nil {
+func (i *Pointer) AddAxisSourceHandler(f PointerAxisSourceHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.axisSourceHandlers = append(i.axisSourceHandlers, h)
+	i.axisSourceHandlers = append(i.axisSourceHandlers, f)
 }
 
-func (i *Pointer) RemoveAxisSourceHandler(h PointerAxisSourceHandler) {
+func (i *Pointer) RemoveAxisSourceHandler(f PointerAxisSourceHandlerFunc) {
 	for j, e := range i.axisSourceHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.axisSourceHandlers = append(i.axisSourceHandlers[:j], i.axisSourceHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5518,25 +5422,22 @@ type PointerAxisStopEvent struct {
 	Time uint32
 	Axis uint32
 }
-
-type PointerAxisStopHandler interface {
-	HandlePointerAxisStop(PointerAxisStopEvent)
-}
+type PointerAxisStopHandlerFunc func(PointerAxisStopEvent)
 
 // AddAxisStopHandler : adds handler for PointerAxisStopEvent
-func (i *Pointer) AddAxisStopHandler(h PointerAxisStopHandler) {
-	if h == nil {
+func (i *Pointer) AddAxisStopHandler(f PointerAxisStopHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.axisStopHandlers = append(i.axisStopHandlers, h)
+	i.axisStopHandlers = append(i.axisStopHandlers, f)
 }
 
-func (i *Pointer) RemoveAxisStopHandler(h PointerAxisStopHandler) {
+func (i *Pointer) RemoveAxisStopHandler(f PointerAxisStopHandlerFunc) {
 	for j, e := range i.axisStopHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.axisStopHandlers = append(i.axisStopHandlers[:j], i.axisStopHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5573,25 +5474,22 @@ type PointerAxisDiscreteEvent struct {
 	Axis     uint32
 	Discrete int32
 }
-
-type PointerAxisDiscreteHandler interface {
-	HandlePointerAxisDiscrete(PointerAxisDiscreteEvent)
-}
+type PointerAxisDiscreteHandlerFunc func(PointerAxisDiscreteEvent)
 
 // AddAxisDiscreteHandler : adds handler for PointerAxisDiscreteEvent
-func (i *Pointer) AddAxisDiscreteHandler(h PointerAxisDiscreteHandler) {
-	if h == nil {
+func (i *Pointer) AddAxisDiscreteHandler(f PointerAxisDiscreteHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.axisDiscreteHandlers = append(i.axisDiscreteHandlers, h)
+	i.axisDiscreteHandlers = append(i.axisDiscreteHandlers, f)
 }
 
-func (i *Pointer) RemoveAxisDiscreteHandler(h PointerAxisDiscreteHandler) {
+func (i *Pointer) RemoveAxisDiscreteHandler(f PointerAxisDiscreteHandlerFunc) {
 	for j, e := range i.axisDiscreteHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.axisDiscreteHandlers = append(i.axisDiscreteHandlers[:j], i.axisDiscreteHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5612,8 +5510,8 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.SurfaceY = Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.enterHandlers {
-			h.HandlePointerEnter(e)
+		for _, f := range i.enterHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.leaveHandlers) == 0 {
@@ -5625,8 +5523,8 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
 		l += 4
-		for _, h := range i.leaveHandlers {
-			h.HandlePointerLeave(e)
+		for _, f := range i.leaveHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.motionHandlers) == 0 {
@@ -5640,8 +5538,8 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.SurfaceY = Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.motionHandlers {
-			h.HandlePointerMotion(e)
+		for _, f := range i.motionHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.buttonHandlers) == 0 {
@@ -5657,8 +5555,8 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.State = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.buttonHandlers {
-			h.HandlePointerButton(e)
+		for _, f := range i.buttonHandlers {
+			f(e)
 		}
 	case 4:
 		if len(i.axisHandlers) == 0 {
@@ -5672,16 +5570,16 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Value = Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.axisHandlers {
-			h.HandlePointerAxis(e)
+		for _, f := range i.axisHandlers {
+			f(e)
 		}
 	case 5:
 		if len(i.frameHandlers) == 0 {
 			return
 		}
 		var e PointerFrameEvent
-		for _, h := range i.frameHandlers {
-			h.HandlePointerFrame(e)
+		for _, f := range i.frameHandlers {
+			f(e)
 		}
 	case 6:
 		if len(i.axisSourceHandlers) == 0 {
@@ -5691,8 +5589,8 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.AxisSource = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.axisSourceHandlers {
-			h.HandlePointerAxisSource(e)
+		for _, f := range i.axisSourceHandlers {
+			f(e)
 		}
 	case 7:
 		if len(i.axisStopHandlers) == 0 {
@@ -5704,8 +5602,8 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Axis = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.axisStopHandlers {
-			h.HandlePointerAxisStop(e)
+		for _, f := range i.axisStopHandlers {
+			f(e)
 		}
 	case 8:
 		if len(i.axisDiscreteHandlers) == 0 {
@@ -5717,8 +5615,8 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Discrete = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.axisDiscreteHandlers {
-			h.HandlePointerAxisDiscrete(e)
+		for _, f := range i.axisDiscreteHandlers {
+			f(e)
 		}
 	}
 }
@@ -5729,12 +5627,12 @@ func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // associated with a seat.
 type Keyboard struct {
 	BaseProxy
-	keymapHandlers     []KeyboardKeymapHandler
-	enterHandlers      []KeyboardEnterHandler
-	leaveHandlers      []KeyboardLeaveHandler
-	keyHandlers        []KeyboardKeyHandler
-	modifiersHandlers  []KeyboardModifiersHandler
-	repeatInfoHandlers []KeyboardRepeatInfoHandler
+	keymapHandlers     []KeyboardKeymapHandlerFunc
+	enterHandlers      []KeyboardEnterHandlerFunc
+	leaveHandlers      []KeyboardLeaveHandlerFunc
+	keyHandlers        []KeyboardKeyHandlerFunc
+	modifiersHandlers  []KeyboardModifiersHandlerFunc
+	repeatInfoHandlers []KeyboardRepeatInfoHandlerFunc
 }
 
 // NewKeyboard : keyboard input device
@@ -5852,25 +5750,22 @@ type KeyboardKeymapEvent struct {
 	Fd     uintptr
 	Size   uint32
 }
-
-type KeyboardKeymapHandler interface {
-	HandleKeyboardKeymap(KeyboardKeymapEvent)
-}
+type KeyboardKeymapHandlerFunc func(KeyboardKeymapEvent)
 
 // AddKeymapHandler : adds handler for KeyboardKeymapEvent
-func (i *Keyboard) AddKeymapHandler(h KeyboardKeymapHandler) {
-	if h == nil {
+func (i *Keyboard) AddKeymapHandler(f KeyboardKeymapHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.keymapHandlers = append(i.keymapHandlers, h)
+	i.keymapHandlers = append(i.keymapHandlers, f)
 }
 
-func (i *Keyboard) RemoveKeymapHandler(h KeyboardKeymapHandler) {
+func (i *Keyboard) RemoveKeymapHandler(f KeyboardKeymapHandlerFunc) {
 	for j, e := range i.keymapHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.keymapHandlers = append(i.keymapHandlers[:j], i.keymapHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5887,25 +5782,22 @@ type KeyboardEnterEvent struct {
 	Surface *Surface
 	Keys    []byte
 }
-
-type KeyboardEnterHandler interface {
-	HandleKeyboardEnter(KeyboardEnterEvent)
-}
+type KeyboardEnterHandlerFunc func(KeyboardEnterEvent)
 
 // AddEnterHandler : adds handler for KeyboardEnterEvent
-func (i *Keyboard) AddEnterHandler(h KeyboardEnterHandler) {
-	if h == nil {
+func (i *Keyboard) AddEnterHandler(f KeyboardEnterHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.enterHandlers = append(i.enterHandlers, h)
+	i.enterHandlers = append(i.enterHandlers, f)
 }
 
-func (i *Keyboard) RemoveEnterHandler(h KeyboardEnterHandler) {
+func (i *Keyboard) RemoveEnterHandler(f KeyboardEnterHandlerFunc) {
 	for j, e := range i.enterHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5924,25 +5816,22 @@ type KeyboardLeaveEvent struct {
 	Serial  uint32
 	Surface *Surface
 }
-
-type KeyboardLeaveHandler interface {
-	HandleKeyboardLeave(KeyboardLeaveEvent)
-}
+type KeyboardLeaveHandlerFunc func(KeyboardLeaveEvent)
 
 // AddLeaveHandler : adds handler for KeyboardLeaveEvent
-func (i *Keyboard) AddLeaveHandler(h KeyboardLeaveHandler) {
-	if h == nil {
+func (i *Keyboard) AddLeaveHandler(f KeyboardLeaveHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.leaveHandlers = append(i.leaveHandlers, h)
+	i.leaveHandlers = append(i.leaveHandlers, f)
 }
 
-func (i *Keyboard) RemoveLeaveHandler(h KeyboardLeaveHandler) {
+func (i *Keyboard) RemoveLeaveHandler(f KeyboardLeaveHandlerFunc) {
 	for j, e := range i.leaveHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5964,25 +5853,22 @@ type KeyboardKeyEvent struct {
 	Key    uint32
 	State  uint32
 }
-
-type KeyboardKeyHandler interface {
-	HandleKeyboardKey(KeyboardKeyEvent)
-}
+type KeyboardKeyHandlerFunc func(KeyboardKeyEvent)
 
 // AddKeyHandler : adds handler for KeyboardKeyEvent
-func (i *Keyboard) AddKeyHandler(h KeyboardKeyHandler) {
-	if h == nil {
+func (i *Keyboard) AddKeyHandler(f KeyboardKeyHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.keyHandlers = append(i.keyHandlers, h)
+	i.keyHandlers = append(i.keyHandlers, f)
 }
 
-func (i *Keyboard) RemoveKeyHandler(h KeyboardKeyHandler) {
+func (i *Keyboard) RemoveKeyHandler(f KeyboardKeyHandlerFunc) {
 	for j, e := range i.keyHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.keyHandlers = append(i.keyHandlers[:j], i.keyHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -5998,25 +5884,22 @@ type KeyboardModifiersEvent struct {
 	ModsLocked    uint32
 	Group         uint32
 }
-
-type KeyboardModifiersHandler interface {
-	HandleKeyboardModifiers(KeyboardModifiersEvent)
-}
+type KeyboardModifiersHandlerFunc func(KeyboardModifiersEvent)
 
 // AddModifiersHandler : adds handler for KeyboardModifiersEvent
-func (i *Keyboard) AddModifiersHandler(h KeyboardModifiersHandler) {
-	if h == nil {
+func (i *Keyboard) AddModifiersHandler(f KeyboardModifiersHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.modifiersHandlers = append(i.modifiersHandlers, h)
+	i.modifiersHandlers = append(i.modifiersHandlers, f)
 }
 
-func (i *Keyboard) RemoveModifiersHandler(h KeyboardModifiersHandler) {
+func (i *Keyboard) RemoveModifiersHandler(f KeyboardModifiersHandlerFunc) {
 	for j, e := range i.modifiersHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.modifiersHandlers = append(i.modifiersHandlers[:j], i.modifiersHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6039,25 +5922,22 @@ type KeyboardRepeatInfoEvent struct {
 	Rate  int32
 	Delay int32
 }
-
-type KeyboardRepeatInfoHandler interface {
-	HandleKeyboardRepeatInfo(KeyboardRepeatInfoEvent)
-}
+type KeyboardRepeatInfoHandlerFunc func(KeyboardRepeatInfoEvent)
 
 // AddRepeatInfoHandler : adds handler for KeyboardRepeatInfoEvent
-func (i *Keyboard) AddRepeatInfoHandler(h KeyboardRepeatInfoHandler) {
-	if h == nil {
+func (i *Keyboard) AddRepeatInfoHandler(f KeyboardRepeatInfoHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.repeatInfoHandlers = append(i.repeatInfoHandlers, h)
+	i.repeatInfoHandlers = append(i.repeatInfoHandlers, f)
 }
 
-func (i *Keyboard) RemoveRepeatInfoHandler(h KeyboardRepeatInfoHandler) {
+func (i *Keyboard) RemoveRepeatInfoHandler(f KeyboardRepeatInfoHandlerFunc) {
 	for j, e := range i.repeatInfoHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.repeatInfoHandlers = append(i.repeatInfoHandlers[:j], i.repeatInfoHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6075,8 +5955,8 @@ func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		e.Fd = fd
 		e.Size = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.keymapHandlers {
-			h.HandleKeyboardKeymap(e)
+		for _, f := range i.keymapHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.enterHandlers) == 0 {
@@ -6093,8 +5973,8 @@ func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		e.Keys = make([]byte, keysLen)
 		copy(e.Keys, data[l:l+keysLen])
 		l += keysLen
-		for _, h := range i.enterHandlers {
-			h.HandleKeyboardEnter(e)
+		for _, f := range i.enterHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.leaveHandlers) == 0 {
@@ -6106,8 +5986,8 @@ func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
 		l += 4
-		for _, h := range i.leaveHandlers {
-			h.HandleKeyboardLeave(e)
+		for _, f := range i.leaveHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.keyHandlers) == 0 {
@@ -6123,8 +6003,8 @@ func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.State = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.keyHandlers {
-			h.HandleKeyboardKey(e)
+		for _, f := range i.keyHandlers {
+			f(e)
 		}
 	case 4:
 		if len(i.modifiersHandlers) == 0 {
@@ -6142,8 +6022,8 @@ func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Group = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.modifiersHandlers {
-			h.HandleKeyboardModifiers(e)
+		for _, f := range i.modifiersHandlers {
+			f(e)
 		}
 	case 5:
 		if len(i.repeatInfoHandlers) == 0 {
@@ -6155,8 +6035,8 @@ func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Delay = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.repeatInfoHandlers {
-			h.HandleKeyboardRepeatInfo(e)
+		for _, f := range i.repeatInfoHandlers {
+			f(e)
 		}
 	}
 }
@@ -6173,13 +6053,13 @@ func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // contact point can be identified by the ID of the sequence.
 type Touch struct {
 	BaseProxy
-	downHandlers        []TouchDownHandler
-	upHandlers          []TouchUpHandler
-	motionHandlers      []TouchMotionHandler
-	frameHandlers       []TouchFrameHandler
-	cancelHandlers      []TouchCancelHandler
-	shapeHandlers       []TouchShapeHandler
-	orientationHandlers []TouchOrientationHandler
+	downHandlers        []TouchDownHandlerFunc
+	upHandlers          []TouchUpHandlerFunc
+	motionHandlers      []TouchMotionHandlerFunc
+	frameHandlers       []TouchFrameHandlerFunc
+	cancelHandlers      []TouchCancelHandlerFunc
+	shapeHandlers       []TouchShapeHandlerFunc
+	orientationHandlers []TouchOrientationHandlerFunc
 }
 
 // NewTouch : touchscreen input device
@@ -6228,25 +6108,22 @@ type TouchDownEvent struct {
 	X       float64
 	Y       float64
 }
-
-type TouchDownHandler interface {
-	HandleTouchDown(TouchDownEvent)
-}
+type TouchDownHandlerFunc func(TouchDownEvent)
 
 // AddDownHandler : adds handler for TouchDownEvent
-func (i *Touch) AddDownHandler(h TouchDownHandler) {
-	if h == nil {
+func (i *Touch) AddDownHandler(f TouchDownHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.downHandlers = append(i.downHandlers, h)
+	i.downHandlers = append(i.downHandlers, f)
 }
 
-func (i *Touch) RemoveDownHandler(h TouchDownHandler) {
+func (i *Touch) RemoveDownHandler(f TouchDownHandlerFunc) {
 	for j, e := range i.downHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.downHandlers = append(i.downHandlers[:j], i.downHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6261,25 +6138,22 @@ type TouchUpEvent struct {
 	Time   uint32
 	Id     int32
 }
-
-type TouchUpHandler interface {
-	HandleTouchUp(TouchUpEvent)
-}
+type TouchUpHandlerFunc func(TouchUpEvent)
 
 // AddUpHandler : adds handler for TouchUpEvent
-func (i *Touch) AddUpHandler(h TouchUpHandler) {
-	if h == nil {
+func (i *Touch) AddUpHandler(f TouchUpHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.upHandlers = append(i.upHandlers, h)
+	i.upHandlers = append(i.upHandlers, f)
 }
 
-func (i *Touch) RemoveUpHandler(h TouchUpHandler) {
+func (i *Touch) RemoveUpHandler(f TouchUpHandlerFunc) {
 	for j, e := range i.upHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.upHandlers = append(i.upHandlers[:j], i.upHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6293,25 +6167,22 @@ type TouchMotionEvent struct {
 	X    float64
 	Y    float64
 }
-
-type TouchMotionHandler interface {
-	HandleTouchMotion(TouchMotionEvent)
-}
+type TouchMotionHandlerFunc func(TouchMotionEvent)
 
 // AddMotionHandler : adds handler for TouchMotionEvent
-func (i *Touch) AddMotionHandler(h TouchMotionHandler) {
-	if h == nil {
+func (i *Touch) AddMotionHandler(f TouchMotionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.motionHandlers = append(i.motionHandlers, h)
+	i.motionHandlers = append(i.motionHandlers, f)
 }
 
-func (i *Touch) RemoveMotionHandler(h TouchMotionHandler) {
+func (i *Touch) RemoveMotionHandler(f TouchMotionHandlerFunc) {
 	for j, e := range i.motionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6327,24 +6198,22 @@ func (i *Touch) RemoveMotionHandler(h TouchMotionHandler) {
 // must assume that any state not updated in a frame is unchanged from the
 // previously known state.
 type TouchFrameEvent struct{}
-type TouchFrameHandler interface {
-	HandleTouchFrame(TouchFrameEvent)
-}
+type TouchFrameHandlerFunc func(TouchFrameEvent)
 
 // AddFrameHandler : adds handler for TouchFrameEvent
-func (i *Touch) AddFrameHandler(h TouchFrameHandler) {
-	if h == nil {
+func (i *Touch) AddFrameHandler(f TouchFrameHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.frameHandlers = append(i.frameHandlers, h)
+	i.frameHandlers = append(i.frameHandlers, f)
 }
 
-func (i *Touch) RemoveFrameHandler(h TouchFrameHandler) {
+func (i *Touch) RemoveFrameHandler(f TouchFrameHandlerFunc) {
 	for j, e := range i.frameHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.frameHandlers = append(i.frameHandlers[:j], i.frameHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6358,24 +6227,22 @@ func (i *Touch) RemoveFrameHandler(h TouchFrameHandler) {
 // responsible for finalizing the touch points, future touch points on
 // this surface may reuse the touch point ID.
 type TouchCancelEvent struct{}
-type TouchCancelHandler interface {
-	HandleTouchCancel(TouchCancelEvent)
-}
+type TouchCancelHandlerFunc func(TouchCancelEvent)
 
 // AddCancelHandler : adds handler for TouchCancelEvent
-func (i *Touch) AddCancelHandler(h TouchCancelHandler) {
-	if h == nil {
+func (i *Touch) AddCancelHandler(f TouchCancelHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.cancelHandlers = append(i.cancelHandlers, h)
+	i.cancelHandlers = append(i.cancelHandlers, f)
 }
 
-func (i *Touch) RemoveCancelHandler(h TouchCancelHandler) {
+func (i *Touch) RemoveCancelHandler(f TouchCancelHandlerFunc) {
 	for j, e := range i.cancelHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.cancelHandlers = append(i.cancelHandlers[:j], i.cancelHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6412,25 +6279,22 @@ type TouchShapeEvent struct {
 	Major float64
 	Minor float64
 }
-
-type TouchShapeHandler interface {
-	HandleTouchShape(TouchShapeEvent)
-}
+type TouchShapeHandlerFunc func(TouchShapeEvent)
 
 // AddShapeHandler : adds handler for TouchShapeEvent
-func (i *Touch) AddShapeHandler(h TouchShapeHandler) {
-	if h == nil {
+func (i *Touch) AddShapeHandler(f TouchShapeHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.shapeHandlers = append(i.shapeHandlers, h)
+	i.shapeHandlers = append(i.shapeHandlers, f)
 }
 
-func (i *Touch) RemoveShapeHandler(h TouchShapeHandler) {
+func (i *Touch) RemoveShapeHandler(f TouchShapeHandlerFunc) {
 	for j, e := range i.shapeHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.shapeHandlers = append(i.shapeHandlers[:j], i.shapeHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6464,25 +6328,22 @@ type TouchOrientationEvent struct {
 	Id          int32
 	Orientation float64
 }
-
-type TouchOrientationHandler interface {
-	HandleTouchOrientation(TouchOrientationEvent)
-}
+type TouchOrientationHandlerFunc func(TouchOrientationEvent)
 
 // AddOrientationHandler : adds handler for TouchOrientationEvent
-func (i *Touch) AddOrientationHandler(h TouchOrientationHandler) {
-	if h == nil {
+func (i *Touch) AddOrientationHandler(f TouchOrientationHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.orientationHandlers = append(i.orientationHandlers, h)
+	i.orientationHandlers = append(i.orientationHandlers, f)
 }
 
-func (i *Touch) RemoveOrientationHandler(h TouchOrientationHandler) {
+func (i *Touch) RemoveOrientationHandler(f TouchOrientationHandlerFunc) {
 	for j, e := range i.orientationHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.orientationHandlers = append(i.orientationHandlers[:j], i.orientationHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6507,8 +6368,8 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Y = Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.downHandlers {
-			h.HandleTouchDown(e)
+		for _, f := range i.downHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.upHandlers) == 0 {
@@ -6522,8 +6383,8 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Id = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.upHandlers {
-			h.HandleTouchUp(e)
+		for _, f := range i.upHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.motionHandlers) == 0 {
@@ -6539,24 +6400,24 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Y = Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.motionHandlers {
-			h.HandleTouchMotion(e)
+		for _, f := range i.motionHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.frameHandlers) == 0 {
 			return
 		}
 		var e TouchFrameEvent
-		for _, h := range i.frameHandlers {
-			h.HandleTouchFrame(e)
+		for _, f := range i.frameHandlers {
+			f(e)
 		}
 	case 4:
 		if len(i.cancelHandlers) == 0 {
 			return
 		}
 		var e TouchCancelEvent
-		for _, h := range i.cancelHandlers {
-			h.HandleTouchCancel(e)
+		for _, f := range i.cancelHandlers {
+			f(e)
 		}
 	case 5:
 		if len(i.shapeHandlers) == 0 {
@@ -6570,8 +6431,8 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Minor = Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.shapeHandlers {
-			h.HandleTouchShape(e)
+		for _, f := range i.shapeHandlers {
+			f(e)
 		}
 	case 6:
 		if len(i.orientationHandlers) == 0 {
@@ -6583,8 +6444,8 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Orientation = Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.orientationHandlers {
-			h.HandleTouchOrientation(e)
+		for _, f := range i.orientationHandlers {
+			f(e)
 		}
 	}
 }
@@ -6599,10 +6460,10 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // as global during start up, or when a monitor is hotplugged.
 type Output struct {
 	BaseProxy
-	geometryHandlers []OutputGeometryHandler
-	modeHandlers     []OutputModeHandler
-	doneHandlers     []OutputDoneHandler
-	scaleHandlers    []OutputScaleHandler
+	geometryHandlers []OutputGeometryHandlerFunc
+	modeHandlers     []OutputModeHandlerFunc
+	doneHandlers     []OutputDoneHandlerFunc
+	scaleHandlers    []OutputScaleHandlerFunc
 }
 
 // NewOutput : compositor output region
@@ -6849,25 +6710,22 @@ type OutputGeometryEvent struct {
 	Model          string
 	Transform      int32
 }
-
-type OutputGeometryHandler interface {
-	HandleOutputGeometry(OutputGeometryEvent)
-}
+type OutputGeometryHandlerFunc func(OutputGeometryEvent)
 
 // AddGeometryHandler : adds handler for OutputGeometryEvent
-func (i *Output) AddGeometryHandler(h OutputGeometryHandler) {
-	if h == nil {
+func (i *Output) AddGeometryHandler(f OutputGeometryHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.geometryHandlers = append(i.geometryHandlers, h)
+	i.geometryHandlers = append(i.geometryHandlers, f)
 }
 
-func (i *Output) RemoveGeometryHandler(h OutputGeometryHandler) {
+func (i *Output) RemoveGeometryHandler(f OutputGeometryHandlerFunc) {
 	for j, e := range i.geometryHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.geometryHandlers = append(i.geometryHandlers[:j], i.geometryHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6910,25 +6768,22 @@ type OutputModeEvent struct {
 	Height  int32
 	Refresh int32
 }
-
-type OutputModeHandler interface {
-	HandleOutputMode(OutputModeEvent)
-}
+type OutputModeHandlerFunc func(OutputModeEvent)
 
 // AddModeHandler : adds handler for OutputModeEvent
-func (i *Output) AddModeHandler(h OutputModeHandler) {
-	if h == nil {
+func (i *Output) AddModeHandler(f OutputModeHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.modeHandlers = append(i.modeHandlers, h)
+	i.modeHandlers = append(i.modeHandlers, f)
 }
 
-func (i *Output) RemoveModeHandler(h OutputModeHandler) {
+func (i *Output) RemoveModeHandler(f OutputModeHandlerFunc) {
 	for j, e := range i.modeHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.modeHandlers = append(i.modeHandlers[:j], i.modeHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6941,24 +6796,22 @@ func (i *Output) RemoveModeHandler(h OutputModeHandler) {
 // changes to the output properties to be seen as
 // atomic, even if they happen via multiple events.
 type OutputDoneEvent struct{}
-type OutputDoneHandler interface {
-	HandleOutputDone(OutputDoneEvent)
-}
+type OutputDoneHandlerFunc func(OutputDoneEvent)
 
 // AddDoneHandler : adds handler for OutputDoneEvent
-func (i *Output) AddDoneHandler(h OutputDoneHandler) {
-	if h == nil {
+func (i *Output) AddDoneHandler(f OutputDoneHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.doneHandlers = append(i.doneHandlers, h)
+	i.doneHandlers = append(i.doneHandlers, f)
 }
 
-func (i *Output) RemoveDoneHandler(h OutputDoneHandler) {
+func (i *Output) RemoveDoneHandler(f OutputDoneHandlerFunc) {
 	for j, e := range i.doneHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -6986,25 +6839,22 @@ func (i *Output) RemoveDoneHandler(h OutputDoneHandler) {
 type OutputScaleEvent struct {
 	Factor int32
 }
-
-type OutputScaleHandler interface {
-	HandleOutputScale(OutputScaleEvent)
-}
+type OutputScaleHandlerFunc func(OutputScaleEvent)
 
 // AddScaleHandler : adds handler for OutputScaleEvent
-func (i *Output) AddScaleHandler(h OutputScaleHandler) {
-	if h == nil {
+func (i *Output) AddScaleHandler(f OutputScaleHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.scaleHandlers = append(i.scaleHandlers, h)
+	i.scaleHandlers = append(i.scaleHandlers, f)
 }
 
-func (i *Output) RemoveScaleHandler(h OutputScaleHandler) {
+func (i *Output) RemoveScaleHandler(f OutputScaleHandlerFunc) {
 	for j, e := range i.scaleHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.scaleHandlers = append(i.scaleHandlers[:j], i.scaleHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -7037,8 +6887,8 @@ func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += modelLen
 		e.Transform = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.geometryHandlers {
-			h.HandleOutputGeometry(e)
+		for _, f := range i.geometryHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.modeHandlers) == 0 {
@@ -7054,16 +6904,16 @@ func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Refresh = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.modeHandlers {
-			h.HandleOutputMode(e)
+		for _, f := range i.modeHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.doneHandlers) == 0 {
 			return
 		}
 		var e OutputDoneEvent
-		for _, h := range i.doneHandlers {
-			h.HandleOutputDone(e)
+		for _, f := range i.doneHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.scaleHandlers) == 0 {
@@ -7073,8 +6923,8 @@ func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Factor = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.scaleHandlers {
-			h.HandleOutputScale(e)
+		for _, f := range i.scaleHandlers {
+			f(e)
 		}
 	}
 }

@@ -28,7 +28,11 @@
 
 package relative_pointer
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // RelativePointerManager : get relative pointer objects
 //
@@ -98,7 +102,7 @@ func (i *RelativePointerManager) GetRelativePointer(pointer *client.Pointer) (*R
 // focus.
 type RelativePointer struct {
 	client.BaseProxy
-	relativeMotionHandlers []RelativePointerRelativeMotionHandler
+	relativeMotionHandlers []RelativePointerRelativeMotionHandlerFunc
 }
 
 // NewRelativePointer : relative pointer object
@@ -169,25 +173,22 @@ type RelativePointerRelativeMotionEvent struct {
 	DxUnaccel float64
 	DyUnaccel float64
 }
-
-type RelativePointerRelativeMotionHandler interface {
-	HandleRelativePointerRelativeMotion(RelativePointerRelativeMotionEvent)
-}
+type RelativePointerRelativeMotionHandlerFunc func(RelativePointerRelativeMotionEvent)
 
 // AddRelativeMotionHandler : adds handler for RelativePointerRelativeMotionEvent
-func (i *RelativePointer) AddRelativeMotionHandler(h RelativePointerRelativeMotionHandler) {
-	if h == nil {
+func (i *RelativePointer) AddRelativeMotionHandler(f RelativePointerRelativeMotionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.relativeMotionHandlers = append(i.relativeMotionHandlers, h)
+	i.relativeMotionHandlers = append(i.relativeMotionHandlers, f)
 }
 
-func (i *RelativePointer) RemoveRelativeMotionHandler(h RelativePointerRelativeMotionHandler) {
+func (i *RelativePointer) RemoveRelativeMotionHandler(f RelativePointerRelativeMotionHandlerFunc) {
 	for j, e := range i.relativeMotionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.relativeMotionHandlers = append(i.relativeMotionHandlers[:j], i.relativeMotionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -212,8 +213,8 @@ func (i *RelativePointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.DyUnaccel = client.Fixed(data[l : l+4])
 		l += 4
-		for _, h := range i.relativeMotionHandlers {
-			h.HandleRelativePointerRelativeMotion(e)
+		for _, f := range i.relativeMotionHandlers {
+			f(e)
 		}
 	}
 }

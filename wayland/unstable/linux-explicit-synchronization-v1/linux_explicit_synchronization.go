@@ -30,6 +30,8 @@
 package linux_explicit_synchronization
 
 import (
+	"reflect"
+
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	"golang.org/x/sys/unix"
 )
@@ -420,8 +422,8 @@ func (e LinuxSurfaceSynchronizationError) String() string {
 // 'immediate_release' event it is automatically destroyed.
 type LinuxBufferRelease struct {
 	client.BaseProxy
-	fencedReleaseHandlers    []LinuxBufferReleaseFencedReleaseHandler
-	immediateReleaseHandlers []LinuxBufferReleaseImmediateReleaseHandler
+	fencedReleaseHandlers    []LinuxBufferReleaseFencedReleaseHandlerFunc
+	immediateReleaseHandlers []LinuxBufferReleaseImmediateReleaseHandlerFunc
 }
 
 // NewLinuxBufferRelease : buffer release explicit synchronization
@@ -470,25 +472,22 @@ func (i *LinuxBufferRelease) Destroy() error {
 type LinuxBufferReleaseFencedReleaseEvent struct {
 	Fence uintptr
 }
-
-type LinuxBufferReleaseFencedReleaseHandler interface {
-	HandleLinuxBufferReleaseFencedRelease(LinuxBufferReleaseFencedReleaseEvent)
-}
+type LinuxBufferReleaseFencedReleaseHandlerFunc func(LinuxBufferReleaseFencedReleaseEvent)
 
 // AddFencedReleaseHandler : adds handler for LinuxBufferReleaseFencedReleaseEvent
-func (i *LinuxBufferRelease) AddFencedReleaseHandler(h LinuxBufferReleaseFencedReleaseHandler) {
-	if h == nil {
+func (i *LinuxBufferRelease) AddFencedReleaseHandler(f LinuxBufferReleaseFencedReleaseHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.fencedReleaseHandlers = append(i.fencedReleaseHandlers, h)
+	i.fencedReleaseHandlers = append(i.fencedReleaseHandlers, f)
 }
 
-func (i *LinuxBufferRelease) RemoveFencedReleaseHandler(h LinuxBufferReleaseFencedReleaseHandler) {
+func (i *LinuxBufferRelease) RemoveFencedReleaseHandler(f LinuxBufferReleaseFencedReleaseHandlerFunc) {
 	for j, e := range i.fencedReleaseHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.fencedReleaseHandlers = append(i.fencedReleaseHandlers[:j], i.fencedReleaseHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -507,24 +506,22 @@ func (i *LinuxBufferRelease) RemoveFencedReleaseHandler(h LinuxBufferReleaseFenc
 //
 // This event destroys the zwp_linux_buffer_release_v1 object.
 type LinuxBufferReleaseImmediateReleaseEvent struct{}
-type LinuxBufferReleaseImmediateReleaseHandler interface {
-	HandleLinuxBufferReleaseImmediateRelease(LinuxBufferReleaseImmediateReleaseEvent)
-}
+type LinuxBufferReleaseImmediateReleaseHandlerFunc func(LinuxBufferReleaseImmediateReleaseEvent)
 
 // AddImmediateReleaseHandler : adds handler for LinuxBufferReleaseImmediateReleaseEvent
-func (i *LinuxBufferRelease) AddImmediateReleaseHandler(h LinuxBufferReleaseImmediateReleaseHandler) {
-	if h == nil {
+func (i *LinuxBufferRelease) AddImmediateReleaseHandler(f LinuxBufferReleaseImmediateReleaseHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.immediateReleaseHandlers = append(i.immediateReleaseHandlers, h)
+	i.immediateReleaseHandlers = append(i.immediateReleaseHandlers, f)
 }
 
-func (i *LinuxBufferRelease) RemoveImmediateReleaseHandler(h LinuxBufferReleaseImmediateReleaseHandler) {
+func (i *LinuxBufferRelease) RemoveImmediateReleaseHandler(f LinuxBufferReleaseImmediateReleaseHandlerFunc) {
 	for j, e := range i.immediateReleaseHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.immediateReleaseHandlers = append(i.immediateReleaseHandlers[:j], i.immediateReleaseHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -537,16 +534,16 @@ func (i *LinuxBufferRelease) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		}
 		var e LinuxBufferReleaseFencedReleaseEvent
 		e.Fence = fd
-		for _, h := range i.fencedReleaseHandlers {
-			h.HandleLinuxBufferReleaseFencedRelease(e)
+		for _, f := range i.fencedReleaseHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.immediateReleaseHandlers) == 0 {
 			return
 		}
 		var e LinuxBufferReleaseImmediateReleaseEvent
-		for _, h := range i.immediateReleaseHandlers {
-			h.HandleLinuxBufferReleaseImmediateRelease(e)
+		for _, f := range i.immediateReleaseHandlers {
+			f(e)
 		}
 	}
 }

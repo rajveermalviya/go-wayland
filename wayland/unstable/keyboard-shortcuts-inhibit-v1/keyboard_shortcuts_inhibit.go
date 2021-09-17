@@ -27,7 +27,11 @@
 
 package keyboard_shortcuts_inhibit
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // KeyboardShortcutsInhibitManager : context object for keyboard grab_manager
 //
@@ -160,8 +164,8 @@ func (e KeyboardShortcutsInhibitManagerError) String() string {
 // event is emitted in this case.
 type KeyboardShortcutsInhibitor struct {
 	client.BaseProxy
-	activeHandlers   []KeyboardShortcutsInhibitorActiveHandler
-	inactiveHandlers []KeyboardShortcutsInhibitorInactiveHandler
+	activeHandlers   []KeyboardShortcutsInhibitorActiveHandlerFunc
+	inactiveHandlers []KeyboardShortcutsInhibitorInactiveHandlerFunc
 }
 
 // NewKeyboardShortcutsInhibitor : context object for keyboard shortcuts inhibitor
@@ -237,24 +241,22 @@ func (i *KeyboardShortcutsInhibitor) Destroy() error {
 // re-enable and existing shortcuts inhibitor using any mechanism
 // offered by the compositor.
 type KeyboardShortcutsInhibitorActiveEvent struct{}
-type KeyboardShortcutsInhibitorActiveHandler interface {
-	HandleKeyboardShortcutsInhibitorActive(KeyboardShortcutsInhibitorActiveEvent)
-}
+type KeyboardShortcutsInhibitorActiveHandlerFunc func(KeyboardShortcutsInhibitorActiveEvent)
 
 // AddActiveHandler : adds handler for KeyboardShortcutsInhibitorActiveEvent
-func (i *KeyboardShortcutsInhibitor) AddActiveHandler(h KeyboardShortcutsInhibitorActiveHandler) {
-	if h == nil {
+func (i *KeyboardShortcutsInhibitor) AddActiveHandler(f KeyboardShortcutsInhibitorActiveHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.activeHandlers = append(i.activeHandlers, h)
+	i.activeHandlers = append(i.activeHandlers, f)
 }
 
-func (i *KeyboardShortcutsInhibitor) RemoveActiveHandler(h KeyboardShortcutsInhibitorActiveHandler) {
+func (i *KeyboardShortcutsInhibitor) RemoveActiveHandler(f KeyboardShortcutsInhibitorActiveHandlerFunc) {
 	for j, e := range i.activeHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.activeHandlers = append(i.activeHandlers[:j], i.activeHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -264,24 +266,22 @@ func (i *KeyboardShortcutsInhibitor) RemoveActiveHandler(h KeyboardShortcutsInhi
 // This event indicates that the shortcuts inhibitor is inactive,
 // normal shortcuts processing is restored by the compositor.
 type KeyboardShortcutsInhibitorInactiveEvent struct{}
-type KeyboardShortcutsInhibitorInactiveHandler interface {
-	HandleKeyboardShortcutsInhibitorInactive(KeyboardShortcutsInhibitorInactiveEvent)
-}
+type KeyboardShortcutsInhibitorInactiveHandlerFunc func(KeyboardShortcutsInhibitorInactiveEvent)
 
 // AddInactiveHandler : adds handler for KeyboardShortcutsInhibitorInactiveEvent
-func (i *KeyboardShortcutsInhibitor) AddInactiveHandler(h KeyboardShortcutsInhibitorInactiveHandler) {
-	if h == nil {
+func (i *KeyboardShortcutsInhibitor) AddInactiveHandler(f KeyboardShortcutsInhibitorInactiveHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.inactiveHandlers = append(i.inactiveHandlers, h)
+	i.inactiveHandlers = append(i.inactiveHandlers, f)
 }
 
-func (i *KeyboardShortcutsInhibitor) RemoveInactiveHandler(h KeyboardShortcutsInhibitorInactiveHandler) {
+func (i *KeyboardShortcutsInhibitor) RemoveInactiveHandler(f KeyboardShortcutsInhibitorInactiveHandlerFunc) {
 	for j, e := range i.inactiveHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.inactiveHandlers = append(i.inactiveHandlers[:j], i.inactiveHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -293,16 +293,16 @@ func (i *KeyboardShortcutsInhibitor) Dispatch(opcode uint16, fd uintptr, data []
 			return
 		}
 		var e KeyboardShortcutsInhibitorActiveEvent
-		for _, h := range i.activeHandlers {
-			h.HandleKeyboardShortcutsInhibitorActive(e)
+		for _, f := range i.activeHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.inactiveHandlers) == 0 {
 			return
 		}
 		var e KeyboardShortcutsInhibitorInactiveEvent
-		for _, h := range i.inactiveHandlers {
-			h.HandleKeyboardShortcutsInhibitorInactive(e)
+		for _, f := range i.inactiveHandlers {
+			f(e)
 		}
 	}
 }

@@ -30,7 +30,11 @@
 
 package xdg_shell
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // Shell : create desktop-style surfaces
 //
@@ -40,7 +44,7 @@ import "github.com/rajveermalviya/go-wayland/wayland/client"
 // desktop environments.
 type Shell struct {
 	client.BaseProxy
-	pingHandlers []ShellPingHandler
+	pingHandlers []ShellPingHandlerFunc
 }
 
 // NewShell : create desktop-style surfaces
@@ -228,25 +232,22 @@ func (e ShellError) String() string {
 type ShellPingEvent struct {
 	Serial uint32
 }
-
-type ShellPingHandler interface {
-	HandleShellPing(ShellPingEvent)
-}
+type ShellPingHandlerFunc func(ShellPingEvent)
 
 // AddPingHandler : adds handler for ShellPingEvent
-func (i *Shell) AddPingHandler(h ShellPingHandler) {
-	if h == nil {
+func (i *Shell) AddPingHandler(f ShellPingHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.pingHandlers = append(i.pingHandlers, h)
+	i.pingHandlers = append(i.pingHandlers, f)
 }
 
-func (i *Shell) RemovePingHandler(h ShellPingHandler) {
+func (i *Shell) RemovePingHandler(f ShellPingHandlerFunc) {
 	for j, e := range i.pingHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.pingHandlers = append(i.pingHandlers[:j], i.pingHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -261,8 +262,8 @@ func (i *Shell) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Serial = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.pingHandlers {
-			h.HandleShellPing(e)
+		for _, f := range i.pingHandlers {
+			f(e)
 		}
 	}
 }
@@ -767,7 +768,7 @@ func (e PositionerConstraintAdjustment) String() string {
 // buffer to the surface.
 type Surface struct {
 	client.BaseProxy
-	configureHandlers []SurfaceConfigureHandler
+	configureHandlers []SurfaceConfigureHandlerFunc
 }
 
 // NewSurface : desktop user interface surface base interface
@@ -1025,25 +1026,22 @@ func (e SurfaceError) String() string {
 type SurfaceConfigureEvent struct {
 	Serial uint32
 }
-
-type SurfaceConfigureHandler interface {
-	HandleSurfaceConfigure(SurfaceConfigureEvent)
-}
+type SurfaceConfigureHandlerFunc func(SurfaceConfigureEvent)
 
 // AddConfigureHandler : adds handler for SurfaceConfigureEvent
-func (i *Surface) AddConfigureHandler(h SurfaceConfigureHandler) {
-	if h == nil {
+func (i *Surface) AddConfigureHandler(f SurfaceConfigureHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.configureHandlers = append(i.configureHandlers, h)
+	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *Surface) RemoveConfigureHandler(h SurfaceConfigureHandler) {
+func (i *Surface) RemoveConfigureHandler(f SurfaceConfigureHandlerFunc) {
 	for j, e := range i.configureHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -1058,8 +1056,8 @@ func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Serial = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.configureHandlers {
-			h.HandleSurfaceConfigure(e)
+		for _, f := range i.configureHandlers {
+			f(e)
 		}
 	}
 }
@@ -1073,8 +1071,8 @@ func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // resize and move.
 type Toplevel struct {
 	client.BaseProxy
-	configureHandlers []ToplevelConfigureHandler
-	closeHandlers     []ToplevelCloseHandler
+	configureHandlers []ToplevelConfigureHandlerFunc
+	closeHandlers     []ToplevelCloseHandlerFunc
 }
 
 // NewToplevel : toplevel surface
@@ -1735,25 +1733,22 @@ type ToplevelConfigureEvent struct {
 	Height int32
 	States []byte
 }
-
-type ToplevelConfigureHandler interface {
-	HandleToplevelConfigure(ToplevelConfigureEvent)
-}
+type ToplevelConfigureHandlerFunc func(ToplevelConfigureEvent)
 
 // AddConfigureHandler : adds handler for ToplevelConfigureEvent
-func (i *Toplevel) AddConfigureHandler(h ToplevelConfigureHandler) {
-	if h == nil {
+func (i *Toplevel) AddConfigureHandler(f ToplevelConfigureHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.configureHandlers = append(i.configureHandlers, h)
+	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *Toplevel) RemoveConfigureHandler(h ToplevelConfigureHandler) {
+func (i *Toplevel) RemoveConfigureHandler(f ToplevelConfigureHandlerFunc) {
 	for j, e := range i.configureHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -1769,24 +1764,22 @@ func (i *Toplevel) RemoveConfigureHandler(h ToplevelConfigureHandler) {
 // window. The client may choose to ignore this request, or show
 // a dialog to ask the user to save their data, etc.
 type ToplevelCloseEvent struct{}
-type ToplevelCloseHandler interface {
-	HandleToplevelClose(ToplevelCloseEvent)
-}
+type ToplevelCloseHandlerFunc func(ToplevelCloseEvent)
 
 // AddCloseHandler : adds handler for ToplevelCloseEvent
-func (i *Toplevel) AddCloseHandler(h ToplevelCloseHandler) {
-	if h == nil {
+func (i *Toplevel) AddCloseHandler(f ToplevelCloseHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.closeHandlers = append(i.closeHandlers, h)
+	i.closeHandlers = append(i.closeHandlers, f)
 }
 
-func (i *Toplevel) RemoveCloseHandler(h ToplevelCloseHandler) {
+func (i *Toplevel) RemoveCloseHandler(f ToplevelCloseHandlerFunc) {
 	for j, e := range i.closeHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.closeHandlers = append(i.closeHandlers[:j], i.closeHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -1808,16 +1801,16 @@ func (i *Toplevel) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		e.States = make([]byte, statesLen)
 		copy(e.States, data[l:l+statesLen])
 		l += statesLen
-		for _, h := range i.configureHandlers {
-			h.HandleToplevelConfigure(e)
+		for _, f := range i.configureHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.closeHandlers) == 0 {
 			return
 		}
 		var e ToplevelCloseEvent
-		for _, h := range i.closeHandlers {
-			h.HandleToplevelClose(e)
+		for _, f := range i.closeHandlers {
+			f(e)
 		}
 	}
 }
@@ -1859,8 +1852,8 @@ func (i *Toplevel) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // for the xdg_popup state to take effect.
 type Popup struct {
 	client.BaseProxy
-	configureHandlers []PopupConfigureHandler
-	popupDoneHandlers []PopupPopupDoneHandler
+	configureHandlers []PopupConfigureHandlerFunc
+	popupDoneHandlers []PopupPopupDoneHandlerFunc
 }
 
 // NewPopup : short-lived, popup surfaces for menus
@@ -2034,25 +2027,22 @@ type PopupConfigureEvent struct {
 	Width  int32
 	Height int32
 }
-
-type PopupConfigureHandler interface {
-	HandlePopupConfigure(PopupConfigureEvent)
-}
+type PopupConfigureHandlerFunc func(PopupConfigureEvent)
 
 // AddConfigureHandler : adds handler for PopupConfigureEvent
-func (i *Popup) AddConfigureHandler(h PopupConfigureHandler) {
-	if h == nil {
+func (i *Popup) AddConfigureHandler(f PopupConfigureHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.configureHandlers = append(i.configureHandlers, h)
+	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *Popup) RemoveConfigureHandler(h PopupConfigureHandler) {
+func (i *Popup) RemoveConfigureHandler(f PopupConfigureHandlerFunc) {
 	for j, e := range i.configureHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2063,24 +2053,22 @@ func (i *Popup) RemoveConfigureHandler(h PopupConfigureHandler) {
 // compositor. The client should destroy the xdg_popup object at this
 // point.
 type PopupPopupDoneEvent struct{}
-type PopupPopupDoneHandler interface {
-	HandlePopupPopupDone(PopupPopupDoneEvent)
-}
+type PopupPopupDoneHandlerFunc func(PopupPopupDoneEvent)
 
 // AddPopupDoneHandler : adds handler for PopupPopupDoneEvent
-func (i *Popup) AddPopupDoneHandler(h PopupPopupDoneHandler) {
-	if h == nil {
+func (i *Popup) AddPopupDoneHandler(f PopupPopupDoneHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.popupDoneHandlers = append(i.popupDoneHandlers, h)
+	i.popupDoneHandlers = append(i.popupDoneHandlers, f)
 }
 
-func (i *Popup) RemovePopupDoneHandler(h PopupPopupDoneHandler) {
+func (i *Popup) RemovePopupDoneHandler(f PopupPopupDoneHandlerFunc) {
 	for j, e := range i.popupDoneHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.popupDoneHandlers = append(i.popupDoneHandlers[:j], i.popupDoneHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -2101,16 +2089,16 @@ func (i *Popup) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Height = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.configureHandlers {
-			h.HandlePopupConfigure(e)
+		for _, f := range i.configureHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.popupDoneHandlers) == 0 {
 			return
 		}
 		var e PopupPopupDoneEvent
-		for _, h := range i.popupDoneHandlers {
-			h.HandlePopupPopupDone(e)
+		for _, f := range i.popupDoneHandlers {
+			f(e)
 		}
 	}
 }

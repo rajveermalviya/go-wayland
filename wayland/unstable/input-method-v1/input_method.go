@@ -27,7 +27,11 @@
 
 package input_method
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // InputMethodContext : input method context
 //
@@ -56,12 +60,12 @@ import "github.com/rajveermalviya/go-wayland/wayland/client"
 // interface version number is reset.
 type InputMethodContext struct {
 	client.BaseProxy
-	surroundingTextHandlers   []InputMethodContextSurroundingTextHandler
-	resetHandlers             []InputMethodContextResetHandler
-	contentTypeHandlers       []InputMethodContextContentTypeHandler
-	invokeActionHandlers      []InputMethodContextInvokeActionHandler
-	commitStateHandlers       []InputMethodContextCommitStateHandler
-	preferredLanguageHandlers []InputMethodContextPreferredLanguageHandler
+	surroundingTextHandlers   []InputMethodContextSurroundingTextHandlerFunc
+	resetHandlers             []InputMethodContextResetHandlerFunc
+	contentTypeHandlers       []InputMethodContextContentTypeHandlerFunc
+	invokeActionHandlers      []InputMethodContextInvokeActionHandlerFunc
+	commitStateHandlers       []InputMethodContextCommitStateHandlerFunc
+	preferredLanguageHandlers []InputMethodContextPreferredLanguageHandlerFunc
 }
 
 // NewInputMethodContext : input method context
@@ -474,49 +478,44 @@ type InputMethodContextSurroundingTextEvent struct {
 	Cursor uint32
 	Anchor uint32
 }
-
-type InputMethodContextSurroundingTextHandler interface {
-	HandleInputMethodContextSurroundingText(InputMethodContextSurroundingTextEvent)
-}
+type InputMethodContextSurroundingTextHandlerFunc func(InputMethodContextSurroundingTextEvent)
 
 // AddSurroundingTextHandler : adds handler for InputMethodContextSurroundingTextEvent
-func (i *InputMethodContext) AddSurroundingTextHandler(h InputMethodContextSurroundingTextHandler) {
-	if h == nil {
+func (i *InputMethodContext) AddSurroundingTextHandler(f InputMethodContextSurroundingTextHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.surroundingTextHandlers = append(i.surroundingTextHandlers, h)
+	i.surroundingTextHandlers = append(i.surroundingTextHandlers, f)
 }
 
-func (i *InputMethodContext) RemoveSurroundingTextHandler(h InputMethodContextSurroundingTextHandler) {
+func (i *InputMethodContext) RemoveSurroundingTextHandler(f InputMethodContextSurroundingTextHandlerFunc) {
 	for j, e := range i.surroundingTextHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.surroundingTextHandlers = append(i.surroundingTextHandlers[:j], i.surroundingTextHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
 
 // InputMethodContextResetEvent :
 type InputMethodContextResetEvent struct{}
-type InputMethodContextResetHandler interface {
-	HandleInputMethodContextReset(InputMethodContextResetEvent)
-}
+type InputMethodContextResetHandlerFunc func(InputMethodContextResetEvent)
 
 // AddResetHandler : adds handler for InputMethodContextResetEvent
-func (i *InputMethodContext) AddResetHandler(h InputMethodContextResetHandler) {
-	if h == nil {
+func (i *InputMethodContext) AddResetHandler(f InputMethodContextResetHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.resetHandlers = append(i.resetHandlers, h)
+	i.resetHandlers = append(i.resetHandlers, f)
 }
 
-func (i *InputMethodContext) RemoveResetHandler(h InputMethodContextResetHandler) {
+func (i *InputMethodContext) RemoveResetHandler(f InputMethodContextResetHandlerFunc) {
 	for j, e := range i.resetHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.resetHandlers = append(i.resetHandlers[:j], i.resetHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -526,25 +525,22 @@ type InputMethodContextContentTypeEvent struct {
 	Hint    uint32
 	Purpose uint32
 }
-
-type InputMethodContextContentTypeHandler interface {
-	HandleInputMethodContextContentType(InputMethodContextContentTypeEvent)
-}
+type InputMethodContextContentTypeHandlerFunc func(InputMethodContextContentTypeEvent)
 
 // AddContentTypeHandler : adds handler for InputMethodContextContentTypeEvent
-func (i *InputMethodContext) AddContentTypeHandler(h InputMethodContextContentTypeHandler) {
-	if h == nil {
+func (i *InputMethodContext) AddContentTypeHandler(f InputMethodContextContentTypeHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.contentTypeHandlers = append(i.contentTypeHandlers, h)
+	i.contentTypeHandlers = append(i.contentTypeHandlers, f)
 }
 
-func (i *InputMethodContext) RemoveContentTypeHandler(h InputMethodContextContentTypeHandler) {
+func (i *InputMethodContext) RemoveContentTypeHandler(f InputMethodContextContentTypeHandlerFunc) {
 	for j, e := range i.contentTypeHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.contentTypeHandlers = append(i.contentTypeHandlers[:j], i.contentTypeHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -554,25 +550,22 @@ type InputMethodContextInvokeActionEvent struct {
 	Button uint32
 	Index  uint32
 }
-
-type InputMethodContextInvokeActionHandler interface {
-	HandleInputMethodContextInvokeAction(InputMethodContextInvokeActionEvent)
-}
+type InputMethodContextInvokeActionHandlerFunc func(InputMethodContextInvokeActionEvent)
 
 // AddInvokeActionHandler : adds handler for InputMethodContextInvokeActionEvent
-func (i *InputMethodContext) AddInvokeActionHandler(h InputMethodContextInvokeActionHandler) {
-	if h == nil {
+func (i *InputMethodContext) AddInvokeActionHandler(f InputMethodContextInvokeActionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.invokeActionHandlers = append(i.invokeActionHandlers, h)
+	i.invokeActionHandlers = append(i.invokeActionHandlers, f)
 }
 
-func (i *InputMethodContext) RemoveInvokeActionHandler(h InputMethodContextInvokeActionHandler) {
+func (i *InputMethodContext) RemoveInvokeActionHandler(f InputMethodContextInvokeActionHandlerFunc) {
 	for j, e := range i.invokeActionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.invokeActionHandlers = append(i.invokeActionHandlers[:j], i.invokeActionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -581,25 +574,22 @@ func (i *InputMethodContext) RemoveInvokeActionHandler(h InputMethodContextInvok
 type InputMethodContextCommitStateEvent struct {
 	Serial uint32
 }
-
-type InputMethodContextCommitStateHandler interface {
-	HandleInputMethodContextCommitState(InputMethodContextCommitStateEvent)
-}
+type InputMethodContextCommitStateHandlerFunc func(InputMethodContextCommitStateEvent)
 
 // AddCommitStateHandler : adds handler for InputMethodContextCommitStateEvent
-func (i *InputMethodContext) AddCommitStateHandler(h InputMethodContextCommitStateHandler) {
-	if h == nil {
+func (i *InputMethodContext) AddCommitStateHandler(f InputMethodContextCommitStateHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.commitStateHandlers = append(i.commitStateHandlers, h)
+	i.commitStateHandlers = append(i.commitStateHandlers, f)
 }
 
-func (i *InputMethodContext) RemoveCommitStateHandler(h InputMethodContextCommitStateHandler) {
+func (i *InputMethodContext) RemoveCommitStateHandler(f InputMethodContextCommitStateHandlerFunc) {
 	for j, e := range i.commitStateHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.commitStateHandlers = append(i.commitStateHandlers[:j], i.commitStateHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -608,25 +598,22 @@ func (i *InputMethodContext) RemoveCommitStateHandler(h InputMethodContextCommit
 type InputMethodContextPreferredLanguageEvent struct {
 	Language string
 }
-
-type InputMethodContextPreferredLanguageHandler interface {
-	HandleInputMethodContextPreferredLanguage(InputMethodContextPreferredLanguageEvent)
-}
+type InputMethodContextPreferredLanguageHandlerFunc func(InputMethodContextPreferredLanguageEvent)
 
 // AddPreferredLanguageHandler : adds handler for InputMethodContextPreferredLanguageEvent
-func (i *InputMethodContext) AddPreferredLanguageHandler(h InputMethodContextPreferredLanguageHandler) {
-	if h == nil {
+func (i *InputMethodContext) AddPreferredLanguageHandler(f InputMethodContextPreferredLanguageHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.preferredLanguageHandlers = append(i.preferredLanguageHandlers, h)
+	i.preferredLanguageHandlers = append(i.preferredLanguageHandlers, f)
 }
 
-func (i *InputMethodContext) RemovePreferredLanguageHandler(h InputMethodContextPreferredLanguageHandler) {
+func (i *InputMethodContext) RemovePreferredLanguageHandler(f InputMethodContextPreferredLanguageHandlerFunc) {
 	for j, e := range i.preferredLanguageHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.preferredLanguageHandlers = append(i.preferredLanguageHandlers[:j], i.preferredLanguageHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -647,16 +634,16 @@ func (i *InputMethodContext) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Anchor = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.surroundingTextHandlers {
-			h.HandleInputMethodContextSurroundingText(e)
+		for _, f := range i.surroundingTextHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.resetHandlers) == 0 {
 			return
 		}
 		var e InputMethodContextResetEvent
-		for _, h := range i.resetHandlers {
-			h.HandleInputMethodContextReset(e)
+		for _, f := range i.resetHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.contentTypeHandlers) == 0 {
@@ -668,8 +655,8 @@ func (i *InputMethodContext) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Purpose = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.contentTypeHandlers {
-			h.HandleInputMethodContextContentType(e)
+		for _, f := range i.contentTypeHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.invokeActionHandlers) == 0 {
@@ -681,8 +668,8 @@ func (i *InputMethodContext) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Index = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.invokeActionHandlers {
-			h.HandleInputMethodContextInvokeAction(e)
+		for _, f := range i.invokeActionHandlers {
+			f(e)
 		}
 	case 4:
 		if len(i.commitStateHandlers) == 0 {
@@ -692,8 +679,8 @@ func (i *InputMethodContext) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Serial = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.commitStateHandlers {
-			h.HandleInputMethodContextCommitState(e)
+		for _, f := range i.commitStateHandlers {
+			f(e)
 		}
 	case 5:
 		if len(i.preferredLanguageHandlers) == 0 {
@@ -705,8 +692,8 @@ func (i *InputMethodContext) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Language = client.String(data[l : l+languageLen])
 		l += languageLen
-		for _, h := range i.preferredLanguageHandlers {
-			h.HandleInputMethodContextPreferredLanguage(e)
+		for _, f := range i.preferredLanguageHandlers {
+			f(e)
 		}
 	}
 }
@@ -719,8 +706,8 @@ func (i *InputMethodContext) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // created which allows the input method to communicate with the text input.
 type InputMethod struct {
 	client.BaseProxy
-	activateHandlers   []InputMethodActivateHandler
-	deactivateHandlers []InputMethodDeactivateHandler
+	activateHandlers   []InputMethodActivateHandlerFunc
+	deactivateHandlers []InputMethodDeactivateHandlerFunc
 }
 
 // NewInputMethod : input method
@@ -747,25 +734,22 @@ func (i *InputMethod) Destroy() error {
 type InputMethodActivateEvent struct {
 	Id *InputMethodContext
 }
-
-type InputMethodActivateHandler interface {
-	HandleInputMethodActivate(InputMethodActivateEvent)
-}
+type InputMethodActivateHandlerFunc func(InputMethodActivateEvent)
 
 // AddActivateHandler : adds handler for InputMethodActivateEvent
-func (i *InputMethod) AddActivateHandler(h InputMethodActivateHandler) {
-	if h == nil {
+func (i *InputMethod) AddActivateHandler(f InputMethodActivateHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.activateHandlers = append(i.activateHandlers, h)
+	i.activateHandlers = append(i.activateHandlers, f)
 }
 
-func (i *InputMethod) RemoveActivateHandler(h InputMethodActivateHandler) {
+func (i *InputMethod) RemoveActivateHandler(f InputMethodActivateHandlerFunc) {
 	for j, e := range i.activateHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.activateHandlers = append(i.activateHandlers[:j], i.activateHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -778,25 +762,22 @@ func (i *InputMethod) RemoveActivateHandler(h InputMethodActivateHandler) {
 type InputMethodDeactivateEvent struct {
 	Context *InputMethodContext
 }
-
-type InputMethodDeactivateHandler interface {
-	HandleInputMethodDeactivate(InputMethodDeactivateEvent)
-}
+type InputMethodDeactivateHandlerFunc func(InputMethodDeactivateEvent)
 
 // AddDeactivateHandler : adds handler for InputMethodDeactivateEvent
-func (i *InputMethod) AddDeactivateHandler(h InputMethodDeactivateHandler) {
-	if h == nil {
+func (i *InputMethod) AddDeactivateHandler(f InputMethodDeactivateHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.deactivateHandlers = append(i.deactivateHandlers, h)
+	i.deactivateHandlers = append(i.deactivateHandlers, f)
 }
 
-func (i *InputMethod) RemoveDeactivateHandler(h InputMethodDeactivateHandler) {
+func (i *InputMethod) RemoveDeactivateHandler(f InputMethodDeactivateHandlerFunc) {
 	for j, e := range i.deactivateHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.deactivateHandlers = append(i.deactivateHandlers[:j], i.deactivateHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -811,8 +792,8 @@ func (i *InputMethod) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Id = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*InputMethodContext)
 		l += 4
-		for _, h := range i.activateHandlers {
-			h.HandleInputMethodActivate(e)
+		for _, f := range i.activateHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.deactivateHandlers) == 0 {
@@ -822,8 +803,8 @@ func (i *InputMethod) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Context = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*InputMethodContext)
 		l += 4
-		for _, h := range i.deactivateHandlers {
-			h.HandleInputMethodDeactivate(e)
+		for _, f := range i.deactivateHandlers {
+			f(e)
 		}
 	}
 }

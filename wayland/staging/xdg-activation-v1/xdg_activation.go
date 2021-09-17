@@ -28,7 +28,11 @@
 
 package xdg_activation
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // Activation : interface for activating surfaces
 //
@@ -139,7 +143,7 @@ func (i *Activation) Activate(token string, surface *client.Surface) error {
 // the compositor will provide an invalid token.
 type ActivationToken struct {
 	client.BaseProxy
-	doneHandlers []ActivationTokenDoneHandler
+	doneHandlers []ActivationTokenDoneHandlerFunc
 }
 
 // NewActivationToken : an exported activation handle
@@ -316,25 +320,22 @@ func (e ActivationTokenError) String() string {
 type ActivationTokenDoneEvent struct {
 	Token string
 }
-
-type ActivationTokenDoneHandler interface {
-	HandleActivationTokenDone(ActivationTokenDoneEvent)
-}
+type ActivationTokenDoneHandlerFunc func(ActivationTokenDoneEvent)
 
 // AddDoneHandler : adds handler for ActivationTokenDoneEvent
-func (i *ActivationToken) AddDoneHandler(h ActivationTokenDoneHandler) {
-	if h == nil {
+func (i *ActivationToken) AddDoneHandler(f ActivationTokenDoneHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.doneHandlers = append(i.doneHandlers, h)
+	i.doneHandlers = append(i.doneHandlers, f)
 }
 
-func (i *ActivationToken) RemoveDoneHandler(h ActivationTokenDoneHandler) {
+func (i *ActivationToken) RemoveDoneHandler(f ActivationTokenDoneHandlerFunc) {
 	for j, e := range i.doneHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -351,8 +352,8 @@ func (i *ActivationToken) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Token = client.String(data[l : l+tokenLen])
 		l += tokenLen
-		for _, h := range i.doneHandlers {
-			h.HandleActivationTokenDone(e)
+		for _, f := range i.doneHandlers {
+			f(e)
 		}
 	}
 }

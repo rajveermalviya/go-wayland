@@ -28,6 +28,8 @@
 package xdg_decoration
 
 import (
+	"reflect"
+
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	xdg_shell "github.com/rajveermalviya/go-wayland/wayland/stable/xdg-shell"
 )
@@ -147,7 +149,7 @@ func (i *DecorationManager) GetToplevelDecoration(toplevel *xdg_shell.Toplevel) 
 // xdg_toplevel.
 type ToplevelDecoration struct {
 	client.BaseProxy
-	configureHandlers []ToplevelDecorationConfigureHandler
+	configureHandlers []ToplevelDecorationConfigureHandlerFunc
 }
 
 // NewToplevelDecoration : decoration object for a toplevel surface
@@ -332,25 +334,22 @@ func (e ToplevelDecorationMode) String() string {
 type ToplevelDecorationConfigureEvent struct {
 	Mode uint32
 }
-
-type ToplevelDecorationConfigureHandler interface {
-	HandleToplevelDecorationConfigure(ToplevelDecorationConfigureEvent)
-}
+type ToplevelDecorationConfigureHandlerFunc func(ToplevelDecorationConfigureEvent)
 
 // AddConfigureHandler : adds handler for ToplevelDecorationConfigureEvent
-func (i *ToplevelDecoration) AddConfigureHandler(h ToplevelDecorationConfigureHandler) {
-	if h == nil {
+func (i *ToplevelDecoration) AddConfigureHandler(f ToplevelDecorationConfigureHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.configureHandlers = append(i.configureHandlers, h)
+	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *ToplevelDecoration) RemoveConfigureHandler(h ToplevelDecorationConfigureHandler) {
+func (i *ToplevelDecoration) RemoveConfigureHandler(f ToplevelDecorationConfigureHandlerFunc) {
 	for j, e := range i.configureHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -365,8 +364,8 @@ func (i *ToplevelDecoration) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Mode = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.configureHandlers {
-			h.HandleToplevelDecorationConfigure(e)
+		for _, f := range i.configureHandlers {
+			f(e)
 		}
 	}
 }

@@ -28,6 +28,8 @@
 package linux_dmabuf
 
 import (
+	"reflect"
+
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	"golang.org/x/sys/unix"
 )
@@ -100,8 +102,8 @@ import (
 // interface version number is reset.
 type LinuxDmabuf struct {
 	client.BaseProxy
-	formatHandlers   []LinuxDmabufFormatHandler
-	modifierHandlers []LinuxDmabufModifierHandler
+	formatHandlers   []LinuxDmabufFormatHandlerFunc
+	modifierHandlers []LinuxDmabufModifierHandlerFunc
 }
 
 // NewLinuxDmabuf : factory for creating dmabuf-based wl_buffers
@@ -235,25 +237,22 @@ func (i *LinuxDmabuf) CreateParams() (*LinuxBufferParams, error) {
 type LinuxDmabufFormatEvent struct {
 	Format uint32
 }
-
-type LinuxDmabufFormatHandler interface {
-	HandleLinuxDmabufFormat(LinuxDmabufFormatEvent)
-}
+type LinuxDmabufFormatHandlerFunc func(LinuxDmabufFormatEvent)
 
 // AddFormatHandler : adds handler for LinuxDmabufFormatEvent
-func (i *LinuxDmabuf) AddFormatHandler(h LinuxDmabufFormatHandler) {
-	if h == nil {
+func (i *LinuxDmabuf) AddFormatHandler(f LinuxDmabufFormatHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.formatHandlers = append(i.formatHandlers, h)
+	i.formatHandlers = append(i.formatHandlers, f)
 }
 
-func (i *LinuxDmabuf) RemoveFormatHandler(h LinuxDmabufFormatHandler) {
+func (i *LinuxDmabuf) RemoveFormatHandler(f LinuxDmabufFormatHandlerFunc) {
 	for j, e := range i.formatHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.formatHandlers = append(i.formatHandlers[:j], i.formatHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -284,25 +283,22 @@ type LinuxDmabufModifierEvent struct {
 	ModifierHi uint32
 	ModifierLo uint32
 }
-
-type LinuxDmabufModifierHandler interface {
-	HandleLinuxDmabufModifier(LinuxDmabufModifierEvent)
-}
+type LinuxDmabufModifierHandlerFunc func(LinuxDmabufModifierEvent)
 
 // AddModifierHandler : adds handler for LinuxDmabufModifierEvent
-func (i *LinuxDmabuf) AddModifierHandler(h LinuxDmabufModifierHandler) {
-	if h == nil {
+func (i *LinuxDmabuf) AddModifierHandler(f LinuxDmabufModifierHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.modifierHandlers = append(i.modifierHandlers, h)
+	i.modifierHandlers = append(i.modifierHandlers, f)
 }
 
-func (i *LinuxDmabuf) RemoveModifierHandler(h LinuxDmabufModifierHandler) {
+func (i *LinuxDmabuf) RemoveModifierHandler(f LinuxDmabufModifierHandlerFunc) {
 	for j, e := range i.modifierHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.modifierHandlers = append(i.modifierHandlers[:j], i.modifierHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -317,8 +313,8 @@ func (i *LinuxDmabuf) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Format = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.formatHandlers {
-			h.HandleLinuxDmabufFormat(e)
+		for _, f := range i.formatHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.modifierHandlers) == 0 {
@@ -332,8 +328,8 @@ func (i *LinuxDmabuf) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.ModifierLo = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.modifierHandlers {
-			h.HandleLinuxDmabufModifier(e)
+		for _, f := range i.modifierHandlers {
+			f(e)
 		}
 	}
 }
@@ -356,8 +352,8 @@ func (i *LinuxDmabuf) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // be given in any order. Each plane index can be set only once.
 type LinuxBufferParams struct {
 	client.BaseProxy
-	createdHandlers []LinuxBufferParamsCreatedHandler
-	failedHandlers  []LinuxBufferParamsFailedHandler
+	createdHandlers []LinuxBufferParamsCreatedHandlerFunc
+	failedHandlers  []LinuxBufferParamsFailedHandlerFunc
 }
 
 // NewLinuxBufferParams : parameters for creating a dmabuf-based wl_buffer
@@ -717,25 +713,22 @@ func (e LinuxBufferParamsFlags) String() string {
 type LinuxBufferParamsCreatedEvent struct {
 	Buffer *client.Buffer
 }
-
-type LinuxBufferParamsCreatedHandler interface {
-	HandleLinuxBufferParamsCreated(LinuxBufferParamsCreatedEvent)
-}
+type LinuxBufferParamsCreatedHandlerFunc func(LinuxBufferParamsCreatedEvent)
 
 // AddCreatedHandler : adds handler for LinuxBufferParamsCreatedEvent
-func (i *LinuxBufferParams) AddCreatedHandler(h LinuxBufferParamsCreatedHandler) {
-	if h == nil {
+func (i *LinuxBufferParams) AddCreatedHandler(f LinuxBufferParamsCreatedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.createdHandlers = append(i.createdHandlers, h)
+	i.createdHandlers = append(i.createdHandlers, f)
 }
 
-func (i *LinuxBufferParams) RemoveCreatedHandler(h LinuxBufferParamsCreatedHandler) {
+func (i *LinuxBufferParams) RemoveCreatedHandler(f LinuxBufferParamsCreatedHandlerFunc) {
 	for j, e := range i.createdHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.createdHandlers = append(i.createdHandlers[:j], i.createdHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -749,24 +742,22 @@ func (i *LinuxBufferParams) RemoveCreatedHandler(h LinuxBufferParamsCreatedHandl
 // Upon receiving this event, the client should destroy the
 // zlinux_buffer_params object.
 type LinuxBufferParamsFailedEvent struct{}
-type LinuxBufferParamsFailedHandler interface {
-	HandleLinuxBufferParamsFailed(LinuxBufferParamsFailedEvent)
-}
+type LinuxBufferParamsFailedHandlerFunc func(LinuxBufferParamsFailedEvent)
 
 // AddFailedHandler : adds handler for LinuxBufferParamsFailedEvent
-func (i *LinuxBufferParams) AddFailedHandler(h LinuxBufferParamsFailedHandler) {
-	if h == nil {
+func (i *LinuxBufferParams) AddFailedHandler(f LinuxBufferParamsFailedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.failedHandlers = append(i.failedHandlers, h)
+	i.failedHandlers = append(i.failedHandlers, f)
 }
 
-func (i *LinuxBufferParams) RemoveFailedHandler(h LinuxBufferParamsFailedHandler) {
+func (i *LinuxBufferParams) RemoveFailedHandler(f LinuxBufferParamsFailedHandlerFunc) {
 	for j, e := range i.failedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.failedHandlers = append(i.failedHandlers[:j], i.failedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -781,16 +772,16 @@ func (i *LinuxBufferParams) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Buffer = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Buffer)
 		l += 4
-		for _, h := range i.createdHandlers {
-			h.HandleLinuxBufferParamsCreated(e)
+		for _, f := range i.createdHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.failedHandlers) == 0 {
 			return
 		}
 		var e LinuxBufferParamsFailedEvent
-		for _, h := range i.failedHandlers {
-			h.HandleLinuxBufferParamsFailed(e)
+		for _, f := range i.failedHandlers {
+			f(e)
 		}
 	}
 }

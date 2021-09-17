@@ -28,7 +28,11 @@
 
 package pointer_constraints
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // PointerConstraints : constrain the movement of a pointer
 //
@@ -310,8 +314,8 @@ func (e PointerConstraintsLifetime) String() string {
 // destroyed.
 type LockedPointer struct {
 	client.BaseProxy
-	lockedHandlers   []LockedPointerLockedHandler
-	unlockedHandlers []LockedPointerUnlockedHandler
+	lockedHandlers   []LockedPointerLockedHandlerFunc
+	unlockedHandlers []LockedPointerUnlockedHandlerFunc
 }
 
 // NewLockedPointer : receive relative pointer motion events
@@ -432,24 +436,22 @@ func (i *LockedPointer) SetRegion(region *client.Region) error {
 //
 // Notification that the pointer lock of the seat's pointer is activated.
 type LockedPointerLockedEvent struct{}
-type LockedPointerLockedHandler interface {
-	HandleLockedPointerLocked(LockedPointerLockedEvent)
-}
+type LockedPointerLockedHandlerFunc func(LockedPointerLockedEvent)
 
 // AddLockedHandler : adds handler for LockedPointerLockedEvent
-func (i *LockedPointer) AddLockedHandler(h LockedPointerLockedHandler) {
-	if h == nil {
+func (i *LockedPointer) AddLockedHandler(f LockedPointerLockedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.lockedHandlers = append(i.lockedHandlers, h)
+	i.lockedHandlers = append(i.lockedHandlers, f)
 }
 
-func (i *LockedPointer) RemoveLockedHandler(h LockedPointerLockedHandler) {
+func (i *LockedPointer) RemoveLockedHandler(f LockedPointerLockedHandlerFunc) {
 	for j, e := range i.lockedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.lockedHandlers = append(i.lockedHandlers[:j], i.lockedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -463,24 +465,22 @@ func (i *LockedPointer) RemoveLockedHandler(h LockedPointerLockedHandler) {
 // wp_pointer_constraints.lifetime) this pointer lock may again
 // reactivate in the future.
 type LockedPointerUnlockedEvent struct{}
-type LockedPointerUnlockedHandler interface {
-	HandleLockedPointerUnlocked(LockedPointerUnlockedEvent)
-}
+type LockedPointerUnlockedHandlerFunc func(LockedPointerUnlockedEvent)
 
 // AddUnlockedHandler : adds handler for LockedPointerUnlockedEvent
-func (i *LockedPointer) AddUnlockedHandler(h LockedPointerUnlockedHandler) {
-	if h == nil {
+func (i *LockedPointer) AddUnlockedHandler(f LockedPointerUnlockedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.unlockedHandlers = append(i.unlockedHandlers, h)
+	i.unlockedHandlers = append(i.unlockedHandlers, f)
 }
 
-func (i *LockedPointer) RemoveUnlockedHandler(h LockedPointerUnlockedHandler) {
+func (i *LockedPointer) RemoveUnlockedHandler(f LockedPointerUnlockedHandlerFunc) {
 	for j, e := range i.unlockedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.unlockedHandlers = append(i.unlockedHandlers[:j], i.unlockedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -492,16 +492,16 @@ func (i *LockedPointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 			return
 		}
 		var e LockedPointerLockedEvent
-		for _, h := range i.lockedHandlers {
-			h.HandleLockedPointerLocked(e)
+		for _, f := range i.lockedHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.unlockedHandlers) == 0 {
 			return
 		}
 		var e LockedPointerUnlockedEvent
-		for _, h := range i.unlockedHandlers {
-			h.HandleLockedPointerUnlocked(e)
+		for _, f := range i.unlockedHandlers {
+			f(e)
 		}
 	}
 }
@@ -526,8 +526,8 @@ func (i *LockedPointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // be destroyed.
 type ConfinedPointer struct {
 	client.BaseProxy
-	confinedHandlers   []ConfinedPointerConfinedHandler
-	unconfinedHandlers []ConfinedPointerUnconfinedHandler
+	confinedHandlers   []ConfinedPointerConfinedHandlerFunc
+	unconfinedHandlers []ConfinedPointerUnconfinedHandlerFunc
 }
 
 // NewConfinedPointer : confined pointer object
@@ -618,24 +618,22 @@ func (i *ConfinedPointer) SetRegion(region *client.Region) error {
 // Notification that the pointer confinement of the seat's pointer is
 // activated.
 type ConfinedPointerConfinedEvent struct{}
-type ConfinedPointerConfinedHandler interface {
-	HandleConfinedPointerConfined(ConfinedPointerConfinedEvent)
-}
+type ConfinedPointerConfinedHandlerFunc func(ConfinedPointerConfinedEvent)
 
 // AddConfinedHandler : adds handler for ConfinedPointerConfinedEvent
-func (i *ConfinedPointer) AddConfinedHandler(h ConfinedPointerConfinedHandler) {
-	if h == nil {
+func (i *ConfinedPointer) AddConfinedHandler(f ConfinedPointerConfinedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.confinedHandlers = append(i.confinedHandlers, h)
+	i.confinedHandlers = append(i.confinedHandlers, f)
 }
 
-func (i *ConfinedPointer) RemoveConfinedHandler(h ConfinedPointerConfinedHandler) {
+func (i *ConfinedPointer) RemoveConfinedHandler(f ConfinedPointerConfinedHandlerFunc) {
 	for j, e := range i.confinedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.confinedHandlers = append(i.confinedHandlers[:j], i.confinedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -649,24 +647,22 @@ func (i *ConfinedPointer) RemoveConfinedHandler(h ConfinedPointerConfinedHandler
 // wp_pointer_constraints.lifetime) this pointer confinement may again
 // reactivate in the future.
 type ConfinedPointerUnconfinedEvent struct{}
-type ConfinedPointerUnconfinedHandler interface {
-	HandleConfinedPointerUnconfined(ConfinedPointerUnconfinedEvent)
-}
+type ConfinedPointerUnconfinedHandlerFunc func(ConfinedPointerUnconfinedEvent)
 
 // AddUnconfinedHandler : adds handler for ConfinedPointerUnconfinedEvent
-func (i *ConfinedPointer) AddUnconfinedHandler(h ConfinedPointerUnconfinedHandler) {
-	if h == nil {
+func (i *ConfinedPointer) AddUnconfinedHandler(f ConfinedPointerUnconfinedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.unconfinedHandlers = append(i.unconfinedHandlers, h)
+	i.unconfinedHandlers = append(i.unconfinedHandlers, f)
 }
 
-func (i *ConfinedPointer) RemoveUnconfinedHandler(h ConfinedPointerUnconfinedHandler) {
+func (i *ConfinedPointer) RemoveUnconfinedHandler(f ConfinedPointerUnconfinedHandlerFunc) {
 	for j, e := range i.unconfinedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.unconfinedHandlers = append(i.unconfinedHandlers[:j], i.unconfinedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -678,16 +674,16 @@ func (i *ConfinedPointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 			return
 		}
 		var e ConfinedPointerConfinedEvent
-		for _, h := range i.confinedHandlers {
-			h.HandleConfinedPointerConfined(e)
+		for _, f := range i.confinedHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.unconfinedHandlers) == 0 {
 			return
 		}
 		var e ConfinedPointerUnconfinedEvent
-		for _, h := range i.unconfinedHandlers {
-			h.HandleConfinedPointerUnconfined(e)
+		for _, f := range i.unconfinedHandlers {
+			f(e)
 		}
 	}
 }

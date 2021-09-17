@@ -27,7 +27,11 @@
 
 package xdg_foreign
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // Exporter : interface for exporting surfaces
 //
@@ -171,7 +175,7 @@ func (i *Importer) Import(handle string) (*Imported, error) {
 // importer may have established using xdg_imported.
 type Exported struct {
 	client.BaseProxy
-	handleHandlers []ExportedHandleHandler
+	handleHandlers []ExportedHandleHandlerFunc
 }
 
 // NewExported : an exported surface handle
@@ -215,25 +219,22 @@ func (i *Exported) Destroy() error {
 type ExportedHandleEvent struct {
 	Handle string
 }
-
-type ExportedHandleHandler interface {
-	HandleExportedHandle(ExportedHandleEvent)
-}
+type ExportedHandleHandlerFunc func(ExportedHandleEvent)
 
 // AddHandleHandler : adds handler for ExportedHandleEvent
-func (i *Exported) AddHandleHandler(h ExportedHandleHandler) {
-	if h == nil {
+func (i *Exported) AddHandleHandler(f ExportedHandleHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.handleHandlers = append(i.handleHandlers, h)
+	i.handleHandlers = append(i.handleHandlers, f)
 }
 
-func (i *Exported) RemoveHandleHandler(h ExportedHandleHandler) {
+func (i *Exported) RemoveHandleHandler(f ExportedHandleHandlerFunc) {
 	for j, e := range i.handleHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.handleHandlers = append(i.handleHandlers[:j], i.handleHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -250,8 +251,8 @@ func (i *Exported) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Handle = client.String(data[l : l+handleLen])
 		l += handleLen
-		for _, h := range i.handleHandlers {
-			h.HandleExportedHandle(e)
+		for _, f := range i.handleHandlers {
+			f(e)
 		}
 	}
 }
@@ -263,7 +264,7 @@ func (i *Exported) Dispatch(opcode uint16, fd uintptr, data []byte) {
 // relationships between its own surfaces and the imported surface.
 type Imported struct {
 	client.BaseProxy
-	destroyedHandlers []ImportedDestroyedHandler
+	destroyedHandlers []ImportedDestroyedHandlerFunc
 }
 
 // NewImported : an imported surface handle
@@ -327,24 +328,22 @@ func (i *Imported) SetParentOf(surface *client.Surface) error {
 // example if the exported surface or the exported surface handle has been
 // destroyed, if the handle used for importing was invalid.
 type ImportedDestroyedEvent struct{}
-type ImportedDestroyedHandler interface {
-	HandleImportedDestroyed(ImportedDestroyedEvent)
-}
+type ImportedDestroyedHandlerFunc func(ImportedDestroyedEvent)
 
 // AddDestroyedHandler : adds handler for ImportedDestroyedEvent
-func (i *Imported) AddDestroyedHandler(h ImportedDestroyedHandler) {
-	if h == nil {
+func (i *Imported) AddDestroyedHandler(f ImportedDestroyedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.destroyedHandlers = append(i.destroyedHandlers, h)
+	i.destroyedHandlers = append(i.destroyedHandlers, f)
 }
 
-func (i *Imported) RemoveDestroyedHandler(h ImportedDestroyedHandler) {
+func (i *Imported) RemoveDestroyedHandler(f ImportedDestroyedHandlerFunc) {
 	for j, e := range i.destroyedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.destroyedHandlers = append(i.destroyedHandlers[:j], i.destroyedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -356,8 +355,8 @@ func (i *Imported) Dispatch(opcode uint16, fd uintptr, data []byte) {
 			return
 		}
 		var e ImportedDestroyedEvent
-		for _, h := range i.destroyedHandlers {
-			h.HandleImportedDestroyed(e)
+		for _, f := range i.destroyedHandlers {
+			f(e)
 		}
 	}
 }

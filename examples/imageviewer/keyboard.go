@@ -13,13 +13,13 @@ func (app *appState) attachKeyboard() {
 	}
 	app.keyboard = keyboard
 
-	keyboard.AddKeyHandler(app)
+	keyboard.AddKeyHandler(app.HandleKeyboardKey)
 
 	logPrintln("keyboard interface registered")
 }
 
 func (app *appState) releaseKeyboard() {
-	app.keyboard.RemoveKeyHandler(app)
+	app.keyboard.RemoveKeyHandler(app.HandleKeyboardKey)
 
 	if err := app.keyboard.Release(); err != nil {
 		logPrintln("unable to release keyboard interface")

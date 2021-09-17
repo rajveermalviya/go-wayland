@@ -31,6 +31,8 @@
 package wayland_drm
 
 import (
+	"reflect"
+
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	"golang.org/x/sys/unix"
 )
@@ -38,10 +40,10 @@ import (
 // Drm :
 type Drm struct {
 	client.BaseProxy
-	deviceHandlers        []DrmDeviceHandler
-	formatHandlers        []DrmFormatHandler
-	authenticatedHandlers []DrmAuthenticatedHandler
-	capabilitiesHandlers  []DrmCapabilitiesHandler
+	deviceHandlers        []DrmDeviceHandlerFunc
+	formatHandlers        []DrmFormatHandlerFunc
+	authenticatedHandlers []DrmAuthenticatedHandlerFunc
+	capabilitiesHandlers  []DrmCapabilitiesHandlerFunc
 }
 
 // NewDrm :
@@ -580,25 +582,22 @@ func (e DrmCapability) String() string {
 type DrmDeviceEvent struct {
 	Name string
 }
-
-type DrmDeviceHandler interface {
-	HandleDrmDevice(DrmDeviceEvent)
-}
+type DrmDeviceHandlerFunc func(DrmDeviceEvent)
 
 // AddDeviceHandler : adds handler for DrmDeviceEvent
-func (i *Drm) AddDeviceHandler(h DrmDeviceHandler) {
-	if h == nil {
+func (i *Drm) AddDeviceHandler(f DrmDeviceHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.deviceHandlers = append(i.deviceHandlers, h)
+	i.deviceHandlers = append(i.deviceHandlers, f)
 }
 
-func (i *Drm) RemoveDeviceHandler(h DrmDeviceHandler) {
+func (i *Drm) RemoveDeviceHandler(f DrmDeviceHandlerFunc) {
 	for j, e := range i.deviceHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.deviceHandlers = append(i.deviceHandlers[:j], i.deviceHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -607,49 +606,44 @@ func (i *Drm) RemoveDeviceHandler(h DrmDeviceHandler) {
 type DrmFormatEvent struct {
 	Format uint32
 }
-
-type DrmFormatHandler interface {
-	HandleDrmFormat(DrmFormatEvent)
-}
+type DrmFormatHandlerFunc func(DrmFormatEvent)
 
 // AddFormatHandler : adds handler for DrmFormatEvent
-func (i *Drm) AddFormatHandler(h DrmFormatHandler) {
-	if h == nil {
+func (i *Drm) AddFormatHandler(f DrmFormatHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.formatHandlers = append(i.formatHandlers, h)
+	i.formatHandlers = append(i.formatHandlers, f)
 }
 
-func (i *Drm) RemoveFormatHandler(h DrmFormatHandler) {
+func (i *Drm) RemoveFormatHandler(f DrmFormatHandlerFunc) {
 	for j, e := range i.formatHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.formatHandlers = append(i.formatHandlers[:j], i.formatHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
 
 // DrmAuthenticatedEvent :
 type DrmAuthenticatedEvent struct{}
-type DrmAuthenticatedHandler interface {
-	HandleDrmAuthenticated(DrmAuthenticatedEvent)
-}
+type DrmAuthenticatedHandlerFunc func(DrmAuthenticatedEvent)
 
 // AddAuthenticatedHandler : adds handler for DrmAuthenticatedEvent
-func (i *Drm) AddAuthenticatedHandler(h DrmAuthenticatedHandler) {
-	if h == nil {
+func (i *Drm) AddAuthenticatedHandler(f DrmAuthenticatedHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.authenticatedHandlers = append(i.authenticatedHandlers, h)
+	i.authenticatedHandlers = append(i.authenticatedHandlers, f)
 }
 
-func (i *Drm) RemoveAuthenticatedHandler(h DrmAuthenticatedHandler) {
+func (i *Drm) RemoveAuthenticatedHandler(f DrmAuthenticatedHandlerFunc) {
 	for j, e := range i.authenticatedHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.authenticatedHandlers = append(i.authenticatedHandlers[:j], i.authenticatedHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -658,25 +652,22 @@ func (i *Drm) RemoveAuthenticatedHandler(h DrmAuthenticatedHandler) {
 type DrmCapabilitiesEvent struct {
 	Value uint32
 }
-
-type DrmCapabilitiesHandler interface {
-	HandleDrmCapabilities(DrmCapabilitiesEvent)
-}
+type DrmCapabilitiesHandlerFunc func(DrmCapabilitiesEvent)
 
 // AddCapabilitiesHandler : adds handler for DrmCapabilitiesEvent
-func (i *Drm) AddCapabilitiesHandler(h DrmCapabilitiesHandler) {
-	if h == nil {
+func (i *Drm) AddCapabilitiesHandler(f DrmCapabilitiesHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.capabilitiesHandlers = append(i.capabilitiesHandlers, h)
+	i.capabilitiesHandlers = append(i.capabilitiesHandlers, f)
 }
 
-func (i *Drm) RemoveCapabilitiesHandler(h DrmCapabilitiesHandler) {
+func (i *Drm) RemoveCapabilitiesHandler(f DrmCapabilitiesHandlerFunc) {
 	for j, e := range i.capabilitiesHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.capabilitiesHandlers = append(i.capabilitiesHandlers[:j], i.capabilitiesHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -693,8 +684,8 @@ func (i *Drm) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Name = client.String(data[l : l+nameLen])
 		l += nameLen
-		for _, h := range i.deviceHandlers {
-			h.HandleDrmDevice(e)
+		for _, f := range i.deviceHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.formatHandlers) == 0 {
@@ -704,16 +695,16 @@ func (i *Drm) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Format = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.formatHandlers {
-			h.HandleDrmFormat(e)
+		for _, f := range i.formatHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.authenticatedHandlers) == 0 {
 			return
 		}
 		var e DrmAuthenticatedEvent
-		for _, h := range i.authenticatedHandlers {
-			h.HandleDrmAuthenticated(e)
+		for _, f := range i.authenticatedHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.capabilitiesHandlers) == 0 {
@@ -723,8 +714,8 @@ func (i *Drm) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Value = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.capabilitiesHandlers {
-			h.HandleDrmCapabilities(e)
+		for _, f := range i.capabilitiesHandlers {
+			f(e)
 		}
 	}
 }

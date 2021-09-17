@@ -27,7 +27,11 @@
 
 package input_timestamps
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // InputTimestampsManager : context object for high-resolution input timestamps
 //
@@ -164,7 +168,7 @@ func (i *InputTimestampsManager) GetTouchTimestamps(touch *client.Touch) (*Input
 // zwp_input_timestamps_manager_v1 request used to create this object.
 type InputTimestamps struct {
 	client.BaseProxy
-	timestampHandlers []InputTimestampsTimestampHandler
+	timestampHandlers []InputTimestampsTimestampHandlerFunc
 }
 
 // NewInputTimestamps : context object for input timestamps
@@ -219,25 +223,22 @@ type InputTimestampsTimestampEvent struct {
 	TvSecLo uint32
 	TvNsec  uint32
 }
-
-type InputTimestampsTimestampHandler interface {
-	HandleInputTimestampsTimestamp(InputTimestampsTimestampEvent)
-}
+type InputTimestampsTimestampHandlerFunc func(InputTimestampsTimestampEvent)
 
 // AddTimestampHandler : adds handler for InputTimestampsTimestampEvent
-func (i *InputTimestamps) AddTimestampHandler(h InputTimestampsTimestampHandler) {
-	if h == nil {
+func (i *InputTimestamps) AddTimestampHandler(f InputTimestampsTimestampHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.timestampHandlers = append(i.timestampHandlers, h)
+	i.timestampHandlers = append(i.timestampHandlers, f)
 }
 
-func (i *InputTimestamps) RemoveTimestampHandler(h InputTimestampsTimestampHandler) {
+func (i *InputTimestamps) RemoveTimestampHandler(f InputTimestampsTimestampHandlerFunc) {
 	for j, e := range i.timestampHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.timestampHandlers = append(i.timestampHandlers[:j], i.timestampHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -256,8 +257,8 @@ func (i *InputTimestamps) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.TvNsec = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.timestampHandlers {
-			h.HandleInputTimestampsTimestamp(e)
+		for _, f := range i.timestampHandlers {
+			f(e)
 		}
 	}
 }

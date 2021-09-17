@@ -27,7 +27,11 @@
 
 package xdg_output
 
-import "github.com/rajveermalviya/go-wayland/wayland/client"
+import (
+	"reflect"
+
+	"github.com/rajveermalviya/go-wayland/wayland/client"
+)
 
 // OutputManager : manage xdg_output objects
 //
@@ -101,11 +105,11 @@ func (i *OutputManager) GetXdgOutput(output *client.Output) (*Output, error) {
 // properties to be seen as atomic, even if they happen via multiple events.
 type Output struct {
 	client.BaseProxy
-	logicalPositionHandlers []OutputLogicalPositionHandler
-	logicalSizeHandlers     []OutputLogicalSizeHandler
-	doneHandlers            []OutputDoneHandler
-	nameHandlers            []OutputNameHandler
-	descriptionHandlers     []OutputDescriptionHandler
+	logicalPositionHandlers []OutputLogicalPositionHandlerFunc
+	logicalSizeHandlers     []OutputLogicalSizeHandlerFunc
+	doneHandlers            []OutputDoneHandlerFunc
+	nameHandlers            []OutputNameHandlerFunc
+	descriptionHandlers     []OutputDescriptionHandlerFunc
 }
 
 // NewOutput : compositor logical output region
@@ -156,25 +160,22 @@ type OutputLogicalPositionEvent struct {
 	X int32
 	Y int32
 }
-
-type OutputLogicalPositionHandler interface {
-	HandleOutputLogicalPosition(OutputLogicalPositionEvent)
-}
+type OutputLogicalPositionHandlerFunc func(OutputLogicalPositionEvent)
 
 // AddLogicalPositionHandler : adds handler for OutputLogicalPositionEvent
-func (i *Output) AddLogicalPositionHandler(h OutputLogicalPositionHandler) {
-	if h == nil {
+func (i *Output) AddLogicalPositionHandler(f OutputLogicalPositionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.logicalPositionHandlers = append(i.logicalPositionHandlers, h)
+	i.logicalPositionHandlers = append(i.logicalPositionHandlers, f)
 }
 
-func (i *Output) RemoveLogicalPositionHandler(h OutputLogicalPositionHandler) {
+func (i *Output) RemoveLogicalPositionHandler(f OutputLogicalPositionHandlerFunc) {
 	for j, e := range i.logicalPositionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.logicalPositionHandlers = append(i.logicalPositionHandlers[:j], i.logicalPositionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -219,25 +220,22 @@ type OutputLogicalSizeEvent struct {
 	Width  int32
 	Height int32
 }
-
-type OutputLogicalSizeHandler interface {
-	HandleOutputLogicalSize(OutputLogicalSizeEvent)
-}
+type OutputLogicalSizeHandlerFunc func(OutputLogicalSizeEvent)
 
 // AddLogicalSizeHandler : adds handler for OutputLogicalSizeEvent
-func (i *Output) AddLogicalSizeHandler(h OutputLogicalSizeHandler) {
-	if h == nil {
+func (i *Output) AddLogicalSizeHandler(f OutputLogicalSizeHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.logicalSizeHandlers = append(i.logicalSizeHandlers, h)
+	i.logicalSizeHandlers = append(i.logicalSizeHandlers, f)
 }
 
-func (i *Output) RemoveLogicalSizeHandler(h OutputLogicalSizeHandler) {
+func (i *Output) RemoveLogicalSizeHandler(f OutputLogicalSizeHandlerFunc) {
 	for j, e := range i.logicalSizeHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.logicalSizeHandlers = append(i.logicalSizeHandlers[:j], i.logicalSizeHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -254,24 +252,22 @@ func (i *Output) RemoveLogicalSizeHandler(h OutputLogicalSizeHandler) {
 // are not required to send it anymore and must send wl_output.done
 // instead.
 type OutputDoneEvent struct{}
-type OutputDoneHandler interface {
-	HandleOutputDone(OutputDoneEvent)
-}
+type OutputDoneHandlerFunc func(OutputDoneEvent)
 
 // AddDoneHandler : adds handler for OutputDoneEvent
-func (i *Output) AddDoneHandler(h OutputDoneHandler) {
-	if h == nil {
+func (i *Output) AddDoneHandler(f OutputDoneHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.doneHandlers = append(i.doneHandlers, h)
+	i.doneHandlers = append(i.doneHandlers, f)
 }
 
-func (i *Output) RemoveDoneHandler(h OutputDoneHandler) {
+func (i *Output) RemoveDoneHandler(f OutputDoneHandlerFunc) {
 	for j, e := range i.doneHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -299,25 +295,22 @@ func (i *Output) RemoveDoneHandler(h OutputDoneHandler) {
 type OutputNameEvent struct {
 	Name string
 }
-
-type OutputNameHandler interface {
-	HandleOutputName(OutputNameEvent)
-}
+type OutputNameHandlerFunc func(OutputNameEvent)
 
 // AddNameHandler : adds handler for OutputNameEvent
-func (i *Output) AddNameHandler(h OutputNameHandler) {
-	if h == nil {
+func (i *Output) AddNameHandler(f OutputNameHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.nameHandlers = append(i.nameHandlers, h)
+	i.nameHandlers = append(i.nameHandlers, f)
 }
 
-func (i *Output) RemoveNameHandler(h OutputNameHandler) {
+func (i *Output) RemoveNameHandler(f OutputNameHandlerFunc) {
 	for j, e := range i.nameHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.nameHandlers = append(i.nameHandlers[:j], i.nameHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -342,25 +335,22 @@ func (i *Output) RemoveNameHandler(h OutputNameHandler) {
 type OutputDescriptionEvent struct {
 	Description string
 }
-
-type OutputDescriptionHandler interface {
-	HandleOutputDescription(OutputDescriptionEvent)
-}
+type OutputDescriptionHandlerFunc func(OutputDescriptionEvent)
 
 // AddDescriptionHandler : adds handler for OutputDescriptionEvent
-func (i *Output) AddDescriptionHandler(h OutputDescriptionHandler) {
-	if h == nil {
+func (i *Output) AddDescriptionHandler(f OutputDescriptionHandlerFunc) {
+	if f == nil {
 		return
 	}
 
-	i.descriptionHandlers = append(i.descriptionHandlers, h)
+	i.descriptionHandlers = append(i.descriptionHandlers, f)
 }
 
-func (i *Output) RemoveDescriptionHandler(h OutputDescriptionHandler) {
+func (i *Output) RemoveDescriptionHandler(f OutputDescriptionHandlerFunc) {
 	for j, e := range i.descriptionHandlers {
-		if e == h {
+		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
 			i.descriptionHandlers = append(i.descriptionHandlers[:j], i.descriptionHandlers[j+1:]...)
-			break
+			return
 		}
 	}
 }
@@ -377,8 +367,8 @@ func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Y = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.logicalPositionHandlers {
-			h.HandleOutputLogicalPosition(e)
+		for _, f := range i.logicalPositionHandlers {
+			f(e)
 		}
 	case 1:
 		if len(i.logicalSizeHandlers) == 0 {
@@ -390,16 +380,16 @@ func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Height = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, h := range i.logicalSizeHandlers {
-			h.HandleOutputLogicalSize(e)
+		for _, f := range i.logicalSizeHandlers {
+			f(e)
 		}
 	case 2:
 		if len(i.doneHandlers) == 0 {
 			return
 		}
 		var e OutputDoneEvent
-		for _, h := range i.doneHandlers {
-			h.HandleOutputDone(e)
+		for _, f := range i.doneHandlers {
+			f(e)
 		}
 	case 3:
 		if len(i.nameHandlers) == 0 {
@@ -411,8 +401,8 @@ func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Name = client.String(data[l : l+nameLen])
 		l += nameLen
-		for _, h := range i.nameHandlers {
-			h.HandleOutputName(e)
+		for _, f := range i.nameHandlers {
+			f(e)
 		}
 	case 4:
 		if len(i.descriptionHandlers) == 0 {
@@ -424,8 +414,8 @@ func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Description = client.String(data[l : l+descriptionLen])
 		l += descriptionLen
-		for _, h := range i.descriptionHandlers {
-			h.HandleOutputDescription(e)
+		for _, f := range i.descriptionHandlers {
+			f(e)
 		}
 	}
 }
