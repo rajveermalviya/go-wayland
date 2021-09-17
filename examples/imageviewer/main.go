@@ -152,7 +152,7 @@ func (app *appState) initWindow() {
 		log.Fatalf("unable to set toplevel title: %v", err2)
 	}
 	// Set appID
-	if err2 := xdgTopLevel.SetAppID(app.appID); err2 != nil {
+	if err2 := xdgTopLevel.SetAppId(app.appID); err2 != nil {
 		log.Fatalf("unable to set toplevel appID: %v", err2)
 	}
 	// Commit the state changes (title & appID) to the server

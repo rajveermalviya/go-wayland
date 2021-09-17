@@ -1,5 +1,5 @@
 module github.com/rajveermalviya/go-wayland/wayland
 
-go 1.16
+go 1.17
 
-require golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
+require golang.org/x/sys v0.0.0-20210915083310-ed5796bab164

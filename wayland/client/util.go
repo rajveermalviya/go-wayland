@@ -15,3 +15,10 @@ func fixedFromfloat64(d float64) int32 {
 	u_i := int64(math.Float64bits(u_d))
 	return int32(u_i)
 }
+
+func PaddedLen(l int) int {
+	if (l & 0x3) != 0 {
+		return l + (4 - (l & 0x3))
+	}
+	return l
+}

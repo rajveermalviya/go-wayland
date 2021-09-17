@@ -740,7 +740,6 @@ func toCamel(s string) string {
 	s = strings.TrimPrefix(s, prefix)
 	s = strings.TrimSuffix(s, suffix)
 	s = strcase.ToCamel(s)
-	s = strings.ReplaceAll(s, "Id", "ID")
 	return s
 }
 
@@ -748,13 +747,11 @@ func toCamel(s string) string {
 func toCamelPrefix(s string, prefix string) string {
 	s = strings.TrimPrefix(s, prefix)
 	s = strcase.ToCamel(s)
-	s = strings.ReplaceAll(s, "Id", "ID")
 	return s
 }
 
 func toLowerCamel(s string) string {
 	s = strcase.ToLowerCamel(s)
-	s = strings.ReplaceAll(s, "Id", "ID")
 	return s
 }
 

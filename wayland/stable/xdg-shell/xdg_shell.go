@@ -1342,7 +1342,7 @@ func (i *Toplevel) SetTitle(title string) error {
 	return err
 }
 
-// SetAppID : set application ID
+// SetAppId : set application ID
 //
 // Set an application identifier for the surface.
 //
@@ -1368,18 +1368,18 @@ func (i *Toplevel) SetTitle(title string) error {
 //
 // [0] http://standards.freedesktop.org/desktop-entry-spec/
 //
-func (i *Toplevel) SetAppID(appID string) error {
+func (i *Toplevel) SetAppId(appId string) error {
 	const opcode = 3
-	appIDLen := client.PaddedLen(len(appID) + 1)
-	rLen := 8 + (4 + appIDLen)
+	appIdLen := client.PaddedLen(len(appId) + 1)
+	rLen := 8 + (4 + appIdLen)
 	r := make([]byte, rLen)
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	client.PutString(r[l:l+(4+appIDLen)], appID, appIDLen)
-	l += (4 + appIDLen)
+	client.PutString(r[l:l+(4+appIdLen)], appId, appIdLen)
+	l += (4 + appIdLen)
 	err := i.Context().WriteMsg(r, nil)
 	return err
 }

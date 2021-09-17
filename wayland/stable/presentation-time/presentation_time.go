@@ -55,7 +55,7 @@ import "github.com/rajveermalviya/go-wayland/wayland/client"
 // when the compositor misses its target vertical blanking period.
 type Presentation struct {
 	client.BaseProxy
-	clockIDHandlers []PresentationClockIDHandler
+	clockIdHandlers []PresentationClockIdHandler
 }
 
 // NewPresentation : timed presentation related wl_surface requests
@@ -177,7 +177,7 @@ func (e PresentationError) String() string {
 	return e.Name() + "=" + e.Value()
 }
 
-// PresentationClockIDEvent : clock ID for timestamps
+// PresentationClockIdEvent : clock ID for timestamps
 //
 // This event tells the client in which clock domain the
 // compositor interprets the timestamps used by the presentation
@@ -208,27 +208,27 @@ func (e PresentationError) String() string {
 // irrelevant. Precision of one millisecond or better is
 // recommended. Clients must be able to query the current clock
 // value directly, not by asking the compositor.
-type PresentationClockIDEvent struct {
-	ClkID uint32
+type PresentationClockIdEvent struct {
+	ClkId uint32
 }
 
-type PresentationClockIDHandler interface {
-	HandlePresentationClockID(PresentationClockIDEvent)
+type PresentationClockIdHandler interface {
+	HandlePresentationClockId(PresentationClockIdEvent)
 }
 
-// AddClockIDHandler : adds handler for PresentationClockIDEvent
-func (i *Presentation) AddClockIDHandler(h PresentationClockIDHandler) {
+// AddClockIdHandler : adds handler for PresentationClockIdEvent
+func (i *Presentation) AddClockIdHandler(h PresentationClockIdHandler) {
 	if h == nil {
 		return
 	}
 
-	i.clockIDHandlers = append(i.clockIDHandlers, h)
+	i.clockIdHandlers = append(i.clockIdHandlers, h)
 }
 
-func (i *Presentation) RemoveClockIDHandler(h PresentationClockIDHandler) {
-	for j, e := range i.clockIDHandlers {
+func (i *Presentation) RemoveClockIdHandler(h PresentationClockIdHandler) {
+	for j, e := range i.clockIdHandlers {
 		if e == h {
-			i.clockIDHandlers = append(i.clockIDHandlers[:j], i.clockIDHandlers[j+1:]...)
+			i.clockIdHandlers = append(i.clockIdHandlers[:j], i.clockIdHandlers[j+1:]...)
 			break
 		}
 	}
@@ -237,15 +237,15 @@ func (i *Presentation) RemoveClockIDHandler(h PresentationClockIDHandler) {
 func (i *Presentation) Dispatch(opcode uint16, fd uintptr, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.clockIDHandlers) == 0 {
+		if len(i.clockIdHandlers) == 0 {
 			return
 		}
-		var e PresentationClockIDEvent
+		var e PresentationClockIdEvent
 		l := 0
-		e.ClkID = client.Uint32(data[l : l+4])
+		e.ClkId = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.clockIDHandlers {
-			h.HandlePresentationClockID(e)
+		for _, h := range i.clockIdHandlers {
+			h.HandlePresentationClockId(e)
 		}
 	}
 }

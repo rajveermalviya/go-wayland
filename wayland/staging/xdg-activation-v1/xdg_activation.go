@@ -192,26 +192,26 @@ func (i *ActivationToken) SetSerial(serial uint32, seat *client.Seat) error {
 	return err
 }
 
-// SetAppID : specifies the application being activated
+// SetAppId : specifies the application being activated
 //
 // The requesting client can specify an app_id to associate the token
 // being created with it.
 //
 // Must be sent before commit. This information is optional.
 //
-//  appID: the application id of the client being activated.
-func (i *ActivationToken) SetAppID(appID string) error {
+//  appId: the application id of the client being activated.
+func (i *ActivationToken) SetAppId(appId string) error {
 	const opcode = 1
-	appIDLen := client.PaddedLen(len(appID) + 1)
-	rLen := 8 + (4 + appIDLen)
+	appIdLen := client.PaddedLen(len(appId) + 1)
+	rLen := 8 + (4 + appIdLen)
 	r := make([]byte, rLen)
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	client.PutString(r[l:l+(4+appIDLen)], appID, appIDLen)
-	l += (4 + appIDLen)
+	client.PutString(r[l:l+(4+appIdLen)], appId, appIdLen)
+	l += (4 + appIdLen)
 	err := i.Context().WriteMsg(r, nil)
 	return err
 }

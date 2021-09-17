@@ -203,7 +203,7 @@ func (i *LinuxDmabuf) Destroy() error {
 // received.
 //
 func (i *LinuxDmabuf) CreateParams() (*LinuxBufferParams, error) {
-	paramsID := NewLinuxBufferParams(i.Context())
+	paramsId := NewLinuxBufferParams(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
 	r := make([]byte, rLen)
@@ -212,10 +212,10 @@ func (i *LinuxDmabuf) CreateParams() (*LinuxBufferParams, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	client.PutUint32(r[l:l+4], paramsID.ID())
+	client.PutUint32(r[l:l+4], paramsId.ID())
 	l += 4
 	err := i.Context().WriteMsg(r, nil)
-	return paramsID, err
+	return paramsId, err
 }
 
 // LinuxDmabufFormatEvent : supported buffer format
@@ -423,12 +423,12 @@ func (i *LinuxBufferParams) Destroy() error {
 // was already set.
 //
 //  fd: dmabuf fd
-//  planeIDx: plane index
+//  planeIdx: plane index
 //  offset: offset in bytes
 //  stride: stride in bytes
 //  modifierHi: high 32 bits of layout modifier
 //  modifierLo: low 32 bits of layout modifier
-func (i *LinuxBufferParams) Add(fd uintptr, planeIDx, offset, stride, modifierHi, modifierLo uint32) error {
+func (i *LinuxBufferParams) Add(fd uintptr, planeIdx, offset, stride, modifierHi, modifierLo uint32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4
 	r := make([]byte, rLen)
@@ -437,7 +437,7 @@ func (i *LinuxBufferParams) Add(fd uintptr, planeIDx, offset, stride, modifierHi
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	client.PutUint32(r[l:l+4], uint32(planeIDx))
+	client.PutUint32(r[l:l+4], uint32(planeIdx))
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(offset))
 	l += 4
@@ -570,7 +570,7 @@ func (i *LinuxBufferParams) Create(width, height int32, format, flags uint32) er
 //  format: DRM_FORMAT code
 //  flags: see enum flags
 func (i *LinuxBufferParams) CreateImmed(width, height int32, format, flags uint32) (*client.Buffer, error) {
-	bufferID := client.NewBuffer(i.Context())
+	bufferId := client.NewBuffer(i.Context())
 	const opcode = 3
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4
 	r := make([]byte, rLen)
@@ -579,7 +579,7 @@ func (i *LinuxBufferParams) CreateImmed(width, height int32, format, flags uint3
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	client.PutUint32(r[l:l+4], bufferID.ID())
+	client.PutUint32(r[l:l+4], bufferId.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(width))
 	l += 4
@@ -590,7 +590,7 @@ func (i *LinuxBufferParams) CreateImmed(width, height int32, format, flags uint3
 	client.PutUint32(r[l:l+4], uint32(flags))
 	l += 4
 	err := i.Context().WriteMsg(r, nil)
-	return bufferID, err
+	return bufferId, err
 }
 
 type LinuxBufferParamsError uint32
@@ -599,8 +599,8 @@ type LinuxBufferParamsError uint32
 const (
 	// LinuxBufferParamsErrorAlreadyUsed : the dmabuf_batch object has already been used to create a wl_buffer
 	LinuxBufferParamsErrorAlreadyUsed LinuxBufferParamsError = 0
-	// LinuxBufferParamsErrorPlaneIDx : plane index out of bounds
-	LinuxBufferParamsErrorPlaneIDx LinuxBufferParamsError = 1
+	// LinuxBufferParamsErrorPlaneIdx : plane index out of bounds
+	LinuxBufferParamsErrorPlaneIdx LinuxBufferParamsError = 1
 	// LinuxBufferParamsErrorPlaneSet : the plane index was already set
 	LinuxBufferParamsErrorPlaneSet LinuxBufferParamsError = 2
 	// LinuxBufferParamsErrorIncomplete : missing or too many planes to create a buffer
@@ -619,7 +619,7 @@ func (e LinuxBufferParamsError) Name() string {
 	switch e {
 	case LinuxBufferParamsErrorAlreadyUsed:
 		return "already_used"
-	case LinuxBufferParamsErrorPlaneIDx:
+	case LinuxBufferParamsErrorPlaneIdx:
 		return "plane_idx"
 	case LinuxBufferParamsErrorPlaneSet:
 		return "plane_set"
@@ -642,7 +642,7 @@ func (e LinuxBufferParamsError) Value() string {
 	switch e {
 	case LinuxBufferParamsErrorAlreadyUsed:
 		return "0"
-	case LinuxBufferParamsErrorPlaneIDx:
+	case LinuxBufferParamsErrorPlaneIdx:
 		return "1"
 	case LinuxBufferParamsErrorPlaneSet:
 		return "2"

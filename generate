@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 cd cmd/go-wayland-scanner
 go install

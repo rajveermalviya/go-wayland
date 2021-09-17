@@ -207,7 +207,7 @@ func (i *DrmLeaseDevice) RemoveDrmFdHandler(h DrmLeaseDeviceDrmFdHandler) {
 // After the drm_fd event it will send all available connectors but may
 // send additional connectors at any time.
 type DrmLeaseDeviceConnectorEvent struct {
-	ID *DrmLeaseConnector
+	Id *DrmLeaseConnector
 }
 
 type DrmLeaseDeviceConnectorHandler interface {
@@ -310,7 +310,7 @@ func (i *DrmLeaseDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		}
 		var e DrmLeaseDeviceConnectorEvent
 		l := 0
-		e.ID = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*DrmLeaseConnector)
+		e.Id = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*DrmLeaseConnector)
 		l += 4
 		for _, h := range i.connectorHandlers {
 			h.HandleDrmLeaseDeviceConnector(e)
@@ -347,7 +347,7 @@ type DrmLeaseConnector struct {
 	client.BaseProxy
 	nameHandlers        []DrmLeaseConnectorNameHandler
 	descriptionHandlers []DrmLeaseConnectorDescriptionHandler
-	connectorIDHandlers []DrmLeaseConnectorConnectorIDHandler
+	connectorIdHandlers []DrmLeaseConnectorConnectorIdHandler
 	doneHandlers        []DrmLeaseConnectorDoneHandler
 	withdrawnHandlers   []DrmLeaseConnectorWithdrawnHandler
 }
@@ -453,33 +453,33 @@ func (i *DrmLeaseConnector) RemoveDescriptionHandler(h DrmLeaseConnectorDescript
 	}
 }
 
-// DrmLeaseConnectorConnectorIDEvent : connector_id
+// DrmLeaseConnectorConnectorIdEvent : connector_id
 //
 // The compositor sends this event once the connector is created to
 // indicate the DRM object ID which represents the underlying connector
 // that is being offered. Note that the final lease may include additional
 // object IDs, such as CRTCs and planes.
-type DrmLeaseConnectorConnectorIDEvent struct {
-	ConnectorID uint32
+type DrmLeaseConnectorConnectorIdEvent struct {
+	ConnectorId uint32
 }
 
-type DrmLeaseConnectorConnectorIDHandler interface {
-	HandleDrmLeaseConnectorConnectorID(DrmLeaseConnectorConnectorIDEvent)
+type DrmLeaseConnectorConnectorIdHandler interface {
+	HandleDrmLeaseConnectorConnectorId(DrmLeaseConnectorConnectorIdEvent)
 }
 
-// AddConnectorIDHandler : adds handler for DrmLeaseConnectorConnectorIDEvent
-func (i *DrmLeaseConnector) AddConnectorIDHandler(h DrmLeaseConnectorConnectorIDHandler) {
+// AddConnectorIdHandler : adds handler for DrmLeaseConnectorConnectorIdEvent
+func (i *DrmLeaseConnector) AddConnectorIdHandler(h DrmLeaseConnectorConnectorIdHandler) {
 	if h == nil {
 		return
 	}
 
-	i.connectorIDHandlers = append(i.connectorIDHandlers, h)
+	i.connectorIdHandlers = append(i.connectorIdHandlers, h)
 }
 
-func (i *DrmLeaseConnector) RemoveConnectorIDHandler(h DrmLeaseConnectorConnectorIDHandler) {
-	for j, e := range i.connectorIDHandlers {
+func (i *DrmLeaseConnector) RemoveConnectorIdHandler(h DrmLeaseConnectorConnectorIdHandler) {
+	for j, e := range i.connectorIdHandlers {
 		if e == h {
-			i.connectorIDHandlers = append(i.connectorIDHandlers[:j], i.connectorIDHandlers[j+1:]...)
+			i.connectorIdHandlers = append(i.connectorIdHandlers[:j], i.connectorIdHandlers[j+1:]...)
 			break
 		}
 	}
@@ -574,15 +574,15 @@ func (i *DrmLeaseConnector) Dispatch(opcode uint16, fd uintptr, data []byte) {
 			h.HandleDrmLeaseConnectorDescription(e)
 		}
 	case 2:
-		if len(i.connectorIDHandlers) == 0 {
+		if len(i.connectorIdHandlers) == 0 {
 			return
 		}
-		var e DrmLeaseConnectorConnectorIDEvent
+		var e DrmLeaseConnectorConnectorIdEvent
 		l := 0
-		e.ConnectorID = client.Uint32(data[l : l+4])
+		e.ConnectorId = client.Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.connectorIDHandlers {
-			h.HandleDrmLeaseConnectorConnectorID(e)
+		for _, h := range i.connectorIdHandlers {
+			h.HandleDrmLeaseConnectorConnectorId(e)
 		}
 	case 3:
 		if len(i.doneHandlers) == 0 {

@@ -36,9 +36,3 @@ func PutString(dst []byte, v string, l int) {
 	copy(dst[4:4+len(v)], []byte(v))
 }
 
-func PaddedLen(l int) int {
-	if (l & 0x3) != 0 {
-		return l + (4 - (l & 0x3))
-	}
-	return l
-}

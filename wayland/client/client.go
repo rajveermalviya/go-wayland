@@ -40,7 +40,7 @@ import "golang.org/x/sys/unix"
 type Display struct {
 	BaseProxy
 	errorHandlers    []DisplayErrorHandler
-	deleteIDHandlers []DisplayDeleteIDHandler
+	deleteIdHandlers []DisplayDeleteIdHandler
 }
 
 // NewDisplay : core global object
@@ -177,7 +177,7 @@ func (e DisplayError) String() string {
 // own set of error codes.  The message is a brief description
 // of the error, for (debugging) convenience.
 type DisplayErrorEvent struct {
-	ObjectID Proxy
+	ObjectId Proxy
 	Code     uint32
 	Message  string
 }
@@ -204,34 +204,34 @@ func (i *Display) RemoveErrorHandler(h DisplayErrorHandler) {
 	}
 }
 
-// DisplayDeleteIDEvent : acknowledge object ID deletion
+// DisplayDeleteIdEvent : acknowledge object ID deletion
 //
 // This event is used internally by the object ID management
 // logic. When a client deletes an object that it had created,
 // the server will send this event to acknowledge that it has
 // seen the delete request. When the client receives this event,
 // it will know that it can safely reuse the object ID.
-type DisplayDeleteIDEvent struct {
-	ID uint32
+type DisplayDeleteIdEvent struct {
+	Id uint32
 }
 
-type DisplayDeleteIDHandler interface {
-	HandleDisplayDeleteID(DisplayDeleteIDEvent)
+type DisplayDeleteIdHandler interface {
+	HandleDisplayDeleteId(DisplayDeleteIdEvent)
 }
 
-// AddDeleteIDHandler : adds handler for DisplayDeleteIDEvent
-func (i *Display) AddDeleteIDHandler(h DisplayDeleteIDHandler) {
+// AddDeleteIdHandler : adds handler for DisplayDeleteIdEvent
+func (i *Display) AddDeleteIdHandler(h DisplayDeleteIdHandler) {
 	if h == nil {
 		return
 	}
 
-	i.deleteIDHandlers = append(i.deleteIDHandlers, h)
+	i.deleteIdHandlers = append(i.deleteIdHandlers, h)
 }
 
-func (i *Display) RemoveDeleteIDHandler(h DisplayDeleteIDHandler) {
-	for j, e := range i.deleteIDHandlers {
+func (i *Display) RemoveDeleteIdHandler(h DisplayDeleteIdHandler) {
+	for j, e := range i.deleteIdHandlers {
 		if e == h {
-			i.deleteIDHandlers = append(i.deleteIDHandlers[:j], i.deleteIDHandlers[j+1:]...)
+			i.deleteIdHandlers = append(i.deleteIdHandlers[:j], i.deleteIdHandlers[j+1:]...)
 			break
 		}
 	}
@@ -245,7 +245,7 @@ func (i *Display) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		}
 		var e DisplayErrorEvent
 		l := 0
-		e.ObjectID = i.Context().GetProxy(Uint32(data[l : l+4]))
+		e.ObjectId = i.Context().GetProxy(Uint32(data[l : l+4]))
 		l += 4
 		e.Code = Uint32(data[l : l+4])
 		l += 4
@@ -257,15 +257,15 @@ func (i *Display) Dispatch(opcode uint16, fd uintptr, data []byte) {
 			h.HandleDisplayError(e)
 		}
 	case 1:
-		if len(i.deleteIDHandlers) == 0 {
+		if len(i.deleteIdHandlers) == 0 {
 			return
 		}
-		var e DisplayDeleteIDEvent
+		var e DisplayDeleteIdEvent
 		l := 0
-		e.ID = Uint32(data[l : l+4])
+		e.Id = Uint32(data[l : l+4])
 		l += 4
-		for _, h := range i.deleteIDHandlers {
-			h.HandleDisplayDeleteID(e)
+		for _, h := range i.deleteIdHandlers {
+			h.HandleDisplayDeleteId(e)
 		}
 	}
 }
@@ -2649,7 +2649,7 @@ func (e DataDeviceError) String() string {
 // object will send out data_offer.offer events to describe the
 // mime types it offers.
 type DataDeviceDataOfferEvent struct {
-	ID *DataOffer
+	Id *DataOffer
 }
 
 type DataDeviceDataOfferHandler interface {
@@ -2685,7 +2685,7 @@ type DataDeviceEnterEvent struct {
 	Surface *Surface
 	X       float64
 	Y       float64
-	ID      *DataOffer
+	Id      *DataOffer
 }
 
 type DataDeviceEnterHandler interface {
@@ -2824,7 +2824,7 @@ func (i *DataDevice) RemoveDropHandler(h DataDeviceDropHandler) {
 // destroy the previous selection data_offer, if any, upon receiving
 // this event.
 type DataDeviceSelectionEvent struct {
-	ID *DataOffer
+	Id *DataOffer
 }
 
 type DataDeviceSelectionHandler interface {
@@ -2857,7 +2857,7 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		}
 		var e DataDeviceDataOfferEvent
 		l := 0
-		e.ID = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
+		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
 		for _, h := range i.dataOfferHandlers {
 			h.HandleDataDeviceDataOffer(e)
@@ -2876,7 +2876,7 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Y = Fixed(data[l : l+4])
 		l += 4
-		e.ID = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
+		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
 		for _, h := range i.enterHandlers {
 			h.HandleDataDeviceEnter(e)
@@ -2918,7 +2918,7 @@ func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		}
 		var e DataDeviceSelectionEvent
 		l := 0
-		e.ID = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
+		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
 		for _, h := range i.selectionHandlers {
 			h.HandleDataDeviceSelection(e)
@@ -6223,7 +6223,7 @@ type TouchDownEvent struct {
 	Serial  uint32
 	Time    uint32
 	Surface *Surface
-	ID      int32
+	Id      int32
 	X       float64
 	Y       float64
 }
@@ -6258,7 +6258,7 @@ func (i *Touch) RemoveDownHandler(h TouchDownHandler) {
 type TouchUpEvent struct {
 	Serial uint32
 	Time   uint32
-	ID     int32
+	Id     int32
 }
 
 type TouchUpHandler interface {
@@ -6288,7 +6288,7 @@ func (i *Touch) RemoveUpHandler(h TouchUpHandler) {
 // A touch point has changed coordinates.
 type TouchMotionEvent struct {
 	Time uint32
-	ID   int32
+	Id   int32
 	X    float64
 	Y    float64
 }
@@ -6407,7 +6407,7 @@ func (i *Touch) RemoveCancelHandler(h TouchCancelHandler) {
 // shape reports. The client has to make reasonable assumptions about the
 // shape if it did not receive this event.
 type TouchShapeEvent struct {
-	ID    int32
+	Id    int32
 	Major float64
 	Minor float64
 }
@@ -6460,7 +6460,7 @@ func (i *Touch) RemoveShapeHandler(h TouchShapeHandler) {
 // This event is only sent by the compositor if the touch device supports
 // orientation reports.
 type TouchOrientationEvent struct {
-	ID          int32
+	Id          int32
 	Orientation float64
 }
 
@@ -6500,7 +6500,7 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
 		l += 4
-		e.ID = int32(Uint32(data[l : l+4]))
+		e.Id = int32(Uint32(data[l : l+4]))
 		l += 4
 		e.X = Fixed(data[l : l+4])
 		l += 4
@@ -6519,7 +6519,7 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l += 4
 		e.Time = Uint32(data[l : l+4])
 		l += 4
-		e.ID = int32(Uint32(data[l : l+4]))
+		e.Id = int32(Uint32(data[l : l+4]))
 		l += 4
 		for _, h := range i.upHandlers {
 			h.HandleTouchUp(e)
@@ -6532,7 +6532,7 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		l := 0
 		e.Time = Uint32(data[l : l+4])
 		l += 4
-		e.ID = int32(Uint32(data[l : l+4]))
+		e.Id = int32(Uint32(data[l : l+4]))
 		l += 4
 		e.X = Fixed(data[l : l+4])
 		l += 4
@@ -6563,7 +6563,7 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		}
 		var e TouchShapeEvent
 		l := 0
-		e.ID = int32(Uint32(data[l : l+4]))
+		e.Id = int32(Uint32(data[l : l+4]))
 		l += 4
 		e.Major = Fixed(data[l : l+4])
 		l += 4
@@ -6578,7 +6578,7 @@ func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
 		}
 		var e TouchOrientationEvent
 		l := 0
-		e.ID = int32(Uint32(data[l : l+4]))
+		e.Id = int32(Uint32(data[l : l+4]))
 		l += 4
 		e.Orientation = Fixed(data[l : l+4])
 		l += 4
