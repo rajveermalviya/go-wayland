@@ -64,6 +64,7 @@ func Uint32(src []byte) uint32 {
 }
 
 func String(src []byte) string {
+	// TODO: do not assume padding 0
 	return string(bytes.TrimRight(src, "\x00"))
 }
 

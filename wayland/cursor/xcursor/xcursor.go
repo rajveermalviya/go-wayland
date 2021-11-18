@@ -9,14 +9,27 @@ import (
 	"strings"
 )
 
-const iconDir = "/usr/X11R6/lib/X11/icons"
-
-const xcursorPath = "~/.icons:/usr/share/icons:/usr/share/pixmaps:~/.cursors:/usr/share/cursors/xorg-x11:" + iconDir
+const (
+	iconDir             = "/usr/X11R6/lib/X11/icons"
+	xcursorPath         = "~/.icons:/usr/share/icons:/usr/share/pixmaps:~/.cursors:/usr/share/cursors/xorg-x11:" + iconDir
+	xdgDataHomeFallback = "~/.local/share"
+	cursorDir           = "/icons"
+)
 
 var libraryPath = func() string {
-	path := os.Getenv("XCURSOR_PATH")
-	if path == "" {
-		path = xcursorPath
+	var envVar string
+	var path string
+
+	envVar = os.Getenv("XCURSOR_PATH")
+	if envVar != "" {
+		path = envVar
+	} else {
+		envVar = os.Getenv("XDG_DATA_HOME")
+		if envVar != "" {
+			path = envVar + cursorDir + ":" + xcursorPath
+		} else {
+			path = xdgDataHomeFallback + cursorDir + ":" + xcursorPath
+		}
 	}
 	return path
 }()

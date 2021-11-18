@@ -223,7 +223,7 @@ func createCursorFromXcursorImages(name string, xcimages []xcursor.Image, theme 
 // Returns the index of the image that should be displayed for the
 // given time in the cursor animation and updated duration.
 func (cursor *Cursor) FrameAndDuration(time uint32, d uint32) (int, uint32) {
-	if len(cursor.Images) == 1 {
+	if len(cursor.Images) == 1 || cursor.totalDelay == 0 {
 		return 0, 0
 	}
 
@@ -285,7 +285,6 @@ func (cursor *Cursor) Destroy() error {
 type Theme struct {
 	cursors map[string]*Cursor
 	pool    *shmPool
-	name    string
 	size    int
 }
 
@@ -321,13 +320,16 @@ func LoadTheme(name string, size int, shm *client.Shm) (*Theme, error) {
 	}
 
 	theme := &Theme{
-		name:    name,
 		size:    size,
 		pool:    pool,
 		cursors: map[string]*Cursor{},
 	}
 
 	xcursor.LoadTheme(name, size, theme.loadCallback)
+
+	if len(theme.cursors) == 0 {
+		xcursor.LoadTheme("", size, theme.loadCallback)
+	}
 
 	if len(theme.cursors) == 0 {
 		_ = pool.Destroy()
