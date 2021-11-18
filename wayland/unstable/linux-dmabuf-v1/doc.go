@@ -1,3 +1,3 @@
 package linux_dmabuf
 
-//go:generate go-wayland-scanner -pkg linux_dmabuf -prefix zwp -suffix v1 -o linux_dmabuf.go -i https://raw.githubusercontent.com/wayland-project/wayland-protocols/1.22/unstable/linux-dmabuf/linux-dmabuf-unstable-v1.xml
+//go:generate go-wayland-scanner -pkg linux_dmabuf -prefix zwp -suffix v1 -o linux_dmabuf.go -i https://raw.githubusercontent.com/wayland-project/wayland-protocols/1.23/unstable/linux-dmabuf/linux-dmabuf-unstable-v1.xml
