@@ -28,8 +28,6 @@
 package xdg_decoration
 
 import (
-	"reflect"
-
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	xdg_shell "github.com/rajveermalviya/go-wayland/wayland/stable/xdg-shell"
 )
@@ -343,15 +341,6 @@ func (i *ToplevelDecoration) AddConfigureHandler(f ToplevelDecorationConfigureHa
 	}
 
 	i.configureHandlers = append(i.configureHandlers, f)
-}
-
-func (i *ToplevelDecoration) RemoveConfigureHandler(f ToplevelDecorationConfigureHandlerFunc) {
-	for j, e := range i.configureHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *ToplevelDecoration) Dispatch(opcode uint16, fd uintptr, data []byte) {

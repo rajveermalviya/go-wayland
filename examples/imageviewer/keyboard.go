@@ -19,8 +19,6 @@ func (app *appState) attachKeyboard() {
 }
 
 func (app *appState) releaseKeyboard() {
-	app.keyboard.RemoveKeyHandler(app.HandleKeyboardKey)
-
 	if err := app.keyboard.Release(); err != nil {
 		logPrintln("unable to release keyboard interface")
 	}

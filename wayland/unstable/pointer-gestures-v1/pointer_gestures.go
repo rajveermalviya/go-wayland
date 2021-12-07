@@ -6,11 +6,7 @@
 
 package pointer_gestures
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // PointerGestures : touchpad gestures
 //
@@ -230,15 +226,6 @@ func (i *PointerGestureSwipe) AddBeginHandler(f PointerGestureSwipeBeginHandlerF
 	i.beginHandlers = append(i.beginHandlers, f)
 }
 
-func (i *PointerGestureSwipe) RemoveBeginHandler(f PointerGestureSwipeBeginHandlerFunc) {
-	for j, e := range i.beginHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.beginHandlers = append(i.beginHandlers[:j], i.beginHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerGestureSwipeUpdateEvent : multi-finger swipe motion
 //
 // This event is sent when a multi-finger swipe gesture changes the
@@ -260,15 +247,6 @@ func (i *PointerGestureSwipe) AddUpdateHandler(f PointerGestureSwipeUpdateHandle
 	}
 
 	i.updateHandlers = append(i.updateHandlers, f)
-}
-
-func (i *PointerGestureSwipe) RemoveUpdateHandler(f PointerGestureSwipeUpdateHandlerFunc) {
-	for j, e := range i.updateHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.updateHandlers = append(i.updateHandlers[:j], i.updateHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // PointerGestureSwipeEndEvent : multi-finger swipe end
@@ -294,15 +272,6 @@ func (i *PointerGestureSwipe) AddEndHandler(f PointerGestureSwipeEndHandlerFunc)
 	}
 
 	i.endHandlers = append(i.endHandlers, f)
-}
-
-func (i *PointerGestureSwipe) RemoveEndHandler(f PointerGestureSwipeEndHandlerFunc) {
-	for j, e := range i.endHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.endHandlers = append(i.endHandlers[:j], i.endHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *PointerGestureSwipe) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -441,15 +410,6 @@ func (i *PointerGesturePinch) AddBeginHandler(f PointerGesturePinchBeginHandlerF
 	i.beginHandlers = append(i.beginHandlers, f)
 }
 
-func (i *PointerGesturePinch) RemoveBeginHandler(f PointerGesturePinchBeginHandlerFunc) {
-	for j, e := range i.beginHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.beginHandlers = append(i.beginHandlers[:j], i.beginHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerGesturePinchUpdateEvent : multi-finger pinch motion
 //
 // This event is sent when a multi-finger pinch gesture changes the
@@ -482,15 +442,6 @@ func (i *PointerGesturePinch) AddUpdateHandler(f PointerGesturePinchUpdateHandle
 	i.updateHandlers = append(i.updateHandlers, f)
 }
 
-func (i *PointerGesturePinch) RemoveUpdateHandler(f PointerGesturePinchUpdateHandlerFunc) {
-	for j, e := range i.updateHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.updateHandlers = append(i.updateHandlers[:j], i.updateHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerGesturePinchEndEvent : multi-finger pinch end
 //
 // This event is sent when a multi-finger pinch gesture ceases to
@@ -514,15 +465,6 @@ func (i *PointerGesturePinch) AddEndHandler(f PointerGesturePinchEndHandlerFunc)
 	}
 
 	i.endHandlers = append(i.endHandlers, f)
-}
-
-func (i *PointerGesturePinch) RemoveEndHandler(f PointerGesturePinchEndHandlerFunc) {
-	for j, e := range i.endHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.endHandlers = append(i.endHandlers[:j], i.endHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *PointerGesturePinch) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -667,15 +609,6 @@ func (i *PointerGestureHold) AddBeginHandler(f PointerGestureHoldBeginHandlerFun
 	i.beginHandlers = append(i.beginHandlers, f)
 }
 
-func (i *PointerGestureHold) RemoveBeginHandler(f PointerGestureHoldBeginHandlerFunc) {
-	for j, e := range i.beginHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.beginHandlers = append(i.beginHandlers[:j], i.beginHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerGestureHoldEndEvent : multi-finger hold end
 //
 // This event is sent when a hold gesture ceases to
@@ -701,15 +634,6 @@ func (i *PointerGestureHold) AddEndHandler(f PointerGestureHoldEndHandlerFunc) {
 	}
 
 	i.endHandlers = append(i.endHandlers, f)
-}
-
-func (i *PointerGestureHold) RemoveEndHandler(f PointerGestureHoldEndHandlerFunc) {
-	for j, e := range i.endHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.endHandlers = append(i.endHandlers[:j], i.endHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *PointerGestureHold) Dispatch(opcode uint16, fd uintptr, data []byte) {

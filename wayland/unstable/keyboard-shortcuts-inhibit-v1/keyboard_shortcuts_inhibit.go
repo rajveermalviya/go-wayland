@@ -27,11 +27,7 @@
 
 package keyboard_shortcuts_inhibit
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // KeyboardShortcutsInhibitManager : context object for keyboard grab_manager
 //
@@ -252,15 +248,6 @@ func (i *KeyboardShortcutsInhibitor) AddActiveHandler(f KeyboardShortcutsInhibit
 	i.activeHandlers = append(i.activeHandlers, f)
 }
 
-func (i *KeyboardShortcutsInhibitor) RemoveActiveHandler(f KeyboardShortcutsInhibitorActiveHandlerFunc) {
-	for j, e := range i.activeHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.activeHandlers = append(i.activeHandlers[:j], i.activeHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // KeyboardShortcutsInhibitorInactiveEvent : shortcuts are restored
 //
 // This event indicates that the shortcuts inhibitor is inactive,
@@ -275,15 +262,6 @@ func (i *KeyboardShortcutsInhibitor) AddInactiveHandler(f KeyboardShortcutsInhib
 	}
 
 	i.inactiveHandlers = append(i.inactiveHandlers, f)
-}
-
-func (i *KeyboardShortcutsInhibitor) RemoveInactiveHandler(f KeyboardShortcutsInhibitorInactiveHandlerFunc) {
-	for j, e := range i.inactiveHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.inactiveHandlers = append(i.inactiveHandlers[:j], i.inactiveHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *KeyboardShortcutsInhibitor) Dispatch(opcode uint16, fd uintptr, data []byte) {

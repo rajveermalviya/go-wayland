@@ -28,8 +28,6 @@
 package primary_selection
 
 import (
-	"reflect"
-
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	"golang.org/x/sys/unix"
 )
@@ -199,15 +197,6 @@ func (i *PrimarySelectionDevice) AddDataOfferHandler(f PrimarySelectionDeviceDat
 	i.dataOfferHandlers = append(i.dataOfferHandlers, f)
 }
 
-func (i *PrimarySelectionDevice) RemoveDataOfferHandler(f PrimarySelectionDeviceDataOfferHandlerFunc) {
-	for j, e := range i.dataOfferHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.dataOfferHandlers = append(i.dataOfferHandlers[:j], i.dataOfferHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PrimarySelectionDeviceSelectionEvent : advertise a new primary selection
 //
 // The wp_primary_selection_device.selection event is sent to notify the
@@ -231,15 +220,6 @@ func (i *PrimarySelectionDevice) AddSelectionHandler(f PrimarySelectionDeviceSel
 	}
 
 	i.selectionHandlers = append(i.selectionHandlers, f)
-}
-
-func (i *PrimarySelectionDevice) RemoveSelectionHandler(f PrimarySelectionDeviceSelectionHandlerFunc) {
-	for j, e := range i.selectionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.selectionHandlers = append(i.selectionHandlers[:j], i.selectionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *PrimarySelectionDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -361,15 +341,6 @@ func (i *PrimarySelectionOffer) AddOfferHandler(f PrimarySelectionOfferOfferHand
 	i.offerHandlers = append(i.offerHandlers, f)
 }
 
-func (i *PrimarySelectionOffer) RemoveOfferHandler(f PrimarySelectionOfferOfferHandlerFunc) {
-	for j, e := range i.offerHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.offerHandlers = append(i.offerHandlers[:j], i.offerHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 func (i *PrimarySelectionOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
 	switch opcode {
 	case 0:
@@ -469,15 +440,6 @@ func (i *PrimarySelectionSource) AddSendHandler(f PrimarySelectionSourceSendHand
 	i.sendHandlers = append(i.sendHandlers, f)
 }
 
-func (i *PrimarySelectionSource) RemoveSendHandler(f PrimarySelectionSourceSendHandlerFunc) {
-	for j, e := range i.sendHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.sendHandlers = append(i.sendHandlers[:j], i.sendHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PrimarySelectionSourceCancelledEvent : request for primary selection contents was canceled
 //
 // This primary selection source is no longer valid. The client should
@@ -492,15 +454,6 @@ func (i *PrimarySelectionSource) AddCancelledHandler(f PrimarySelectionSourceCan
 	}
 
 	i.cancelledHandlers = append(i.cancelledHandlers, f)
-}
-
-func (i *PrimarySelectionSource) RemoveCancelledHandler(f PrimarySelectionSourceCancelledHandlerFunc) {
-	for j, e := range i.cancelledHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.cancelledHandlers = append(i.cancelledHandlers[:j], i.cancelledHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *PrimarySelectionSource) Dispatch(opcode uint16, fd uintptr, data []byte) {

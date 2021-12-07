@@ -27,11 +27,7 @@
 
 package input_timestamps
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // InputTimestampsManager : context object for high-resolution input timestamps
 //
@@ -232,15 +228,6 @@ func (i *InputTimestamps) AddTimestampHandler(f InputTimestampsTimestampHandlerF
 	}
 
 	i.timestampHandlers = append(i.timestampHandlers, f)
-}
-
-func (i *InputTimestamps) RemoveTimestampHandler(f InputTimestampsTimestampHandlerFunc) {
-	for j, e := range i.timestampHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.timestampHandlers = append(i.timestampHandlers[:j], i.timestampHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *InputTimestamps) Dispatch(opcode uint16, fd uintptr, data []byte) {

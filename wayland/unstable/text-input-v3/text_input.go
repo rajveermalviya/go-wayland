@@ -32,11 +32,7 @@
 
 package text_input
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // TextInput : text input
 //
@@ -661,15 +657,6 @@ func (i *TextInput) AddEnterHandler(f TextInputEnterHandlerFunc) {
 	i.enterHandlers = append(i.enterHandlers, f)
 }
 
-func (i *TextInput) RemoveEnterHandler(f TextInputEnterHandlerFunc) {
-	for j, e := range i.enterHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // TextInputLeaveEvent : leave event
 //
 // Notification that this seat's text-input focus is no longer on a
@@ -695,15 +682,6 @@ func (i *TextInput) AddLeaveHandler(f TextInputLeaveHandlerFunc) {
 	}
 
 	i.leaveHandlers = append(i.leaveHandlers, f)
-}
-
-func (i *TextInput) RemoveLeaveHandler(f TextInputLeaveHandlerFunc) {
-	for j, e := range i.leaveHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // TextInputPreeditStringEvent : pre-edit
@@ -742,15 +720,6 @@ func (i *TextInput) AddPreeditStringHandler(f TextInputPreeditStringHandlerFunc)
 	i.preeditStringHandlers = append(i.preeditStringHandlers, f)
 }
 
-func (i *TextInput) RemovePreeditStringHandler(f TextInputPreeditStringHandlerFunc) {
-	for j, e := range i.preeditStringHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.preeditStringHandlers = append(i.preeditStringHandlers[:j], i.preeditStringHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // TextInputCommitStringEvent : text commit
 //
 // Notify when text should be inserted into the editor widget. The text to
@@ -773,15 +742,6 @@ func (i *TextInput) AddCommitStringHandler(f TextInputCommitStringHandlerFunc) {
 	}
 
 	i.commitStringHandlers = append(i.commitStringHandlers, f)
-}
-
-func (i *TextInput) RemoveCommitStringHandler(f TextInputCommitStringHandlerFunc) {
-	for j, e := range i.commitStringHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.commitStringHandlers = append(i.commitStringHandlers[:j], i.commitStringHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // TextInputDeleteSurroundingTextEvent : delete surrounding text
@@ -813,15 +773,6 @@ func (i *TextInput) AddDeleteSurroundingTextHandler(f TextInputDeleteSurrounding
 	}
 
 	i.deleteSurroundingTextHandlers = append(i.deleteSurroundingTextHandlers, f)
-}
-
-func (i *TextInput) RemoveDeleteSurroundingTextHandler(f TextInputDeleteSurroundingTextHandlerFunc) {
-	for j, e := range i.deleteSurroundingTextHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.deleteSurroundingTextHandlers = append(i.deleteSurroundingTextHandlers[:j], i.deleteSurroundingTextHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // TextInputDoneEvent : apply changes
@@ -860,15 +811,6 @@ func (i *TextInput) AddDoneHandler(f TextInputDoneHandlerFunc) {
 	}
 
 	i.doneHandlers = append(i.doneHandlers, f)
-}
-
-func (i *TextInput) RemoveDoneHandler(f TextInputDoneHandlerFunc) {
-	for j, e := range i.doneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *TextInput) Dispatch(opcode uint16, fd uintptr, data []byte) {

@@ -27,11 +27,7 @@
 
 package presentation_time
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // Presentation : timed presentation related wl_surface requests
 //
@@ -226,15 +222,6 @@ func (i *Presentation) AddClockIdHandler(f PresentationClockIdHandlerFunc) {
 	i.clockIdHandlers = append(i.clockIdHandlers, f)
 }
 
-func (i *Presentation) RemoveClockIdHandler(f PresentationClockIdHandlerFunc) {
-	for j, e := range i.clockIdHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.clockIdHandlers = append(i.clockIdHandlers[:j], i.clockIdHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 func (i *Presentation) Dispatch(opcode uint16, fd uintptr, data []byte) {
 	switch opcode {
 	case 0:
@@ -368,15 +355,6 @@ func (i *PresentationFeedback) AddSyncOutputHandler(f PresentationFeedbackSyncOu
 	i.syncOutputHandlers = append(i.syncOutputHandlers, f)
 }
 
-func (i *PresentationFeedback) RemoveSyncOutputHandler(f PresentationFeedbackSyncOutputHandlerFunc) {
-	for j, e := range i.syncOutputHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.syncOutputHandlers = append(i.syncOutputHandlers[:j], i.syncOutputHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PresentationFeedbackPresentedEvent : the content update was displayed
 //
 // The associated content update was displayed to the user at the
@@ -440,15 +418,6 @@ func (i *PresentationFeedback) AddPresentedHandler(f PresentationFeedbackPresent
 	i.presentedHandlers = append(i.presentedHandlers, f)
 }
 
-func (i *PresentationFeedback) RemovePresentedHandler(f PresentationFeedbackPresentedHandlerFunc) {
-	for j, e := range i.presentedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.presentedHandlers = append(i.presentedHandlers[:j], i.presentedHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PresentationFeedbackDiscardedEvent : the content update was not displayed
 //
 // The content update was never displayed to the user.
@@ -462,15 +431,6 @@ func (i *PresentationFeedback) AddDiscardedHandler(f PresentationFeedbackDiscard
 	}
 
 	i.discardedHandlers = append(i.discardedHandlers, f)
-}
-
-func (i *PresentationFeedback) RemoveDiscardedHandler(f PresentationFeedbackDiscardedHandlerFunc) {
-	for j, e := range i.discardedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.discardedHandlers = append(i.discardedHandlers[:j], i.discardedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *PresentationFeedback) Dispatch(opcode uint16, fd uintptr, data []byte) {

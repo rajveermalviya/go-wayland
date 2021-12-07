@@ -60,16 +60,6 @@ func (app *appState) attachPointer() {
 }
 
 func (app *appState) releasePointer() {
-	app.pointer.RemoveEnterHandler(app.HandlePointerEnter)
-	app.pointer.RemoveLeaveHandler(app.HandlePointerLeave)
-	app.pointer.RemoveMotionHandler(app.HandlePointerMotion)
-	app.pointer.RemoveButtonHandler(app.HandlePointerButton)
-	app.pointer.RemoveAxisHandler(app.HandlePointerAxis)
-	app.pointer.RemoveAxisSourceHandler(app.HandlePointerAxisSource)
-	app.pointer.RemoveAxisStopHandler(app.HandlePointerAxisStop)
-	app.pointer.RemoveAxisDiscreteHandler(app.HandlePointerAxisDiscrete)
-	app.pointer.RemoveFrameHandler(app.HandlePointerFrame)
-
 	if err := app.pointer.Release(); err != nil {
 		logPrintln("unable to release pointer interface")
 	}

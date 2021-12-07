@@ -28,11 +28,7 @@
 
 package xdg_activation
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // Activation : interface for activating surfaces
 //
@@ -329,15 +325,6 @@ func (i *ActivationToken) AddDoneHandler(f ActivationTokenDoneHandlerFunc) {
 	}
 
 	i.doneHandlers = append(i.doneHandlers, f)
-}
-
-func (i *ActivationToken) RemoveDoneHandler(f ActivationTokenDoneHandlerFunc) {
-	for j, e := range i.doneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *ActivationToken) Dispatch(opcode uint16, fd uintptr, data []byte) {

@@ -31,11 +31,7 @@
 
 package client
 
-import (
-	"reflect"
-
-	"golang.org/x/sys/unix"
-)
+import "golang.org/x/sys/unix"
 
 // Display : core global object
 //
@@ -196,15 +192,6 @@ func (i *Display) AddErrorHandler(f DisplayErrorHandlerFunc) {
 	i.errorHandlers = append(i.errorHandlers, f)
 }
 
-func (i *Display) RemoveErrorHandler(f DisplayErrorHandlerFunc) {
-	for j, e := range i.errorHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.errorHandlers = append(i.errorHandlers[:j], i.errorHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DisplayDeleteIdEvent : acknowledge object ID deletion
 //
 // This event is used internally by the object ID management
@@ -224,15 +211,6 @@ func (i *Display) AddDeleteIdHandler(f DisplayDeleteIdHandlerFunc) {
 	}
 
 	i.deleteIdHandlers = append(i.deleteIdHandlers, f)
-}
-
-func (i *Display) RemoveDeleteIdHandler(f DisplayDeleteIdHandlerFunc) {
-	for j, e := range i.deleteIdHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.deleteIdHandlers = append(i.deleteIdHandlers[:j], i.deleteIdHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Display) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -380,15 +358,6 @@ func (i *Registry) AddGlobalHandler(f RegistryGlobalHandlerFunc) {
 	i.globalHandlers = append(i.globalHandlers, f)
 }
 
-func (i *Registry) RemoveGlobalHandler(f RegistryGlobalHandlerFunc) {
-	for j, e := range i.globalHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.globalHandlers = append(i.globalHandlers[:j], i.globalHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // RegistryGlobalRemoveEvent : announce removal of global object
 //
 // Notify the client of removed global objects.
@@ -413,15 +382,6 @@ func (i *Registry) AddGlobalRemoveHandler(f RegistryGlobalRemoveHandlerFunc) {
 	}
 
 	i.globalRemoveHandlers = append(i.globalRemoveHandlers, f)
-}
-
-func (i *Registry) RemoveGlobalRemoveHandler(f RegistryGlobalRemoveHandlerFunc) {
-	for j, e := range i.globalRemoveHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.globalRemoveHandlers = append(i.globalRemoveHandlers[:j], i.globalRemoveHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Registry) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -496,15 +456,6 @@ func (i *Callback) AddDoneHandler(f CallbackDoneHandlerFunc) {
 	}
 
 	i.doneHandlers = append(i.doneHandlers, f)
-}
-
-func (i *Callback) RemoveDoneHandler(f CallbackDoneHandlerFunc) {
-	for j, e := range i.doneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Callback) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -1485,15 +1436,6 @@ func (i *Shm) AddFormatHandler(f ShmFormatHandlerFunc) {
 	i.formatHandlers = append(i.formatHandlers, f)
 }
 
-func (i *Shm) RemoveFormatHandler(f ShmFormatHandlerFunc) {
-	for j, e := range i.formatHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.formatHandlers = append(i.formatHandlers[:j], i.formatHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 func (i *Shm) Dispatch(opcode uint16, fd uintptr, data []byte) {
 	switch opcode {
 	case 0:
@@ -1590,15 +1532,6 @@ func (i *Buffer) AddReleaseHandler(f BufferReleaseHandlerFunc) {
 	}
 
 	i.releaseHandlers = append(i.releaseHandlers, f)
-}
-
-func (i *Buffer) RemoveReleaseHandler(f BufferReleaseHandlerFunc) {
-	for j, e := range i.releaseHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.releaseHandlers = append(i.releaseHandlers[:j], i.releaseHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Buffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -1884,15 +1817,6 @@ func (i *DataOffer) AddOfferHandler(f DataOfferOfferHandlerFunc) {
 	i.offerHandlers = append(i.offerHandlers, f)
 }
 
-func (i *DataOffer) RemoveOfferHandler(f DataOfferOfferHandlerFunc) {
-	for j, e := range i.offerHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.offerHandlers = append(i.offerHandlers[:j], i.offerHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DataOfferSourceActionsEvent : notify the source-side available actions
 //
 // This event indicates the actions offered by the data source. It
@@ -1910,15 +1834,6 @@ func (i *DataOffer) AddSourceActionsHandler(f DataOfferSourceActionsHandlerFunc)
 	}
 
 	i.sourceActionsHandlers = append(i.sourceActionsHandlers, f)
-}
-
-func (i *DataOffer) RemoveSourceActionsHandler(f DataOfferSourceActionsHandlerFunc) {
-	for j, e := range i.sourceActionsHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.sourceActionsHandlers = append(i.sourceActionsHandlers[:j], i.sourceActionsHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // DataOfferActionEvent : notify the selected action
@@ -1970,15 +1885,6 @@ func (i *DataOffer) AddActionHandler(f DataOfferActionHandlerFunc) {
 	}
 
 	i.actionHandlers = append(i.actionHandlers, f)
-}
-
-func (i *DataOffer) RemoveActionHandler(f DataOfferActionHandlerFunc) {
-	for j, e := range i.actionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.actionHandlers = append(i.actionHandlers[:j], i.actionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *DataOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -2178,15 +2084,6 @@ func (i *DataSource) AddTargetHandler(f DataSourceTargetHandlerFunc) {
 	i.targetHandlers = append(i.targetHandlers, f)
 }
 
-func (i *DataSource) RemoveTargetHandler(f DataSourceTargetHandlerFunc) {
-	for j, e := range i.targetHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.targetHandlers = append(i.targetHandlers[:j], i.targetHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DataSourceSendEvent : send the data
 //
 // Request for data from the client.  Send the data as the
@@ -2205,15 +2102,6 @@ func (i *DataSource) AddSendHandler(f DataSourceSendHandlerFunc) {
 	}
 
 	i.sendHandlers = append(i.sendHandlers, f)
-}
-
-func (i *DataSource) RemoveSendHandler(f DataSourceSendHandlerFunc) {
-	for j, e := range i.sendHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.sendHandlers = append(i.sendHandlers[:j], i.sendHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // DataSourceCancelledEvent : selection was cancelled
@@ -2250,15 +2138,6 @@ func (i *DataSource) AddCancelledHandler(f DataSourceCancelledHandlerFunc) {
 	i.cancelledHandlers = append(i.cancelledHandlers, f)
 }
 
-func (i *DataSource) RemoveCancelledHandler(f DataSourceCancelledHandlerFunc) {
-	for j, e := range i.cancelledHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.cancelledHandlers = append(i.cancelledHandlers[:j], i.cancelledHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DataSourceDndDropPerformedEvent : the drag-and-drop operation physically finished
 //
 // The user performed the drop action. This event does not indicate
@@ -2282,15 +2161,6 @@ func (i *DataSource) AddDndDropPerformedHandler(f DataSourceDndDropPerformedHand
 	i.dndDropPerformedHandlers = append(i.dndDropPerformedHandlers, f)
 }
 
-func (i *DataSource) RemoveDndDropPerformedHandler(f DataSourceDndDropPerformedHandlerFunc) {
-	for j, e := range i.dndDropPerformedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.dndDropPerformedHandlers = append(i.dndDropPerformedHandlers[:j], i.dndDropPerformedHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DataSourceDndFinishedEvent : the drag-and-drop operation concluded
 //
 // The drop destination finished interoperating with this data
@@ -2309,15 +2179,6 @@ func (i *DataSource) AddDndFinishedHandler(f DataSourceDndFinishedHandlerFunc) {
 	}
 
 	i.dndFinishedHandlers = append(i.dndFinishedHandlers, f)
-}
-
-func (i *DataSource) RemoveDndFinishedHandler(f DataSourceDndFinishedHandlerFunc) {
-	for j, e := range i.dndFinishedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.dndFinishedHandlers = append(i.dndFinishedHandlers[:j], i.dndFinishedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // DataSourceActionEvent : notify the selected action
@@ -2359,15 +2220,6 @@ func (i *DataSource) AddActionHandler(f DataSourceActionHandlerFunc) {
 	}
 
 	i.actionHandlers = append(i.actionHandlers, f)
-}
-
-func (i *DataSource) RemoveActionHandler(f DataSourceActionHandlerFunc) {
-	for j, e := range i.actionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.actionHandlers = append(i.actionHandlers[:j], i.actionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *DataSource) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -2635,15 +2487,6 @@ func (i *DataDevice) AddDataOfferHandler(f DataDeviceDataOfferHandlerFunc) {
 	i.dataOfferHandlers = append(i.dataOfferHandlers, f)
 }
 
-func (i *DataDevice) RemoveDataOfferHandler(f DataDeviceDataOfferHandlerFunc) {
-	for j, e := range i.dataOfferHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.dataOfferHandlers = append(i.dataOfferHandlers[:j], i.dataOfferHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DataDeviceEnterEvent : initiate drag-and-drop session
 //
 // This event is sent when an active drag-and-drop pointer enters
@@ -2668,15 +2511,6 @@ func (i *DataDevice) AddEnterHandler(f DataDeviceEnterHandlerFunc) {
 	i.enterHandlers = append(i.enterHandlers, f)
 }
 
-func (i *DataDevice) RemoveEnterHandler(f DataDeviceEnterHandlerFunc) {
-	for j, e := range i.enterHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DataDeviceLeaveEvent : end drag-and-drop session
 //
 // This event is sent when the drag-and-drop pointer leaves the
@@ -2692,15 +2526,6 @@ func (i *DataDevice) AddLeaveHandler(f DataDeviceLeaveHandlerFunc) {
 	}
 
 	i.leaveHandlers = append(i.leaveHandlers, f)
-}
-
-func (i *DataDevice) RemoveLeaveHandler(f DataDeviceLeaveHandlerFunc) {
-	for j, e := range i.leaveHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // DataDeviceMotionEvent : drag-and-drop session motion
@@ -2723,15 +2548,6 @@ func (i *DataDevice) AddMotionHandler(f DataDeviceMotionHandlerFunc) {
 	}
 
 	i.motionHandlers = append(i.motionHandlers, f)
-}
-
-func (i *DataDevice) RemoveMotionHandler(f DataDeviceMotionHandlerFunc) {
-	for j, e := range i.motionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // DataDeviceDropEvent : end drag-and-drop session successfully
@@ -2761,15 +2577,6 @@ func (i *DataDevice) AddDropHandler(f DataDeviceDropHandlerFunc) {
 	i.dropHandlers = append(i.dropHandlers, f)
 }
 
-func (i *DataDevice) RemoveDropHandler(f DataDeviceDropHandlerFunc) {
-	for j, e := range i.dropHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.dropHandlers = append(i.dropHandlers[:j], i.dropHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DataDeviceSelectionEvent : advertise new selection
 //
 // The selection event is sent out to notify the client of a new
@@ -2795,15 +2602,6 @@ func (i *DataDevice) AddSelectionHandler(f DataDeviceSelectionHandlerFunc) {
 	}
 
 	i.selectionHandlers = append(i.selectionHandlers, f)
-}
-
-func (i *DataDevice) RemoveSelectionHandler(f DataDeviceSelectionHandlerFunc) {
-	for j, e := range i.selectionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.selectionHandlers = append(i.selectionHandlers[:j], i.selectionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -3702,15 +3500,6 @@ func (i *ShellSurface) AddPingHandler(f ShellSurfacePingHandlerFunc) {
 	i.pingHandlers = append(i.pingHandlers, f)
 }
 
-func (i *ShellSurface) RemovePingHandler(f ShellSurfacePingHandlerFunc) {
-	for j, e := range i.pingHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.pingHandlers = append(i.pingHandlers[:j], i.pingHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // ShellSurfaceConfigureEvent : suggest resize
 //
 // The configure event asks the client to resize its surface.
@@ -3746,15 +3535,6 @@ func (i *ShellSurface) AddConfigureHandler(f ShellSurfaceConfigureHandlerFunc) {
 	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *ShellSurface) RemoveConfigureHandler(f ShellSurfaceConfigureHandlerFunc) {
-	for j, e := range i.configureHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // ShellSurfacePopupDoneEvent : popup interaction is done
 //
 // The popup_done event is sent out when a popup grab is broken,
@@ -3770,15 +3550,6 @@ func (i *ShellSurface) AddPopupDoneHandler(f ShellSurfacePopupDoneHandlerFunc) {
 	}
 
 	i.popupDoneHandlers = append(i.popupDoneHandlers, f)
-}
-
-func (i *ShellSurface) RemovePopupDoneHandler(f ShellSurfacePopupDoneHandlerFunc) {
-	for j, e := range i.popupDoneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.popupDoneHandlers = append(i.popupDoneHandlers[:j], i.popupDoneHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *ShellSurface) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -4504,15 +4275,6 @@ func (i *Surface) AddEnterHandler(f SurfaceEnterHandlerFunc) {
 	i.enterHandlers = append(i.enterHandlers, f)
 }
 
-func (i *Surface) RemoveEnterHandler(f SurfaceEnterHandlerFunc) {
-	for j, e := range i.enterHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // SurfaceLeaveEvent : surface leaves an output
 //
 // This is emitted whenever a surface's creation, movement, or resizing
@@ -4536,15 +4298,6 @@ func (i *Surface) AddLeaveHandler(f SurfaceLeaveHandlerFunc) {
 	}
 
 	i.leaveHandlers = append(i.leaveHandlers, f)
-}
-
-func (i *Surface) RemoveLeaveHandler(f SurfaceLeaveHandlerFunc) {
-	for j, e := range i.leaveHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -4815,15 +4568,6 @@ func (i *Seat) AddCapabilitiesHandler(f SeatCapabilitiesHandlerFunc) {
 	i.capabilitiesHandlers = append(i.capabilitiesHandlers, f)
 }
 
-func (i *Seat) RemoveCapabilitiesHandler(f SeatCapabilitiesHandlerFunc) {
-	for j, e := range i.capabilitiesHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.capabilitiesHandlers = append(i.capabilitiesHandlers[:j], i.capabilitiesHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // SeatNameEvent : unique identifier for this seat
 //
 // In a multi-seat configuration the seat name can be used by clients to
@@ -4854,15 +4598,6 @@ func (i *Seat) AddNameHandler(f SeatNameHandlerFunc) {
 	}
 
 	i.nameHandlers = append(i.nameHandlers, f)
-}
-
-func (i *Seat) RemoveNameHandler(f SeatNameHandlerFunc) {
-	for j, e := range i.nameHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.nameHandlers = append(i.nameHandlers[:j], i.nameHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Seat) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -5220,15 +4955,6 @@ func (i *Pointer) AddEnterHandler(f PointerEnterHandlerFunc) {
 	i.enterHandlers = append(i.enterHandlers, f)
 }
 
-func (i *Pointer) RemoveEnterHandler(f PointerEnterHandlerFunc) {
-	for j, e := range i.enterHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerLeaveEvent : leave event
 //
 // Notification that this seat's pointer is no longer focused on
@@ -5251,15 +4977,6 @@ func (i *Pointer) AddLeaveHandler(f PointerLeaveHandlerFunc) {
 	i.leaveHandlers = append(i.leaveHandlers, f)
 }
 
-func (i *Pointer) RemoveLeaveHandler(f PointerLeaveHandlerFunc) {
-	for j, e := range i.leaveHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerMotionEvent : pointer motion event
 //
 // Notification of pointer location change. The arguments
@@ -5279,15 +4996,6 @@ func (i *Pointer) AddMotionHandler(f PointerMotionHandlerFunc) {
 	}
 
 	i.motionHandlers = append(i.motionHandlers, f)
-}
-
-func (i *Pointer) RemoveMotionHandler(f PointerMotionHandlerFunc) {
-	for j, e := range i.motionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // PointerButtonEvent : pointer button event
@@ -5323,15 +5031,6 @@ func (i *Pointer) AddButtonHandler(f PointerButtonHandlerFunc) {
 	i.buttonHandlers = append(i.buttonHandlers, f)
 }
 
-func (i *Pointer) RemoveButtonHandler(f PointerButtonHandlerFunc) {
-	for j, e := range i.buttonHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.buttonHandlers = append(i.buttonHandlers[:j], i.buttonHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerAxisEvent : axis event
 //
 // Scroll and other axis notifications.
@@ -5364,15 +5063,6 @@ func (i *Pointer) AddAxisHandler(f PointerAxisHandlerFunc) {
 	}
 
 	i.axisHandlers = append(i.axisHandlers, f)
-}
-
-func (i *Pointer) RemoveAxisHandler(f PointerAxisHandlerFunc) {
-	for j, e := range i.axisHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.axisHandlers = append(i.axisHandlers[:j], i.axisHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // PointerFrameEvent : end of a pointer event sequence
@@ -5423,15 +5113,6 @@ func (i *Pointer) AddFrameHandler(f PointerFrameHandlerFunc) {
 	i.frameHandlers = append(i.frameHandlers, f)
 }
 
-func (i *Pointer) RemoveFrameHandler(f PointerFrameHandlerFunc) {
-	for j, e := range i.frameHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.frameHandlers = append(i.frameHandlers[:j], i.frameHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerAxisSourceEvent : axis source event
 //
 // Source information for scroll and other axes.
@@ -5473,15 +5154,6 @@ func (i *Pointer) AddAxisSourceHandler(f PointerAxisSourceHandlerFunc) {
 	i.axisSourceHandlers = append(i.axisSourceHandlers, f)
 }
 
-func (i *Pointer) RemoveAxisSourceHandler(f PointerAxisSourceHandlerFunc) {
-	for j, e := range i.axisSourceHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.axisSourceHandlers = append(i.axisSourceHandlers[:j], i.axisSourceHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PointerAxisStopEvent : axis stop event
 //
 // Stop notification for scroll and other axes.
@@ -5511,15 +5183,6 @@ func (i *Pointer) AddAxisStopHandler(f PointerAxisStopHandlerFunc) {
 	}
 
 	i.axisStopHandlers = append(i.axisStopHandlers, f)
-}
-
-func (i *Pointer) RemoveAxisStopHandler(f PointerAxisStopHandlerFunc) {
-	for j, e := range i.axisStopHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.axisStopHandlers = append(i.axisStopHandlers[:j], i.axisStopHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // PointerAxisDiscreteEvent : axis click event
@@ -5563,15 +5226,6 @@ func (i *Pointer) AddAxisDiscreteHandler(f PointerAxisDiscreteHandlerFunc) {
 	}
 
 	i.axisDiscreteHandlers = append(i.axisDiscreteHandlers, f)
-}
-
-func (i *Pointer) RemoveAxisDiscreteHandler(f PointerAxisDiscreteHandlerFunc) {
-	for j, e := range i.axisDiscreteHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.axisDiscreteHandlers = append(i.axisDiscreteHandlers[:j], i.axisDiscreteHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -5842,15 +5496,6 @@ func (i *Keyboard) AddKeymapHandler(f KeyboardKeymapHandlerFunc) {
 	i.keymapHandlers = append(i.keymapHandlers, f)
 }
 
-func (i *Keyboard) RemoveKeymapHandler(f KeyboardKeymapHandlerFunc) {
-	for j, e := range i.keymapHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.keymapHandlers = append(i.keymapHandlers[:j], i.keymapHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // KeyboardEnterEvent : enter event
 //
 // Notification that this seat's keyboard focus is on a certain
@@ -5872,15 +5517,6 @@ func (i *Keyboard) AddEnterHandler(f KeyboardEnterHandlerFunc) {
 	}
 
 	i.enterHandlers = append(i.enterHandlers, f)
-}
-
-func (i *Keyboard) RemoveEnterHandler(f KeyboardEnterHandlerFunc) {
-	for j, e := range i.enterHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.enterHandlers = append(i.enterHandlers[:j], i.enterHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // KeyboardLeaveEvent : leave event
@@ -5906,15 +5542,6 @@ func (i *Keyboard) AddLeaveHandler(f KeyboardLeaveHandlerFunc) {
 	}
 
 	i.leaveHandlers = append(i.leaveHandlers, f)
-}
-
-func (i *Keyboard) RemoveLeaveHandler(f KeyboardLeaveHandlerFunc) {
-	for j, e := range i.leaveHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.leaveHandlers = append(i.leaveHandlers[:j], i.leaveHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // KeyboardKeyEvent : key event
@@ -5945,15 +5572,6 @@ func (i *Keyboard) AddKeyHandler(f KeyboardKeyHandlerFunc) {
 	i.keyHandlers = append(i.keyHandlers, f)
 }
 
-func (i *Keyboard) RemoveKeyHandler(f KeyboardKeyHandlerFunc) {
-	for j, e := range i.keyHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.keyHandlers = append(i.keyHandlers[:j], i.keyHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // KeyboardModifiersEvent : modifier and group state
 //
 // Notifies clients that the modifier and/or group state has
@@ -5974,15 +5592,6 @@ func (i *Keyboard) AddModifiersHandler(f KeyboardModifiersHandlerFunc) {
 	}
 
 	i.modifiersHandlers = append(i.modifiersHandlers, f)
-}
-
-func (i *Keyboard) RemoveModifiersHandler(f KeyboardModifiersHandlerFunc) {
-	for j, e := range i.modifiersHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.modifiersHandlers = append(i.modifiersHandlers[:j], i.modifiersHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // KeyboardRepeatInfoEvent : repeat rate and delay
@@ -6012,15 +5621,6 @@ func (i *Keyboard) AddRepeatInfoHandler(f KeyboardRepeatInfoHandlerFunc) {
 	}
 
 	i.repeatInfoHandlers = append(i.repeatInfoHandlers, f)
-}
-
-func (i *Keyboard) RemoveRepeatInfoHandler(f KeyboardRepeatInfoHandlerFunc) {
-	for j, e := range i.repeatInfoHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.repeatInfoHandlers = append(i.repeatInfoHandlers[:j], i.repeatInfoHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -6200,15 +5800,6 @@ func (i *Touch) AddDownHandler(f TouchDownHandlerFunc) {
 	i.downHandlers = append(i.downHandlers, f)
 }
 
-func (i *Touch) RemoveDownHandler(f TouchDownHandlerFunc) {
-	for j, e := range i.downHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.downHandlers = append(i.downHandlers[:j], i.downHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // TouchUpEvent : end of a touch event sequence
 //
 // The touch point has disappeared. No further events will be sent for
@@ -6230,15 +5821,6 @@ func (i *Touch) AddUpHandler(f TouchUpHandlerFunc) {
 	i.upHandlers = append(i.upHandlers, f)
 }
 
-func (i *Touch) RemoveUpHandler(f TouchUpHandlerFunc) {
-	for j, e := range i.upHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.upHandlers = append(i.upHandlers[:j], i.upHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // TouchMotionEvent : update of touch point coordinates
 //
 // A touch point has changed coordinates.
@@ -6257,15 +5839,6 @@ func (i *Touch) AddMotionHandler(f TouchMotionHandlerFunc) {
 	}
 
 	i.motionHandlers = append(i.motionHandlers, f)
-}
-
-func (i *Touch) RemoveMotionHandler(f TouchMotionHandlerFunc) {
-	for j, e := range i.motionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.motionHandlers = append(i.motionHandlers[:j], i.motionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // TouchFrameEvent : end of touch frame event
@@ -6290,15 +5863,6 @@ func (i *Touch) AddFrameHandler(f TouchFrameHandlerFunc) {
 	i.frameHandlers = append(i.frameHandlers, f)
 }
 
-func (i *Touch) RemoveFrameHandler(f TouchFrameHandlerFunc) {
-	for j, e := range i.frameHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.frameHandlers = append(i.frameHandlers[:j], i.frameHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // TouchCancelEvent : touch session cancelled
 //
 // Sent if the compositor decides the touch stream is a global
@@ -6317,15 +5881,6 @@ func (i *Touch) AddCancelHandler(f TouchCancelHandlerFunc) {
 	}
 
 	i.cancelHandlers = append(i.cancelHandlers, f)
-}
-
-func (i *Touch) RemoveCancelHandler(f TouchCancelHandlerFunc) {
-	for j, e := range i.cancelHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.cancelHandlers = append(i.cancelHandlers[:j], i.cancelHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // TouchShapeEvent : update shape of touch point
@@ -6371,15 +5926,6 @@ func (i *Touch) AddShapeHandler(f TouchShapeHandlerFunc) {
 	i.shapeHandlers = append(i.shapeHandlers, f)
 }
 
-func (i *Touch) RemoveShapeHandler(f TouchShapeHandlerFunc) {
-	for j, e := range i.shapeHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.shapeHandlers = append(i.shapeHandlers[:j], i.shapeHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // TouchOrientationEvent : update orientation of touch point
 //
 // Sent when a touchpoint has changed its orientation.
@@ -6418,15 +5964,6 @@ func (i *Touch) AddOrientationHandler(f TouchOrientationHandlerFunc) {
 	}
 
 	i.orientationHandlers = append(i.orientationHandlers, f)
-}
-
-func (i *Touch) RemoveOrientationHandler(f TouchOrientationHandlerFunc) {
-	for j, e := range i.orientationHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.orientationHandlers = append(i.orientationHandlers[:j], i.orientationHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -6807,15 +6344,6 @@ func (i *Output) AddGeometryHandler(f OutputGeometryHandlerFunc) {
 	i.geometryHandlers = append(i.geometryHandlers, f)
 }
 
-func (i *Output) RemoveGeometryHandler(f OutputGeometryHandlerFunc) {
-	for j, e := range i.geometryHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.geometryHandlers = append(i.geometryHandlers[:j], i.geometryHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // OutputModeEvent : advertise available modes for the output
 //
 // The mode event describes an available mode for the output.
@@ -6868,15 +6396,6 @@ func (i *Output) AddModeHandler(f OutputModeHandlerFunc) {
 	i.modeHandlers = append(i.modeHandlers, f)
 }
 
-func (i *Output) RemoveModeHandler(f OutputModeHandlerFunc) {
-	for j, e := range i.modeHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.modeHandlers = append(i.modeHandlers[:j], i.modeHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // OutputDoneEvent : sent all information about output
 //
 // This event is sent after all other properties have been
@@ -6894,15 +6413,6 @@ func (i *Output) AddDoneHandler(f OutputDoneHandlerFunc) {
 	}
 
 	i.doneHandlers = append(i.doneHandlers, f)
-}
-
-func (i *Output) RemoveDoneHandler(f OutputDoneHandlerFunc) {
-	for j, e := range i.doneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // OutputScaleEvent : output scaling properties
@@ -6939,15 +6449,6 @@ func (i *Output) AddScaleHandler(f OutputScaleHandlerFunc) {
 	}
 
 	i.scaleHandlers = append(i.scaleHandlers, f)
-}
-
-func (i *Output) RemoveScaleHandler(f OutputScaleHandlerFunc) {
-	for j, e := range i.scaleHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.scaleHandlers = append(i.scaleHandlers[:j], i.scaleHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // OutputNameEvent : name of this output
@@ -6994,15 +6495,6 @@ func (i *Output) AddNameHandler(f OutputNameHandlerFunc) {
 	i.nameHandlers = append(i.nameHandlers, f)
 }
 
-func (i *Output) RemoveNameHandler(f OutputNameHandlerFunc) {
-	for j, e := range i.nameHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.nameHandlers = append(i.nameHandlers[:j], i.nameHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // OutputDescriptionEvent : human-readable description of this output
 //
 // Many compositors can produce human-readable descriptions of their
@@ -7031,15 +6523,6 @@ func (i *Output) AddDescriptionHandler(f OutputDescriptionHandlerFunc) {
 	}
 
 	i.descriptionHandlers = append(i.descriptionHandlers, f)
-}
-
-func (i *Output) RemoveDescriptionHandler(f OutputDescriptionHandlerFunc) {
-	for j, e := range i.descriptionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.descriptionHandlers = append(i.descriptionHandlers[:j], i.descriptionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {

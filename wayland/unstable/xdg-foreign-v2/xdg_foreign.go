@@ -27,11 +27,7 @@
 
 package xdg_foreign
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // Exporter : interface for exporting surfaces
 //
@@ -264,15 +260,6 @@ func (i *Exported) AddHandleHandler(f ExportedHandleHandlerFunc) {
 	i.handleHandlers = append(i.handleHandlers, f)
 }
 
-func (i *Exported) RemoveHandleHandler(f ExportedHandleHandlerFunc) {
-	for j, e := range i.handleHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.handleHandlers = append(i.handleHandlers[:j], i.handleHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 func (i *Exported) Dispatch(opcode uint16, fd uintptr, data []byte) {
 	switch opcode {
 	case 0:
@@ -405,15 +392,6 @@ func (i *Imported) AddDestroyedHandler(f ImportedDestroyedHandlerFunc) {
 	}
 
 	i.destroyedHandlers = append(i.destroyedHandlers, f)
-}
-
-func (i *Imported) RemoveDestroyedHandler(f ImportedDestroyedHandlerFunc) {
-	for j, e := range i.destroyedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.destroyedHandlers = append(i.destroyedHandlers[:j], i.destroyedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Imported) Dispatch(opcode uint16, fd uintptr, data []byte) {

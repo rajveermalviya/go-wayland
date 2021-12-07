@@ -30,8 +30,6 @@
 package linux_explicit_synchronization
 
 import (
-	"reflect"
-
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	"golang.org/x/sys/unix"
 )
@@ -483,15 +481,6 @@ func (i *LinuxBufferRelease) AddFencedReleaseHandler(f LinuxBufferReleaseFencedR
 	i.fencedReleaseHandlers = append(i.fencedReleaseHandlers, f)
 }
 
-func (i *LinuxBufferRelease) RemoveFencedReleaseHandler(f LinuxBufferReleaseFencedReleaseHandlerFunc) {
-	for j, e := range i.fencedReleaseHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.fencedReleaseHandlers = append(i.fencedReleaseHandlers[:j], i.fencedReleaseHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // LinuxBufferReleaseImmediateReleaseEvent : release buffer immediately
 //
 // Sent when the compositor has finalised its usage of the associated
@@ -515,15 +504,6 @@ func (i *LinuxBufferRelease) AddImmediateReleaseHandler(f LinuxBufferReleaseImme
 	}
 
 	i.immediateReleaseHandlers = append(i.immediateReleaseHandlers, f)
-}
-
-func (i *LinuxBufferRelease) RemoveImmediateReleaseHandler(f LinuxBufferReleaseImmediateReleaseHandlerFunc) {
-	for j, e := range i.immediateReleaseHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.immediateReleaseHandlers = append(i.immediateReleaseHandlers[:j], i.immediateReleaseHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *LinuxBufferRelease) Dispatch(opcode uint16, fd uintptr, data []byte) {

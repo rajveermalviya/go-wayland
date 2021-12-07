@@ -32,11 +32,7 @@
 
 package xdg_shell
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // WmBase : create desktop-style surfaces
 //
@@ -247,15 +243,6 @@ func (i *WmBase) AddPingHandler(f WmBasePingHandlerFunc) {
 	}
 
 	i.pingHandlers = append(i.pingHandlers, f)
-}
-
-func (i *WmBase) RemovePingHandler(f WmBasePingHandlerFunc) {
-	for j, e := range i.pingHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.pingHandlers = append(i.pingHandlers[:j], i.pingHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *WmBase) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -1181,15 +1168,6 @@ func (i *Surface) AddConfigureHandler(f SurfaceConfigureHandlerFunc) {
 	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *Surface) RemoveConfigureHandler(f SurfaceConfigureHandlerFunc) {
-	for j, e := range i.configureHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
 	switch opcode {
 	case 0:
@@ -1982,15 +1960,6 @@ func (i *Toplevel) AddConfigureHandler(f ToplevelConfigureHandlerFunc) {
 	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *Toplevel) RemoveConfigureHandler(f ToplevelConfigureHandlerFunc) {
-	for j, e := range i.configureHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // ToplevelCloseEvent : surface wants to be closed
 //
 // The close event is sent by the compositor when the user
@@ -2011,15 +1980,6 @@ func (i *Toplevel) AddCloseHandler(f ToplevelCloseHandlerFunc) {
 	}
 
 	i.closeHandlers = append(i.closeHandlers, f)
-}
-
-func (i *Toplevel) RemoveCloseHandler(f ToplevelCloseHandlerFunc) {
-	for j, e := range i.closeHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.closeHandlers = append(i.closeHandlers[:j], i.closeHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Toplevel) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -2308,15 +2268,6 @@ func (i *Popup) AddConfigureHandler(f PopupConfigureHandlerFunc) {
 	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *Popup) RemoveConfigureHandler(f PopupConfigureHandlerFunc) {
-	for j, e := range i.configureHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.configureHandlers = append(i.configureHandlers[:j], i.configureHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // PopupPopupDoneEvent : popup interaction is done
 //
 // The popup_done event is sent out when a popup is dismissed by the
@@ -2332,15 +2283,6 @@ func (i *Popup) AddPopupDoneHandler(f PopupPopupDoneHandlerFunc) {
 	}
 
 	i.popupDoneHandlers = append(i.popupDoneHandlers, f)
-}
-
-func (i *Popup) RemovePopupDoneHandler(f PopupPopupDoneHandlerFunc) {
-	for j, e := range i.popupDoneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.popupDoneHandlers = append(i.popupDoneHandlers[:j], i.popupDoneHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // PopupRepositionedEvent : signal the completion of a repositioned request
@@ -2372,15 +2314,6 @@ func (i *Popup) AddRepositionedHandler(f PopupRepositionedHandlerFunc) {
 	}
 
 	i.repositionedHandlers = append(i.repositionedHandlers, f)
-}
-
-func (i *Popup) RemoveRepositionedHandler(f PopupRepositionedHandlerFunc) {
-	for j, e := range i.repositionedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.repositionedHandlers = append(i.repositionedHandlers[:j], i.repositionedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Popup) Dispatch(opcode uint16, fd uintptr, data []byte) {

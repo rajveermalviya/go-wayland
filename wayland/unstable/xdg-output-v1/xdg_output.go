@@ -27,11 +27,7 @@
 
 package xdg_output
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // OutputManager : manage xdg_output objects
 //
@@ -171,15 +167,6 @@ func (i *Output) AddLogicalPositionHandler(f OutputLogicalPositionHandlerFunc) {
 	i.logicalPositionHandlers = append(i.logicalPositionHandlers, f)
 }
 
-func (i *Output) RemoveLogicalPositionHandler(f OutputLogicalPositionHandlerFunc) {
-	for j, e := range i.logicalPositionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.logicalPositionHandlers = append(i.logicalPositionHandlers[:j], i.logicalPositionHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // OutputLogicalSizeEvent : size of the output in the global compositor space
 //
 // The logical_size event describes the size of the output in the
@@ -231,15 +218,6 @@ func (i *Output) AddLogicalSizeHandler(f OutputLogicalSizeHandlerFunc) {
 	i.logicalSizeHandlers = append(i.logicalSizeHandlers, f)
 }
 
-func (i *Output) RemoveLogicalSizeHandler(f OutputLogicalSizeHandlerFunc) {
-	for j, e := range i.logicalSizeHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.logicalSizeHandlers = append(i.logicalSizeHandlers[:j], i.logicalSizeHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // OutputDoneEvent : all information about the output have been sent
 //
 // This event is sent after all other properties of an xdg_output
@@ -261,15 +239,6 @@ func (i *Output) AddDoneHandler(f OutputDoneHandlerFunc) {
 	}
 
 	i.doneHandlers = append(i.doneHandlers, f)
-}
-
-func (i *Output) RemoveDoneHandler(f OutputDoneHandlerFunc) {
-	for j, e := range i.doneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // OutputNameEvent : name of this output
@@ -306,15 +275,6 @@ func (i *Output) AddNameHandler(f OutputNameHandlerFunc) {
 	i.nameHandlers = append(i.nameHandlers, f)
 }
 
-func (i *Output) RemoveNameHandler(f OutputNameHandlerFunc) {
-	for j, e := range i.nameHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.nameHandlers = append(i.nameHandlers[:j], i.nameHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // OutputDescriptionEvent : human-readable description of this output
 //
 // Many compositors can produce human-readable descriptions of their
@@ -344,15 +304,6 @@ func (i *Output) AddDescriptionHandler(f OutputDescriptionHandlerFunc) {
 	}
 
 	i.descriptionHandlers = append(i.descriptionHandlers, f)
-}
-
-func (i *Output) RemoveDescriptionHandler(f OutputDescriptionHandlerFunc) {
-	for j, e := range i.descriptionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.descriptionHandlers = append(i.descriptionHandlers[:j], i.descriptionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {

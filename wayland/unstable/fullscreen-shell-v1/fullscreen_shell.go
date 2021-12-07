@@ -29,11 +29,7 @@
 
 package fullscreen_shell
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // FullscreenShell : displays a single surface per output
 //
@@ -435,15 +431,6 @@ func (i *FullscreenShell) AddCapabilityHandler(f FullscreenShellCapabilityHandle
 	i.capabilityHandlers = append(i.capabilityHandlers, f)
 }
 
-func (i *FullscreenShell) RemoveCapabilityHandler(f FullscreenShellCapabilityHandlerFunc) {
-	for j, e := range i.capabilityHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.capabilityHandlers = append(i.capabilityHandlers[:j], i.capabilityHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 func (i *FullscreenShell) Dispatch(opcode uint16, fd uintptr, data []byte) {
 	switch opcode {
 	case 0:
@@ -500,15 +487,6 @@ func (i *FullscreenShellModeFeedback) AddModeSuccessfulHandler(f FullscreenShell
 	i.modeSuccessfulHandlers = append(i.modeSuccessfulHandlers, f)
 }
 
-func (i *FullscreenShellModeFeedback) RemoveModeSuccessfulHandler(f FullscreenShellModeFeedbackModeSuccessfulHandlerFunc) {
-	for j, e := range i.modeSuccessfulHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.modeSuccessfulHandlers = append(i.modeSuccessfulHandlers[:j], i.modeSuccessfulHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // FullscreenShellModeFeedbackModeFailedEvent : mode switch failed
 //
 // This event indicates that the attempted mode switch operation
@@ -529,15 +507,6 @@ func (i *FullscreenShellModeFeedback) AddModeFailedHandler(f FullscreenShellMode
 	i.modeFailedHandlers = append(i.modeFailedHandlers, f)
 }
 
-func (i *FullscreenShellModeFeedback) RemoveModeFailedHandler(f FullscreenShellModeFeedbackModeFailedHandlerFunc) {
-	for j, e := range i.modeFailedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.modeFailedHandlers = append(i.modeFailedHandlers[:j], i.modeFailedHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // FullscreenShellModeFeedbackPresentCancelledEvent : mode switch cancelled
 //
 // This event indicates that the attempted mode switch operation was
@@ -556,15 +525,6 @@ func (i *FullscreenShellModeFeedback) AddPresentCancelledHandler(f FullscreenShe
 	}
 
 	i.presentCancelledHandlers = append(i.presentCancelledHandlers, f)
-}
-
-func (i *FullscreenShellModeFeedback) RemovePresentCancelledHandler(f FullscreenShellModeFeedbackPresentCancelledHandlerFunc) {
-	for j, e := range i.presentCancelledHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.presentCancelledHandlers = append(i.presentCancelledHandlers[:j], i.presentCancelledHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *FullscreenShellModeFeedback) Dispatch(opcode uint16, fd uintptr, data []byte) {

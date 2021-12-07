@@ -617,16 +617,6 @@ func writeEvent(w io.Writer, ifaceName string, e Event) {
 	fmt.Fprintf(w, "}\n\n")
 	fmt.Fprintf(w, "i.%sHandlers = append(i.%sHandlers, f)\n", eventNameLower, eventNameLower)
 	fmt.Fprintf(w, "}\n")
-
-	// Remove handler
-	fmt.Fprintf(w, "func (i *%s) Remove%sHandler(f %s%sHandlerFunc) {\n", ifaceName, eventName, ifaceName, eventName)
-	fmt.Fprintf(w, "for j, e := range i.%sHandlers {\n", eventNameLower)
-	fmt.Fprintf(w, "if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {\n")
-	fmt.Fprintf(w, "i.%sHandlers = append(i.%sHandlers[:j], i.%sHandlers[j+1:]...)\n", eventNameLower, eventNameLower, eventNameLower)
-	fmt.Fprintf(w, "return\n")
-	fmt.Fprintf(w, "}\n")
-	fmt.Fprintf(w, "}\n")
-	fmt.Fprintf(w, "}\n")
 }
 
 func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {

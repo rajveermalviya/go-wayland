@@ -31,8 +31,6 @@
 package wayland_drm
 
 import (
-	"reflect"
-
 	"github.com/rajveermalviya/go-wayland/wayland/client"
 	"golang.org/x/sys/unix"
 )
@@ -593,15 +591,6 @@ func (i *Drm) AddDeviceHandler(f DrmDeviceHandlerFunc) {
 	i.deviceHandlers = append(i.deviceHandlers, f)
 }
 
-func (i *Drm) RemoveDeviceHandler(f DrmDeviceHandlerFunc) {
-	for j, e := range i.deviceHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.deviceHandlers = append(i.deviceHandlers[:j], i.deviceHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DrmFormatEvent :
 type DrmFormatEvent struct {
 	Format uint32
@@ -617,15 +606,6 @@ func (i *Drm) AddFormatHandler(f DrmFormatHandlerFunc) {
 	i.formatHandlers = append(i.formatHandlers, f)
 }
 
-func (i *Drm) RemoveFormatHandler(f DrmFormatHandlerFunc) {
-	for j, e := range i.formatHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.formatHandlers = append(i.formatHandlers[:j], i.formatHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DrmAuthenticatedEvent :
 type DrmAuthenticatedEvent struct{}
 type DrmAuthenticatedHandlerFunc func(DrmAuthenticatedEvent)
@@ -637,15 +617,6 @@ func (i *Drm) AddAuthenticatedHandler(f DrmAuthenticatedHandlerFunc) {
 	}
 
 	i.authenticatedHandlers = append(i.authenticatedHandlers, f)
-}
-
-func (i *Drm) RemoveAuthenticatedHandler(f DrmAuthenticatedHandlerFunc) {
-	for j, e := range i.authenticatedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.authenticatedHandlers = append(i.authenticatedHandlers[:j], i.authenticatedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // DrmCapabilitiesEvent :
@@ -661,15 +632,6 @@ func (i *Drm) AddCapabilitiesHandler(f DrmCapabilitiesHandlerFunc) {
 	}
 
 	i.capabilitiesHandlers = append(i.capabilitiesHandlers, f)
-}
-
-func (i *Drm) RemoveCapabilitiesHandler(f DrmCapabilitiesHandlerFunc) {
-	for j, e := range i.capabilitiesHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.capabilitiesHandlers = append(i.capabilitiesHandlers[:j], i.capabilitiesHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *Drm) Dispatch(opcode uint16, fd uintptr, data []byte) {

@@ -29,11 +29,7 @@
 
 package drm_lease
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // DrmLeaseDevice : lease device
 //
@@ -186,15 +182,6 @@ func (i *DrmLeaseDevice) AddDrmFdHandler(f DrmLeaseDeviceDrmFdHandlerFunc) {
 	i.drmFdHandlers = append(i.drmFdHandlers, f)
 }
 
-func (i *DrmLeaseDevice) RemoveDrmFdHandler(f DrmLeaseDeviceDrmFdHandlerFunc) {
-	for j, e := range i.drmFdHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.drmFdHandlers = append(i.drmFdHandlers[:j], i.drmFdHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DrmLeaseDeviceConnectorEvent : advertise connectors available for leases
 //
 // The compositor will use this event to advertise connectors available for
@@ -221,15 +208,6 @@ func (i *DrmLeaseDevice) AddConnectorHandler(f DrmLeaseDeviceConnectorHandlerFun
 	i.connectorHandlers = append(i.connectorHandlers, f)
 }
 
-func (i *DrmLeaseDevice) RemoveConnectorHandler(f DrmLeaseDeviceConnectorHandlerFunc) {
-	for j, e := range i.connectorHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.connectorHandlers = append(i.connectorHandlers[:j], i.connectorHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DrmLeaseDeviceDoneEvent : signals grouping of connectors
 //
 // The compositor will send this event to indicate that it has sent all
@@ -250,15 +228,6 @@ func (i *DrmLeaseDevice) AddDoneHandler(f DrmLeaseDeviceDoneHandlerFunc) {
 	i.doneHandlers = append(i.doneHandlers, f)
 }
 
-func (i *DrmLeaseDevice) RemoveDoneHandler(f DrmLeaseDeviceDoneHandlerFunc) {
-	for j, e := range i.doneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DrmLeaseDeviceReleasedEvent : the compositor has finished using the device
 //
 // This event is sent in response to the release request and indicates
@@ -276,15 +245,6 @@ func (i *DrmLeaseDevice) AddReleasedHandler(f DrmLeaseDeviceReleasedHandlerFunc)
 	}
 
 	i.releasedHandlers = append(i.releasedHandlers, f)
-}
-
-func (i *DrmLeaseDevice) RemoveReleasedHandler(f DrmLeaseDeviceReleasedHandlerFunc) {
-	for j, e := range i.releasedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.releasedHandlers = append(i.releasedHandlers[:j], i.releasedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *DrmLeaseDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -403,15 +363,6 @@ func (i *DrmLeaseConnector) AddNameHandler(f DrmLeaseConnectorNameHandlerFunc) {
 	i.nameHandlers = append(i.nameHandlers, f)
 }
 
-func (i *DrmLeaseConnector) RemoveNameHandler(f DrmLeaseConnectorNameHandlerFunc) {
-	for j, e := range i.nameHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.nameHandlers = append(i.nameHandlers[:j], i.nameHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DrmLeaseConnectorDescriptionEvent : description
 //
 // The compositor sends this event once the connector is created to provide
@@ -430,15 +381,6 @@ func (i *DrmLeaseConnector) AddDescriptionHandler(f DrmLeaseConnectorDescription
 	}
 
 	i.descriptionHandlers = append(i.descriptionHandlers, f)
-}
-
-func (i *DrmLeaseConnector) RemoveDescriptionHandler(f DrmLeaseConnectorDescriptionHandlerFunc) {
-	for j, e := range i.descriptionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.descriptionHandlers = append(i.descriptionHandlers[:j], i.descriptionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // DrmLeaseConnectorConnectorIdEvent : connector_id
@@ -461,15 +403,6 @@ func (i *DrmLeaseConnector) AddConnectorIdHandler(f DrmLeaseConnectorConnectorId
 	i.connectorIdHandlers = append(i.connectorIdHandlers, f)
 }
 
-func (i *DrmLeaseConnector) RemoveConnectorIdHandler(f DrmLeaseConnectorConnectorIdHandlerFunc) {
-	for j, e := range i.connectorIdHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.connectorIdHandlers = append(i.connectorIdHandlers[:j], i.connectorIdHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DrmLeaseConnectorDoneEvent : all properties have been sent
 //
 // This event is sent after all properties of a connector have been sent.
@@ -485,15 +418,6 @@ func (i *DrmLeaseConnector) AddDoneHandler(f DrmLeaseConnectorDoneHandlerFunc) {
 	}
 
 	i.doneHandlers = append(i.doneHandlers, f)
-}
-
-func (i *DrmLeaseConnector) RemoveDoneHandler(f DrmLeaseConnectorDoneHandlerFunc) {
-	for j, e := range i.doneHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.doneHandlers = append(i.doneHandlers[:j], i.doneHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 // DrmLeaseConnectorWithdrawnEvent : lease offer withdrawn
@@ -515,15 +439,6 @@ func (i *DrmLeaseConnector) AddWithdrawnHandler(f DrmLeaseConnectorWithdrawnHand
 	}
 
 	i.withdrawnHandlers = append(i.withdrawnHandlers, f)
-}
-
-func (i *DrmLeaseConnector) RemoveWithdrawnHandler(f DrmLeaseConnectorWithdrawnHandlerFunc) {
-	for j, e := range i.withdrawnHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.withdrawnHandlers = append(i.withdrawnHandlers[:j], i.withdrawnHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *DrmLeaseConnector) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -781,15 +696,6 @@ func (i *DrmLease) AddLeaseFdHandler(f DrmLeaseLeaseFdHandlerFunc) {
 	i.leaseFdHandlers = append(i.leaseFdHandlers, f)
 }
 
-func (i *DrmLease) RemoveLeaseFdHandler(f DrmLeaseLeaseFdHandlerFunc) {
-	for j, e := range i.leaseFdHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.leaseFdHandlers = append(i.leaseFdHandlers[:j], i.leaseFdHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // DrmLeaseFinishedEvent : sent when the lease has been revoked
 //
 // The compositor uses this event to either reject a lease request, or if
@@ -810,15 +716,6 @@ func (i *DrmLease) AddFinishedHandler(f DrmLeaseFinishedHandlerFunc) {
 	}
 
 	i.finishedHandlers = append(i.finishedHandlers, f)
-}
-
-func (i *DrmLease) RemoveFinishedHandler(f DrmLeaseFinishedHandlerFunc) {
-	for j, e := range i.finishedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.finishedHandlers = append(i.finishedHandlers[:j], i.finishedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *DrmLease) Dispatch(opcode uint16, fd uintptr, data []byte) {

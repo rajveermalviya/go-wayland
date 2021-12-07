@@ -28,11 +28,7 @@
 
 package relative_pointer
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // RelativePointerManager : get relative pointer objects
 //
@@ -182,15 +178,6 @@ func (i *RelativePointer) AddRelativeMotionHandler(f RelativePointerRelativeMoti
 	}
 
 	i.relativeMotionHandlers = append(i.relativeMotionHandlers, f)
-}
-
-func (i *RelativePointer) RemoveRelativeMotionHandler(f RelativePointerRelativeMotionHandlerFunc) {
-	for j, e := range i.relativeMotionHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.relativeMotionHandlers = append(i.relativeMotionHandlers[:j], i.relativeMotionHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *RelativePointer) Dispatch(opcode uint16, fd uintptr, data []byte) {

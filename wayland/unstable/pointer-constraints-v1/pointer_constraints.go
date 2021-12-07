@@ -28,11 +28,7 @@
 
 package pointer_constraints
 
-import (
-	"reflect"
-
-	"github.com/rajveermalviya/go-wayland/wayland/client"
-)
+import "github.com/rajveermalviya/go-wayland/wayland/client"
 
 // PointerConstraints : constrain the movement of a pointer
 //
@@ -447,15 +443,6 @@ func (i *LockedPointer) AddLockedHandler(f LockedPointerLockedHandlerFunc) {
 	i.lockedHandlers = append(i.lockedHandlers, f)
 }
 
-func (i *LockedPointer) RemoveLockedHandler(f LockedPointerLockedHandlerFunc) {
-	for j, e := range i.lockedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.lockedHandlers = append(i.lockedHandlers[:j], i.lockedHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // LockedPointerUnlockedEvent : lock deactivation event
 //
 // Notification that the pointer lock of the seat's pointer is no longer
@@ -474,15 +461,6 @@ func (i *LockedPointer) AddUnlockedHandler(f LockedPointerUnlockedHandlerFunc) {
 	}
 
 	i.unlockedHandlers = append(i.unlockedHandlers, f)
-}
-
-func (i *LockedPointer) RemoveUnlockedHandler(f LockedPointerUnlockedHandlerFunc) {
-	for j, e := range i.unlockedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.unlockedHandlers = append(i.unlockedHandlers[:j], i.unlockedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *LockedPointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
@@ -629,15 +607,6 @@ func (i *ConfinedPointer) AddConfinedHandler(f ConfinedPointerConfinedHandlerFun
 	i.confinedHandlers = append(i.confinedHandlers, f)
 }
 
-func (i *ConfinedPointer) RemoveConfinedHandler(f ConfinedPointerConfinedHandlerFunc) {
-	for j, e := range i.confinedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.confinedHandlers = append(i.confinedHandlers[:j], i.confinedHandlers[j+1:]...)
-			return
-		}
-	}
-}
-
 // ConfinedPointerUnconfinedEvent : pointer unconfined
 //
 // Notification that the pointer confinement of the seat's pointer is no
@@ -656,15 +625,6 @@ func (i *ConfinedPointer) AddUnconfinedHandler(f ConfinedPointerUnconfinedHandle
 	}
 
 	i.unconfinedHandlers = append(i.unconfinedHandlers, f)
-}
-
-func (i *ConfinedPointer) RemoveUnconfinedHandler(f ConfinedPointerUnconfinedHandlerFunc) {
-	for j, e := range i.unconfinedHandlers {
-		if reflect.ValueOf(e).Pointer() == reflect.ValueOf(f).Pointer() {
-			i.unconfinedHandlers = append(i.unconfinedHandlers[:j], i.unconfinedHandlers[j+1:]...)
-			return
-		}
-	}
 }
 
 func (i *ConfinedPointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
