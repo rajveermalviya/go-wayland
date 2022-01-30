@@ -8,3 +8,5 @@ require (
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
 	golang.org/x/sys v0.0.0-20211210111614-af8b64212486
 )
+
+replace github.com/rajveermalviya/go-wayland/wayland => ../../wayland/

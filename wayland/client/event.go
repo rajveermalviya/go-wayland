@@ -1,11 +1,12 @@
 package client
 
 import (
-	"bytes"
 	"fmt"
 
 	"github.com/rajveermalviya/go-wayland/wayland/internal/byteorder"
 	"golang.org/x/sys/unix"
+
+	_ "unsafe"
 )
 
 var oobSpace = unix.CmsgSpace(4)
@@ -63,10 +64,8 @@ func Uint32(src []byte) uint32 {
 	return byteorder.NativeEndian.Uint32(src)
 }
 
-func String(src []byte) string {
-	// TODO: do not assume padding 0
-	return string(bytes.TrimRight(src, "\x00"))
-}
+//go:linkname String runtime.gostring
+func String([]byte) string
 
 func Fixed(src []byte) float64 {
 	i := int32(byteorder.NativeEndian.Uint32(src))

@@ -56,7 +56,7 @@ func main() {
 	}
 
 	// Resize again, for first frame
-	frameImage := resize.Resize(0, 480, pImage, resize.Bilinear).(*image.RGBA)
+	frameImage := resize.Resize(0, 480, pImage, resize.NearestNeighbor).(*image.RGBA)
 	frameRect := frameImage.Bounds()
 
 	app := &appState{
@@ -197,7 +197,7 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 			log.Fatalf("unable to bind xdg_wm_base interface: %v", err)
 		}
 		app.xdgWmBase = xdgWmBase
-		// Add xdg_wmbase ping handler `app.HandleWmBasePing`
+		// Add xdg_wmbase ping handler
 		xdgWmBase.AddPingHandler(app.HandleWmBasePing)
 	case "wl_seat":
 		seat := client.NewSeat(app.context())
