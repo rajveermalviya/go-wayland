@@ -1,5 +1,7 @@
 {
   "gopls": {
-    "build.experimentalWorkspaceModule": true
+    "ui.codelenses": {
+      "gc_details": true,
+    }
   }
 }

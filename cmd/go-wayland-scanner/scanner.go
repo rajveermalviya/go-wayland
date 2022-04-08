@@ -186,6 +186,8 @@ func fmtFile(b []byte) []byte {
 
 	langVersion := ""
 	out, err := exec.Command("go", "list", "-m", "-f", "{{.GoVersion}}").Output()
+	outSlice := bytes.Split(out, []byte("\n"))
+	out = outSlice[0]
 	out = bytes.TrimSpace(out)
 	if err == nil && len(out) > 0 {
 		langVersion = string(out)
