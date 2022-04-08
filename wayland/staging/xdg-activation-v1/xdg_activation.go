@@ -62,13 +62,13 @@ func (i *Activation) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -82,7 +82,7 @@ func (i *Activation) GetActivationToken() (*ActivationToken, error) {
 	id := NewActivationToken(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -90,7 +90,7 @@ func (i *Activation) GetActivationToken() (*ActivationToken, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -178,7 +178,7 @@ func NewActivationToken(ctx *client.Context) *ActivationToken {
 func (i *ActivationToken) SetSerial(serial uint32, seat *client.Seat) error {
 	const opcode = 0
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -188,7 +188,7 @@ func (i *ActivationToken) SetSerial(serial uint32, seat *client.Seat) error {
 	l += 4
 	client.PutUint32(r[l:l+4], seat.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -230,7 +230,7 @@ func (i *ActivationToken) SetAppId(appId string) error {
 func (i *ActivationToken) SetSurface(surface *client.Surface) error {
 	const opcode = 2
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -238,7 +238,7 @@ func (i *ActivationToken) SetSurface(surface *client.Surface) error {
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -250,13 +250,13 @@ func (i *ActivationToken) SetSurface(surface *client.Surface) error {
 func (i *ActivationToken) Commit() error {
 	const opcode = 3
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -269,13 +269,13 @@ func (i *ActivationToken) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 4
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

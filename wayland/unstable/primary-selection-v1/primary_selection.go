@@ -62,7 +62,7 @@ func (i *PrimarySelectionDeviceManager) CreateSource() (*PrimarySelectionSource,
 	id := NewPrimarySelectionSource(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -70,7 +70,7 @@ func (i *PrimarySelectionDeviceManager) CreateSource() (*PrimarySelectionSource,
 	l += 4
 	client.PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -82,7 +82,7 @@ func (i *PrimarySelectionDeviceManager) GetDevice(seat *client.Seat) (*PrimarySe
 	id := NewPrimarySelectionDevice(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -92,7 +92,7 @@ func (i *PrimarySelectionDeviceManager) GetDevice(seat *client.Seat) (*PrimarySe
 	l += 4
 	client.PutUint32(r[l:l+4], seat.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -104,13 +104,13 @@ func (i *PrimarySelectionDeviceManager) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 2
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -139,7 +139,7 @@ func NewPrimarySelectionDevice(ctx *client.Context) *PrimarySelectionDevice {
 func (i *PrimarySelectionDevice) SetSelection(source *PrimarySelectionSource, serial uint32) error {
 	const opcode = 0
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -154,7 +154,7 @@ func (i *PrimarySelectionDevice) SetSelection(source *PrimarySelectionSource, se
 	}
 	client.PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -166,13 +166,13 @@ func (i *PrimarySelectionDevice) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -311,13 +311,13 @@ func (i *PrimarySelectionOffer) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -410,13 +410,13 @@ func (i *PrimarySelectionSource) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

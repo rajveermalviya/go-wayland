@@ -115,13 +115,13 @@ func (i *TextInput) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -160,13 +160,13 @@ func (i *TextInput) Destroy() error {
 func (i *TextInput) Enable() error {
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -181,13 +181,13 @@ func (i *TextInput) Enable() error {
 func (i *TextInput) Disable() error {
 	const opcode = 2
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -265,7 +265,7 @@ func (i *TextInput) SetSurroundingText(text string, cursor, anchor int32) error 
 func (i *TextInput) SetTextChangeCause(cause uint32) error {
 	const opcode = 4
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -273,7 +273,7 @@ func (i *TextInput) SetTextChangeCause(cause uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(cause))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -294,7 +294,7 @@ func (i *TextInput) SetTextChangeCause(cause uint32) error {
 func (i *TextInput) SetContentType(hint, purpose uint32) error {
 	const opcode = 5
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -304,7 +304,7 @@ func (i *TextInput) SetContentType(hint, purpose uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(purpose))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -331,7 +331,7 @@ func (i *TextInput) SetContentType(hint, purpose uint32) error {
 func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
 	const opcode = 6
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -345,7 +345,7 @@ func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -378,13 +378,13 @@ func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
 func (i *TextInput) Commit() error {
 	const opcode = 7
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -918,13 +918,13 @@ func (i *TextInputManager) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -936,7 +936,7 @@ func (i *TextInputManager) GetTextInput(seat *client.Seat) (*TextInput, error) {
 	id := NewTextInput(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -946,6 +946,6 @@ func (i *TextInputManager) GetTextInput(seat *client.Seat) (*TextInput, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], seat.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }

@@ -71,13 +71,13 @@ func (i *WmBase) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -91,7 +91,7 @@ func (i *WmBase) CreatePositioner() (*Positioner, error) {
 	id := NewPositioner(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -99,7 +99,7 @@ func (i *WmBase) CreatePositioner() (*Positioner, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -123,7 +123,7 @@ func (i *WmBase) GetXdgSurface(surface *client.Surface) (*Surface, error) {
 	id := NewSurface(i.Context())
 	const opcode = 2
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -133,7 +133,7 @@ func (i *WmBase) GetXdgSurface(surface *client.Surface) (*Surface, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -146,7 +146,7 @@ func (i *WmBase) GetXdgSurface(surface *client.Surface) (*Surface, error) {
 func (i *WmBase) Pong(serial uint32) error {
 	const opcode = 3
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -154,7 +154,7 @@ func (i *WmBase) Pong(serial uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -321,13 +321,13 @@ func (i *Positioner) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -344,7 +344,7 @@ func (i *Positioner) Destroy() error {
 func (i *Positioner) SetSize(width, height int32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -354,7 +354,7 @@ func (i *Positioner) SetSize(width, height int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -378,7 +378,7 @@ func (i *Positioner) SetSize(width, height int32) error {
 func (i *Positioner) SetAnchorRect(x, y, width, height int32) error {
 	const opcode = 2
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -392,7 +392,7 @@ func (i *Positioner) SetAnchorRect(x, y, width, height int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -409,7 +409,7 @@ func (i *Positioner) SetAnchorRect(x, y, width, height int32) error {
 func (i *Positioner) SetAnchor(anchor uint32) error {
 	const opcode = 3
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -417,7 +417,7 @@ func (i *Positioner) SetAnchor(anchor uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(anchor))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -434,7 +434,7 @@ func (i *Positioner) SetAnchor(anchor uint32) error {
 func (i *Positioner) SetGravity(gravity uint32) error {
 	const opcode = 4
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -442,7 +442,7 @@ func (i *Positioner) SetGravity(gravity uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(gravity))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -466,7 +466,7 @@ func (i *Positioner) SetGravity(gravity uint32) error {
 func (i *Positioner) SetConstraintAdjustment(constraintAdjustment uint32) error {
 	const opcode = 5
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -474,7 +474,7 @@ func (i *Positioner) SetConstraintAdjustment(constraintAdjustment uint32) error 
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(constraintAdjustment))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -497,7 +497,7 @@ func (i *Positioner) SetConstraintAdjustment(constraintAdjustment uint32) error 
 func (i *Positioner) SetOffset(x, y int32) error {
 	const opcode = 6
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -507,7 +507,7 @@ func (i *Positioner) SetOffset(x, y int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(y))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -523,13 +523,13 @@ func (i *Positioner) SetOffset(x, y int32) error {
 func (i *Positioner) SetReactive() error {
 	const opcode = 7
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -548,7 +548,7 @@ func (i *Positioner) SetReactive() error {
 func (i *Positioner) SetParentSize(parentWidth, parentHeight int32) error {
 	const opcode = 8
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -558,7 +558,7 @@ func (i *Positioner) SetParentSize(parentWidth, parentHeight int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(parentHeight))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -573,7 +573,7 @@ func (i *Positioner) SetParentSize(parentWidth, parentHeight int32) error {
 func (i *Positioner) SetParentConfigure(serial uint32) error {
 	const opcode = 9
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -581,7 +581,7 @@ func (i *Positioner) SetParentConfigure(serial uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -938,13 +938,13 @@ func (i *Surface) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -960,7 +960,7 @@ func (i *Surface) GetToplevel() (*Toplevel, error) {
 	id := NewToplevel(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -968,7 +968,7 @@ func (i *Surface) GetToplevel() (*Toplevel, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -987,7 +987,7 @@ func (i *Surface) GetPopup(parent *Surface, positioner *Positioner) (*Popup, err
 	id := NewPopup(i.Context())
 	const opcode = 2
 	const rLen = 8 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1004,7 +1004,7 @@ func (i *Surface) GetPopup(parent *Surface, positioner *Positioner) (*Popup, err
 	}
 	client.PutUint32(r[l:l+4], positioner.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -1043,7 +1043,7 @@ func (i *Surface) GetPopup(parent *Surface, positioner *Positioner) (*Popup, err
 func (i *Surface) SetWindowGeometry(x, y, width, height int32) error {
 	const opcode = 3
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1057,7 +1057,7 @@ func (i *Surface) SetWindowGeometry(x, y, width, height int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1087,7 +1087,7 @@ func (i *Surface) SetWindowGeometry(x, y, width, height int32) error {
 func (i *Surface) AckConfigure(serial uint32) error {
 	const opcode = 4
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1095,7 +1095,7 @@ func (i *Surface) AckConfigure(serial uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1246,13 +1246,13 @@ func (i *Toplevel) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1278,7 +1278,7 @@ func (i *Toplevel) Destroy() error {
 func (i *Toplevel) SetParent(parent *Toplevel) error {
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1291,7 +1291,7 @@ func (i *Toplevel) SetParent(parent *Toplevel) error {
 		client.PutUint32(r[l:l+4], parent.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1384,7 +1384,7 @@ func (i *Toplevel) SetAppId(appId string) error {
 func (i *Toplevel) ShowWindowMenu(seat *client.Seat, serial uint32, x, y int32) error {
 	const opcode = 4
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1398,7 +1398,7 @@ func (i *Toplevel) ShowWindowMenu(seat *client.Seat, serial uint32, x, y int32) 
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(y))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1426,7 +1426,7 @@ func (i *Toplevel) ShowWindowMenu(seat *client.Seat, serial uint32, x, y int32) 
 func (i *Toplevel) Move(seat *client.Seat, serial uint32) error {
 	const opcode = 5
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1436,7 +1436,7 @@ func (i *Toplevel) Move(seat *client.Seat, serial uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1480,7 +1480,7 @@ func (i *Toplevel) Move(seat *client.Seat, serial uint32) error {
 func (i *Toplevel) Resize(seat *client.Seat, serial, edges uint32) error {
 	const opcode = 6
 	const rLen = 8 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1492,7 +1492,7 @@ func (i *Toplevel) Resize(seat *client.Seat, serial, edges uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(edges))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1536,7 +1536,7 @@ func (i *Toplevel) Resize(seat *client.Seat, serial, edges uint32) error {
 func (i *Toplevel) SetMaxSize(width, height int32) error {
 	const opcode = 7
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1546,7 +1546,7 @@ func (i *Toplevel) SetMaxSize(width, height int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1590,7 +1590,7 @@ func (i *Toplevel) SetMaxSize(width, height int32) error {
 func (i *Toplevel) SetMinSize(width, height int32) error {
 	const opcode = 8
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1600,7 +1600,7 @@ func (i *Toplevel) SetMinSize(width, height int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1629,13 +1629,13 @@ func (i *Toplevel) SetMinSize(width, height int32) error {
 func (i *Toplevel) SetMaximized() error {
 	const opcode = 9
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1666,13 +1666,13 @@ func (i *Toplevel) SetMaximized() error {
 func (i *Toplevel) UnsetMaximized() error {
 	const opcode = 10
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1705,7 +1705,7 @@ func (i *Toplevel) UnsetMaximized() error {
 func (i *Toplevel) SetFullscreen(output *client.Output) error {
 	const opcode = 11
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1718,7 +1718,7 @@ func (i *Toplevel) SetFullscreen(output *client.Output) error {
 		client.PutUint32(r[l:l+4], output.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1745,13 +1745,13 @@ func (i *Toplevel) SetFullscreen(output *client.Output) error {
 func (i *Toplevel) UnsetFullscreen() error {
 	const opcode = 12
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1769,13 +1769,13 @@ func (i *Toplevel) UnsetFullscreen() error {
 func (i *Toplevel) SetMinimized() error {
 	const opcode = 13
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2169,13 +2169,13 @@ func (i *Popup) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2228,7 +2228,7 @@ func (i *Popup) Destroy() error {
 func (i *Popup) Grab(seat *client.Seat, serial uint32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -2238,7 +2238,7 @@ func (i *Popup) Grab(seat *client.Seat, serial uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2272,7 +2272,7 @@ func (i *Popup) Grab(seat *client.Seat, serial uint32) error {
 func (i *Popup) Reposition(positioner *Positioner, token uint32) error {
 	const opcode = 2
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -2282,7 +2282,7 @@ func (i *Popup) Reposition(positioner *Positioner, token uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(token))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

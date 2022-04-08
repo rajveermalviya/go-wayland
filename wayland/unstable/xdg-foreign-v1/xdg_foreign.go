@@ -56,13 +56,13 @@ func (i *Exporter) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -82,7 +82,7 @@ func (i *Exporter) Export(surface *client.Surface) (*Exported, error) {
 	id := NewExported(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -92,7 +92,7 @@ func (i *Exporter) Export(surface *client.Surface) (*Exported, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -125,13 +125,13 @@ func (i *Importer) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -196,13 +196,13 @@ func (i *Exported) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -275,13 +275,13 @@ func (i *Imported) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -296,7 +296,7 @@ func (i *Imported) Destroy() error {
 func (i *Imported) SetParentOf(surface *client.Surface) error {
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -304,7 +304,7 @@ func (i *Imported) SetParentOf(surface *client.Surface) error {
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

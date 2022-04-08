@@ -127,7 +127,7 @@ func NewTextInput(ctx *client.Context) *TextInput {
 func (i *TextInput) Activate(seat *client.Seat, surface *client.Surface) error {
 	const opcode = 0
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -137,7 +137,7 @@ func (i *TextInput) Activate(seat *client.Seat, surface *client.Surface) error {
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -150,7 +150,7 @@ func (i *TextInput) Activate(seat *client.Seat, surface *client.Surface) error {
 func (i *TextInput) Deactivate(seat *client.Seat) error {
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -158,7 +158,7 @@ func (i *TextInput) Deactivate(seat *client.Seat) error {
 	l += 4
 	client.PutUint32(r[l:l+4], seat.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -169,13 +169,13 @@ func (i *TextInput) Deactivate(seat *client.Seat) error {
 func (i *TextInput) ShowInputPanel() error {
 	const opcode = 2
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -186,13 +186,13 @@ func (i *TextInput) ShowInputPanel() error {
 func (i *TextInput) HideInputPanel() error {
 	const opcode = 3
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -205,13 +205,13 @@ func (i *TextInput) HideInputPanel() error {
 func (i *TextInput) Reset() error {
 	const opcode = 4
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -256,7 +256,7 @@ func (i *TextInput) SetSurroundingText(text string, cursor, anchor uint32) error
 func (i *TextInput) SetContentType(hint, purpose uint32) error {
 	const opcode = 6
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -266,7 +266,7 @@ func (i *TextInput) SetContentType(hint, purpose uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(purpose))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -275,7 +275,7 @@ func (i *TextInput) SetContentType(hint, purpose uint32) error {
 func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
 	const opcode = 7
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -289,7 +289,7 @@ func (i *TextInput) SetCursorRectangle(x, y, width, height int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -325,7 +325,7 @@ func (i *TextInput) SetPreferredLanguage(language string) error {
 func (i *TextInput) CommitState(serial uint32) error {
 	const opcode = 9
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -333,7 +333,7 @@ func (i *TextInput) CommitState(serial uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -342,7 +342,7 @@ func (i *TextInput) CommitState(serial uint32) error {
 func (i *TextInput) InvokeAction(button, index uint32) error {
 	const opcode = 10
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -352,7 +352,7 @@ func (i *TextInput) InvokeAction(button, index uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(index))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1169,7 +1169,7 @@ func (i *TextInputManager) CreateTextInput() (*TextInput, error) {
 	id := NewTextInput(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1177,7 +1177,7 @@ func (i *TextInputManager) CreateTextInput() (*TextInput, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 

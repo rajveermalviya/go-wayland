@@ -193,13 +193,13 @@ func (i *LinuxDmabuf) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -214,7 +214,7 @@ func (i *LinuxDmabuf) CreateParams() (*LinuxBufferParams, error) {
 	paramsId := NewLinuxBufferParams(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -222,7 +222,7 @@ func (i *LinuxDmabuf) CreateParams() (*LinuxBufferParams, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], paramsId.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return paramsId, err
 }
 
@@ -237,7 +237,7 @@ func (i *LinuxDmabuf) GetDefaultFeedback() (*LinuxDmabufFeedback, error) {
 	id := NewLinuxDmabufFeedback(i.Context())
 	const opcode = 2
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -245,7 +245,7 @@ func (i *LinuxDmabuf) GetDefaultFeedback() (*LinuxDmabufFeedback, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -262,7 +262,7 @@ func (i *LinuxDmabuf) GetSurfaceFeedback(surface *client.Surface) (*LinuxDmabufF
 	id := NewLinuxDmabufFeedback(i.Context())
 	const opcode = 3
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -272,7 +272,7 @@ func (i *LinuxDmabuf) GetSurfaceFeedback(surface *client.Surface) (*LinuxDmabufF
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -428,13 +428,13 @@ func (i *LinuxBufferParams) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -466,7 +466,7 @@ func (i *LinuxBufferParams) Destroy() error {
 func (i *LinuxBufferParams) Add(fd uintptr, planeIdx, offset, stride, modifierHi, modifierLo uint32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -483,7 +483,7 @@ func (i *LinuxBufferParams) Add(fd uintptr, planeIdx, offset, stride, modifierHi
 	client.PutUint32(r[l:l+4], uint32(modifierLo))
 	l += 4
 	oob := unix.UnixRights(int(fd))
-	err := i.Context().WriteMsg(r, oob)
+	err := i.Context().WriteMsg(r[:], oob)
 	return err
 }
 
@@ -556,7 +556,7 @@ func (i *LinuxBufferParams) Add(fd uintptr, planeIdx, offset, stride, modifierHi
 func (i *LinuxBufferParams) Create(width, height int32, format, flags uint32) error {
 	const opcode = 2
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -570,7 +570,7 @@ func (i *LinuxBufferParams) Create(width, height int32, format, flags uint32) er
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(flags))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -608,7 +608,7 @@ func (i *LinuxBufferParams) CreateImmed(width, height int32, format, flags uint3
 	bufferId := client.NewBuffer(i.Context())
 	const opcode = 3
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -624,7 +624,7 @@ func (i *LinuxBufferParams) CreateImmed(width, height int32, format, flags uint3
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(flags))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return bufferId, err
 }
 
@@ -887,13 +887,13 @@ func (i *LinuxDmabufFeedback) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

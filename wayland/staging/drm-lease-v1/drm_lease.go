@@ -119,7 +119,7 @@ func (i *DrmLeaseDevice) CreateLeaseRequest() (*DrmLeaseRequest, error) {
 	id := NewDrmLeaseRequest(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -127,7 +127,7 @@ func (i *DrmLeaseDevice) CreateLeaseRequest() (*DrmLeaseRequest, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -143,13 +143,13 @@ func (i *DrmLeaseDevice) CreateLeaseRequest() (*DrmLeaseRequest, error) {
 func (i *DrmLeaseDevice) Release() error {
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -333,13 +333,13 @@ func (i *DrmLeaseConnector) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -537,7 +537,7 @@ func NewDrmLeaseRequest(ctx *client.Context) *DrmLeaseRequest {
 func (i *DrmLeaseRequest) RequestConnector(connector *DrmLeaseConnector) error {
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -545,7 +545,7 @@ func (i *DrmLeaseRequest) RequestConnector(connector *DrmLeaseConnector) error {
 	l += 4
 	client.PutUint32(r[l:l+4], connector.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -564,7 +564,7 @@ func (i *DrmLeaseRequest) Submit() (*DrmLease, error) {
 	id := NewDrmLease(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -572,7 +572,7 @@ func (i *DrmLeaseRequest) Submit() (*DrmLease, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -660,13 +660,13 @@ func (i *DrmLease) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

@@ -1,7 +1,9 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
+	"unsafe"
 
 	"github.com/rajveermalviya/go-wayland/wayland/internal/byteorder"
 	"golang.org/x/sys/unix"
@@ -64,8 +66,11 @@ func Uint32(src []byte) uint32 {
 	return byteorder.NativeEndian.Uint32(src)
 }
 
-//go:linkname String runtime.gostring
-func String([]byte) string
+func String(src []byte) string {
+	idx := bytes.IndexByte(src, 0)
+	src = src[:idx:idx]
+	return *(*string)(unsafe.Pointer(&src))
+}
 
 func Fixed(src []byte) float64 {
 	i := int32(byteorder.NativeEndian.Uint32(src))

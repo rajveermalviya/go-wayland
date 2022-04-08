@@ -65,13 +65,13 @@ func (i *Viewporter) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -87,7 +87,7 @@ func (i *Viewporter) GetViewport(surface *client.Surface) (*Viewport, error) {
 	id := NewViewport(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -97,7 +97,7 @@ func (i *Viewporter) GetViewport(surface *client.Surface) (*Viewport, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -276,13 +276,13 @@ func (i *Viewport) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -307,7 +307,7 @@ func (i *Viewport) Destroy() error {
 func (i *Viewport) SetSource(x, y, width, height float64) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -321,7 +321,7 @@ func (i *Viewport) SetSource(x, y, width, height float64) error {
 	l += 4
 	client.PutFixed(r[l:l+4], height)
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -344,7 +344,7 @@ func (i *Viewport) SetSource(x, y, width, height float64) error {
 func (i *Viewport) SetDestination(width, height int32) error {
 	const opcode = 2
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -354,7 +354,7 @@ func (i *Viewport) SetDestination(width, height int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

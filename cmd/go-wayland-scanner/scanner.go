@@ -387,10 +387,11 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 
 	if canBeConst {
 		fmt.Fprintf(w, "const rLen =  %s\n", strings.Join(sizes, "+"))
+		fmt.Fprintf(w, "var r [rLen]byte\n")
 	} else {
 		fmt.Fprintf(w, "rLen := %s\n", strings.Join(sizes, "+"))
+		fmt.Fprintf(w, "r := make([]byte, rLen)\n")
 	}
-	fmt.Fprintf(w, "r := make([]byte, rLen)\n")
 
 	fmt.Fprintf(w, "l := 0\n")
 	if protocol.Name == "wayland" {
@@ -510,9 +511,18 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 		argNameLower := toLowerCamel(arg.Name)
 
 		fmt.Fprintf(w, "oob := unix.UnixRights(int(%s))\n", argNameLower)
-		fmt.Fprintf(w, "err := i.Context().WriteMsg(r, oob)\n")
+
+		if canBeConst {
+			fmt.Fprintf(w, "err := i.Context().WriteMsg(r[:], oob)\n")
+		} else {
+			fmt.Fprintf(w, "err := i.Context().WriteMsg(r, oob)\n")
+		}
 	} else {
-		fmt.Fprintf(w, "err := i.Context().WriteMsg(r, nil)\n")
+		if canBeConst {
+			fmt.Fprintf(w, "err := i.Context().WriteMsg(r[:], nil)\n")
+		} else {
+			fmt.Fprintf(w, "err := i.Context().WriteMsg(r, nil)\n")
+		}
 	}
 
 	fmt.Fprintf(w, "return %s\n", strings.Join(append(newObjects, "err"), ","))

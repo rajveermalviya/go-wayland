@@ -101,13 +101,13 @@ func (i *InputMethodContext) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -186,7 +186,7 @@ func (i *InputMethodContext) PreeditString(serial uint32, text, commit string) e
 func (i *InputMethodContext) PreeditStyling(index, length, style uint32) error {
 	const opcode = 3
 	const rLen = 8 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -198,7 +198,7 @@ func (i *InputMethodContext) PreeditStyling(index, length, style uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(style))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -214,7 +214,7 @@ func (i *InputMethodContext) PreeditStyling(index, length, style uint32) error {
 func (i *InputMethodContext) PreeditCursor(index int32) error {
 	const opcode = 4
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -222,7 +222,7 @@ func (i *InputMethodContext) PreeditCursor(index int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(index))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -236,7 +236,7 @@ func (i *InputMethodContext) PreeditCursor(index int32) error {
 func (i *InputMethodContext) DeleteSurroundingText(index int32, length uint32) error {
 	const opcode = 5
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -246,7 +246,7 @@ func (i *InputMethodContext) DeleteSurroundingText(index int32, length uint32) e
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(length))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -266,7 +266,7 @@ func (i *InputMethodContext) DeleteSurroundingText(index int32, length uint32) e
 func (i *InputMethodContext) CursorPosition(index, anchor int32) error {
 	const opcode = 6
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -276,7 +276,7 @@ func (i *InputMethodContext) CursorPosition(index, anchor int32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(anchor))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -309,7 +309,7 @@ func (i *InputMethodContext) ModifiersMap(_map []byte) error {
 func (i *InputMethodContext) Keysym(serial, time, sym, state, modifiers uint32) error {
 	const opcode = 8
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -325,7 +325,7 @@ func (i *InputMethodContext) Keysym(serial, time, sym, state, modifiers uint32) 
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(modifiers))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -340,7 +340,7 @@ func (i *InputMethodContext) GrabKeyboard() (*client.Keyboard, error) {
 	keyboard := client.NewKeyboard(i.Context())
 	const opcode = 9
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -348,7 +348,7 @@ func (i *InputMethodContext) GrabKeyboard() (*client.Keyboard, error) {
 	l += 4
 	client.PutUint32(r[l:l+4], keyboard.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return keyboard, err
 }
 
@@ -368,7 +368,7 @@ func (i *InputMethodContext) GrabKeyboard() (*client.Keyboard, error) {
 func (i *InputMethodContext) Key(serial, time, key, state uint32) error {
 	const opcode = 10
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -382,7 +382,7 @@ func (i *InputMethodContext) Key(serial, time, key, state uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(state))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -401,7 +401,7 @@ func (i *InputMethodContext) Key(serial, time, key, state uint32) error {
 func (i *InputMethodContext) Modifiers(serial, modsDepressed, modsLatched, modsLocked, group uint32) error {
 	const opcode = 11
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -417,7 +417,7 @@ func (i *InputMethodContext) Modifiers(serial, modsDepressed, modsLatched, modsL
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(group))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -448,7 +448,7 @@ func (i *InputMethodContext) Language(serial uint32, language string) error {
 func (i *InputMethodContext) TextDirection(serial, direction uint32) error {
 	const opcode = 13
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -458,7 +458,7 @@ func (i *InputMethodContext) TextDirection(serial, direction uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(direction))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -755,7 +755,7 @@ func (i *InputPanel) GetInputPanelSurface(surface *client.Surface) (*InputPanelS
 	id := NewInputPanelSurface(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -765,7 +765,7 @@ func (i *InputPanel) GetInputPanelSurface(surface *client.Surface) (*InputPanelS
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -795,7 +795,7 @@ func NewInputPanelSurface(ctx *client.Context) *InputPanelSurface {
 func (i *InputPanelSurface) SetToplevel(output *client.Output, position uint32) error {
 	const opcode = 0
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -805,7 +805,7 @@ func (i *InputPanelSurface) SetToplevel(output *client.Output, position uint32) 
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(position))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -819,13 +819,13 @@ func (i *InputPanelSurface) SetToplevel(output *client.Output, position uint32) 
 func (i *InputPanelSurface) SetOverlayPanel() error {
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

@@ -124,13 +124,13 @@ func (i *FullscreenShell) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -161,7 +161,7 @@ func (i *FullscreenShell) Release() error {
 func (i *FullscreenShell) PresentSurface(surface *client.Surface, method uint32, output *client.Output) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -183,7 +183,7 @@ func (i *FullscreenShell) PresentSurface(surface *client.Surface, method uint32,
 		client.PutUint32(r[l:l+4], output.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -235,7 +235,7 @@ func (i *FullscreenShell) PresentSurfaceForMode(surface *client.Surface, output 
 	feedback := NewFullscreenShellModeFeedback(i.Context())
 	const opcode = 2
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -249,7 +249,7 @@ func (i *FullscreenShell) PresentSurfaceForMode(surface *client.Surface, output 
 	l += 4
 	client.PutUint32(r[l:l+4], feedback.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return feedback, err
 }
 

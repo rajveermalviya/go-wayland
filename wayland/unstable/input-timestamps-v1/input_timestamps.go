@@ -57,13 +57,13 @@ func (i *InputTimestampsManager) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -83,7 +83,7 @@ func (i *InputTimestampsManager) GetKeyboardTimestamps(keyboard *client.Keyboard
 	id := NewInputTimestamps(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -93,7 +93,7 @@ func (i *InputTimestampsManager) GetKeyboardTimestamps(keyboard *client.Keyboard
 	l += 4
 	client.PutUint32(r[l:l+4], keyboard.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -113,7 +113,7 @@ func (i *InputTimestampsManager) GetPointerTimestamps(pointer *client.Pointer) (
 	id := NewInputTimestamps(i.Context())
 	const opcode = 2
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -123,7 +123,7 @@ func (i *InputTimestampsManager) GetPointerTimestamps(pointer *client.Pointer) (
 	l += 4
 	client.PutUint32(r[l:l+4], pointer.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -143,7 +143,7 @@ func (i *InputTimestampsManager) GetTouchTimestamps(touch *client.Touch) (*Input
 	id := NewInputTimestamps(i.Context())
 	const opcode = 3
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -153,7 +153,7 @@ func (i *InputTimestampsManager) GetTouchTimestamps(touch *client.Touch) (*Input
 	l += 4
 	client.PutUint32(r[l:l+4], touch.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -188,13 +188,13 @@ func (i *InputTimestamps) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

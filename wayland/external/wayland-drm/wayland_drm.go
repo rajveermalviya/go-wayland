@@ -56,7 +56,7 @@ func NewDrm(ctx *client.Context) *Drm {
 func (i *Drm) Authenticate(id uint32) error {
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -64,7 +64,7 @@ func (i *Drm) Authenticate(id uint32) error {
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(id))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -74,7 +74,7 @@ func (i *Drm) CreateBuffer(name uint32, width, height int32, stride, format uint
 	id := client.NewBuffer(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -92,7 +92,7 @@ func (i *Drm) CreateBuffer(name uint32, width, height int32, stride, format uint
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(format))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -102,7 +102,7 @@ func (i *Drm) CreatePlanarBuffer(name uint32, width, height int32, format uint32
 	id := client.NewBuffer(i.Context())
 	const opcode = 2
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -130,7 +130,7 @@ func (i *Drm) CreatePlanarBuffer(name uint32, width, height int32, format uint32
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(stride2))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -140,7 +140,7 @@ func (i *Drm) CreatePrimeBuffer(name uintptr, width, height int32, format uint32
 	id := client.NewBuffer(i.Context())
 	const opcode = 3
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -167,7 +167,7 @@ func (i *Drm) CreatePrimeBuffer(name uintptr, width, height int32, format uint32
 	client.PutUint32(r[l:l+4], uint32(stride2))
 	l += 4
 	oob := unix.UnixRights(int(name))
-	err := i.Context().WriteMsg(r, oob)
+	err := i.Context().WriteMsg(r[:], oob)
 	return id, err
 }
 

@@ -71,7 +71,7 @@ func (i *Display) Sync() (*Callback, error) {
 	callback := NewCallback(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -79,7 +79,7 @@ func (i *Display) Sync() (*Callback, error) {
 	l += 4
 	PutUint32(r[l:l+4], callback.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return callback, err
 }
 
@@ -99,7 +99,7 @@ func (i *Display) GetRegistry() (*Registry, error) {
 	registry := NewRegistry(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -107,7 +107,7 @@ func (i *Display) GetRegistry() (*Registry, error) {
 	l += 4
 	PutUint32(r[l:l+4], registry.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return registry, err
 }
 
@@ -502,7 +502,7 @@ func (i *Compositor) CreateSurface() (*Surface, error) {
 	id := NewSurface(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -510,7 +510,7 @@ func (i *Compositor) CreateSurface() (*Surface, error) {
 	l += 4
 	PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -522,7 +522,7 @@ func (i *Compositor) CreateRegion() (*Region, error) {
 	id := NewRegion(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -530,7 +530,7 @@ func (i *Compositor) CreateRegion() (*Region, error) {
 	l += 4
 	PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -590,7 +590,7 @@ func (i *ShmPool) CreateBuffer(offset, width, height, stride int32, format uint3
 	id := NewBuffer(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -608,7 +608,7 @@ func (i *ShmPool) CreateBuffer(offset, width, height, stride int32, format uint3
 	l += 4
 	PutUint32(r[l:l+4], uint32(format))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -624,13 +624,13 @@ func (i *ShmPool) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -645,7 +645,7 @@ func (i *ShmPool) Destroy() error {
 func (i *ShmPool) Resize(size int32) error {
 	const opcode = 2
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -653,7 +653,7 @@ func (i *ShmPool) Resize(size int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(size))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -704,7 +704,7 @@ func (i *Shm) CreatePool(fd uintptr, size int32) (*ShmPool, error) {
 	id := NewShmPool(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -715,7 +715,7 @@ func (i *Shm) CreatePool(fd uintptr, size int32) (*ShmPool, error) {
 	PutUint32(r[l:l+4], uint32(size))
 	l += 4
 	oob := unix.UnixRights(int(fd))
-	err := i.Context().WriteMsg(r, oob)
+	err := i.Context().WriteMsg(r[:], oob)
 	return id, err
 }
 
@@ -1522,13 +1522,13 @@ func (i *Buffer) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1682,13 +1682,13 @@ func (i *DataOffer) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 2
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1712,13 +1712,13 @@ func (i *DataOffer) Destroy() error {
 func (i *DataOffer) Finish() error {
 	const opcode = 3
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -1761,7 +1761,7 @@ func (i *DataOffer) Finish() error {
 func (i *DataOffer) SetActions(dndActions, preferredAction uint32) error {
 	const opcode = 4
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -1771,7 +1771,7 @@ func (i *DataOffer) SetActions(dndActions, preferredAction uint32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(preferredAction))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2010,13 +2010,13 @@ func (i *DataSource) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2040,7 +2040,7 @@ func (i *DataSource) Destroy() error {
 func (i *DataSource) SetActions(dndActions uint32) error {
 	const opcode = 2
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -2048,7 +2048,7 @@ func (i *DataSource) SetActions(dndActions uint32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(dndActions))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2381,7 +2381,7 @@ func NewDataDevice(ctx *Context) *DataDevice {
 func (i *DataDevice) StartDrag(source *DataSource, origin, icon *Surface, serial uint32) error {
 	const opcode = 0
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -2405,7 +2405,7 @@ func (i *DataDevice) StartDrag(source *DataSource, origin, icon *Surface, serial
 	}
 	PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2421,7 +2421,7 @@ func (i *DataDevice) StartDrag(source *DataSource, origin, icon *Surface, serial
 func (i *DataDevice) SetSelection(source *DataSource, serial uint32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -2436,7 +2436,7 @@ func (i *DataDevice) SetSelection(source *DataSource, serial uint32) error {
 	}
 	PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2448,13 +2448,13 @@ func (i *DataDevice) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 2
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -2748,7 +2748,7 @@ func (i *DataDeviceManager) CreateDataSource() (*DataSource, error) {
 	id := NewDataSource(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -2756,7 +2756,7 @@ func (i *DataDeviceManager) CreateDataSource() (*DataSource, error) {
 	l += 4
 	PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -2769,7 +2769,7 @@ func (i *DataDeviceManager) GetDataDevice(seat *Seat) (*DataDevice, error) {
 	id := NewDataDevice(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -2779,7 +2779,7 @@ func (i *DataDeviceManager) GetDataDevice(seat *Seat) (*DataDevice, error) {
 	l += 4
 	PutUint32(r[l:l+4], seat.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -2903,7 +2903,7 @@ func (i *Shell) GetShellSurface(surface *Surface) (*ShellSurface, error) {
 	id := NewShellSurface(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -2913,7 +2913,7 @@ func (i *Shell) GetShellSurface(surface *Surface) (*ShellSurface, error) {
 	l += 4
 	PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -3000,7 +3000,7 @@ func NewShellSurface(ctx *Context) *ShellSurface {
 func (i *ShellSurface) Pong(serial uint32) error {
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3008,7 +3008,7 @@ func (i *ShellSurface) Pong(serial uint32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3025,7 +3025,7 @@ func (i *ShellSurface) Pong(serial uint32) error {
 func (i *ShellSurface) Move(seat *Seat, serial uint32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3035,7 +3035,7 @@ func (i *ShellSurface) Move(seat *Seat, serial uint32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3053,7 +3053,7 @@ func (i *ShellSurface) Move(seat *Seat, serial uint32) error {
 func (i *ShellSurface) Resize(seat *Seat, serial, edges uint32) error {
 	const opcode = 2
 	const rLen = 8 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3065,7 +3065,7 @@ func (i *ShellSurface) Resize(seat *Seat, serial, edges uint32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(edges))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3078,13 +3078,13 @@ func (i *ShellSurface) Resize(seat *Seat, serial, edges uint32) error {
 func (i *ShellSurface) SetToplevel() error {
 	const opcode = 3
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3105,7 +3105,7 @@ func (i *ShellSurface) SetToplevel() error {
 func (i *ShellSurface) SetTransient(parent *Surface, x, y int32, flags uint32) error {
 	const opcode = 4
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3119,7 +3119,7 @@ func (i *ShellSurface) SetTransient(parent *Surface, x, y int32, flags uint32) e
 	l += 4
 	PutUint32(r[l:l+4], uint32(flags))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3165,7 +3165,7 @@ func (i *ShellSurface) SetTransient(parent *Surface, x, y int32, flags uint32) e
 func (i *ShellSurface) SetFullscreen(method, framerate uint32, output *Output) error {
 	const opcode = 5
 	const rLen = 8 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3182,7 +3182,7 @@ func (i *ShellSurface) SetFullscreen(method, framerate uint32, output *Output) e
 		PutUint32(r[l:l+4], output.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3217,7 +3217,7 @@ func (i *ShellSurface) SetFullscreen(method, framerate uint32, output *Output) e
 func (i *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x, y int32, flags uint32) error {
 	const opcode = 6
 	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3235,7 +3235,7 @@ func (i *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x, y
 	l += 4
 	PutUint32(r[l:l+4], uint32(flags))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3264,7 +3264,7 @@ func (i *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x, y
 func (i *ShellSurface) SetMaximized(output *Output) error {
 	const opcode = 7
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3277,7 +3277,7 @@ func (i *ShellSurface) SetMaximized(output *Output) error {
 		PutUint32(r[l:l+4], output.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3722,13 +3722,13 @@ func (i *Surface) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3797,7 +3797,7 @@ func (i *Surface) Destroy() error {
 func (i *Surface) Attach(buffer *Buffer, x, y int32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3814,7 +3814,7 @@ func (i *Surface) Attach(buffer *Buffer, x, y int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(y))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3849,7 +3849,7 @@ func (i *Surface) Attach(buffer *Buffer, x, y int32) error {
 func (i *Surface) Damage(x, y, width, height int32) error {
 	const opcode = 2
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3863,7 +3863,7 @@ func (i *Surface) Damage(x, y, width, height int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3906,7 +3906,7 @@ func (i *Surface) Frame() (*Callback, error) {
 	callback := NewCallback(i.Context())
 	const opcode = 3
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3914,7 +3914,7 @@ func (i *Surface) Frame() (*Callback, error) {
 	l += 4
 	PutUint32(r[l:l+4], callback.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return callback, err
 }
 
@@ -3949,7 +3949,7 @@ func (i *Surface) Frame() (*Callback, error) {
 func (i *Surface) SetOpaqueRegion(region *Region) error {
 	const opcode = 4
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -3962,7 +3962,7 @@ func (i *Surface) SetOpaqueRegion(region *Region) error {
 		PutUint32(r[l:l+4], region.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -3995,7 +3995,7 @@ func (i *Surface) SetOpaqueRegion(region *Region) error {
 func (i *Surface) SetInputRegion(region *Region) error {
 	const opcode = 5
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4008,7 +4008,7 @@ func (i *Surface) SetInputRegion(region *Region) error {
 		PutUint32(r[l:l+4], region.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -4035,13 +4035,13 @@ func (i *Surface) SetInputRegion(region *Region) error {
 func (i *Surface) Commit() error {
 	const opcode = 6
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -4081,7 +4081,7 @@ func (i *Surface) Commit() error {
 func (i *Surface) SetBufferTransform(transform int32) error {
 	const opcode = 7
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4089,7 +4089,7 @@ func (i *Surface) SetBufferTransform(transform int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(transform))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -4123,7 +4123,7 @@ func (i *Surface) SetBufferTransform(transform int32) error {
 func (i *Surface) SetBufferScale(scale int32) error {
 	const opcode = 8
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4131,7 +4131,7 @@ func (i *Surface) SetBufferScale(scale int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(scale))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -4177,7 +4177,7 @@ func (i *Surface) SetBufferScale(scale int32) error {
 func (i *Surface) DamageBuffer(x, y, width, height int32) error {
 	const opcode = 9
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4191,7 +4191,7 @@ func (i *Surface) DamageBuffer(x, y, width, height int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -4215,7 +4215,7 @@ func (i *Surface) DamageBuffer(x, y, width, height int32) error {
 func (i *Surface) Offset(x, y int32) error {
 	const opcode = 10
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4225,7 +4225,7 @@ func (i *Surface) Offset(x, y int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(y))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -4391,7 +4391,7 @@ func (i *Seat) GetPointer() (*Pointer, error) {
 	id := NewPointer(i.Context())
 	const opcode = 0
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4399,7 +4399,7 @@ func (i *Seat) GetPointer() (*Pointer, error) {
 	l += 4
 	PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -4418,7 +4418,7 @@ func (i *Seat) GetKeyboard() (*Keyboard, error) {
 	id := NewKeyboard(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4426,7 +4426,7 @@ func (i *Seat) GetKeyboard() (*Keyboard, error) {
 	l += 4
 	PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -4445,7 +4445,7 @@ func (i *Seat) GetTouch() (*Touch, error) {
 	id := NewTouch(i.Context())
 	const opcode = 2
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4453,7 +4453,7 @@ func (i *Seat) GetTouch() (*Touch, error) {
 	l += 4
 	PutUint32(r[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -4466,13 +4466,13 @@ func (i *Seat) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 3
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -4738,7 +4738,7 @@ func NewPointer(ctx *Context) *Pointer {
 func (i *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX, hotspotY int32) error {
 	const opcode = 0
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -4757,7 +4757,7 @@ func (i *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX, hotspotY 
 	l += 4
 	PutUint32(r[l:l+4], uint32(hotspotY))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -4773,13 +4773,13 @@ func (i *Pointer) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -5410,13 +5410,13 @@ func (i *Keyboard) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -5790,13 +5790,13 @@ func (i *Touch) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -6134,13 +6134,13 @@ func (i *Output) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -6676,13 +6676,13 @@ func (i *Region) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -6697,7 +6697,7 @@ func (i *Region) Destroy() error {
 func (i *Region) Add(x, y, width, height int32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -6711,7 +6711,7 @@ func (i *Region) Add(x, y, width, height int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -6726,7 +6726,7 @@ func (i *Region) Add(x, y, width, height int32) error {
 func (i *Region) Subtract(x, y, width, height int32) error {
 	const opcode = 2
 	const rLen = 8 + 4 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -6740,7 +6740,7 @@ func (i *Region) Subtract(x, y, width, height int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -6806,13 +6806,13 @@ func (i *Subcompositor) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -6840,7 +6840,7 @@ func (i *Subcompositor) GetSubsurface(surface, parent *Surface) (*Subsurface, er
 	id := NewSubsurface(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -6852,7 +6852,7 @@ func (i *Subcompositor) GetSubsurface(surface, parent *Surface) (*Subsurface, er
 	l += 4
 	PutUint32(r[l:l+4], parent.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -7010,13 +7010,13 @@ func (i *Subsurface) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -7044,7 +7044,7 @@ func (i *Subsurface) Destroy() error {
 func (i *Subsurface) SetPosition(x, y int32) error {
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -7054,7 +7054,7 @@ func (i *Subsurface) SetPosition(x, y int32) error {
 	l += 4
 	PutUint32(r[l:l+4], uint32(y))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -7080,7 +7080,7 @@ func (i *Subsurface) SetPosition(x, y int32) error {
 func (i *Subsurface) PlaceAbove(sibling *Surface) error {
 	const opcode = 2
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -7088,7 +7088,7 @@ func (i *Subsurface) PlaceAbove(sibling *Surface) error {
 	l += 4
 	PutUint32(r[l:l+4], sibling.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -7101,7 +7101,7 @@ func (i *Subsurface) PlaceAbove(sibling *Surface) error {
 func (i *Subsurface) PlaceBelow(sibling *Surface) error {
 	const opcode = 3
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
@@ -7109,7 +7109,7 @@ func (i *Subsurface) PlaceBelow(sibling *Surface) error {
 	l += 4
 	PutUint32(r[l:l+4], sibling.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -7132,13 +7132,13 @@ func (i *Subsurface) PlaceBelow(sibling *Surface) error {
 func (i *Subsurface) SetSync() error {
 	const opcode = 4
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -7167,13 +7167,13 @@ func (i *Subsurface) SetSync() error {
 func (i *Subsurface) SetDesync() error {
 	const opcode = 5
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	PutUint32(r[l:4], i.ID())
 	l += 4
 	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 

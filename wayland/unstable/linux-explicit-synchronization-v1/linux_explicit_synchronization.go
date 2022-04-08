@@ -90,13 +90,13 @@ func (i *LinuxExplicitSynchronization) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -119,7 +119,7 @@ func (i *LinuxExplicitSynchronization) GetSynchronization(surface *client.Surfac
 	id := NewLinuxSurfaceSynchronization(i.Context())
 	const opcode = 1
 	const rLen = 8 + 4 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -129,7 +129,7 @@ func (i *LinuxExplicitSynchronization) GetSynchronization(surface *client.Surfac
 	l += 4
 	client.PutUint32(r[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return id, err
 }
 
@@ -252,13 +252,13 @@ func (i *LinuxSurfaceSynchronization) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return err
 }
 
@@ -292,14 +292,14 @@ func (i *LinuxSurfaceSynchronization) Destroy() error {
 func (i *LinuxSurfaceSynchronization) SetAcquireFence(fd uintptr) error {
 	const opcode = 1
 	const rLen = 8
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
 	client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
 	l += 4
 	oob := unix.UnixRights(int(fd))
-	err := i.Context().WriteMsg(r, oob)
+	err := i.Context().WriteMsg(r[:], oob)
 	return err
 }
 
@@ -327,7 +327,7 @@ func (i *LinuxSurfaceSynchronization) GetRelease() (*LinuxBufferRelease, error) 
 	release := NewLinuxBufferRelease(i.Context())
 	const opcode = 2
 	const rLen = 8 + 4
-	r := make([]byte, rLen)
+	var r [rLen]byte
 	l := 0
 	client.PutUint32(r[l:4], i.ID())
 	l += 4
@@ -335,7 +335,7 @@ func (i *LinuxSurfaceSynchronization) GetRelease() (*LinuxBufferRelease, error) 
 	l += 4
 	client.PutUint32(r[l:l+4], release.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(r[:], nil)
 	return release, err
 }
 
