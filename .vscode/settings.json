@@ -1,7 +1,0 @@
-{
-  "gopls": {
-    "ui.codelenses": {
-      "gc_details": true,
-    }
-  }
-}
