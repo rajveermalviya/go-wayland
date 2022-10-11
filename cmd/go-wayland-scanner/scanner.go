@@ -386,24 +386,24 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 	}
 
 	if canBeConst {
-		fmt.Fprintf(w, "const rLen =  %s\n", strings.Join(sizes, "+"))
-		fmt.Fprintf(w, "var r [rLen]byte\n")
+		fmt.Fprintf(w, "const _reqBufLen =  %s\n", strings.Join(sizes, "+"))
+		fmt.Fprintf(w, "var _reqBuf [_reqBufLen]byte\n")
 	} else {
-		fmt.Fprintf(w, "rLen := %s\n", strings.Join(sizes, "+"))
-		fmt.Fprintf(w, "r := make([]byte, rLen)\n")
+		fmt.Fprintf(w, "_reqBufLen := %s\n", strings.Join(sizes, "+"))
+		fmt.Fprintf(w, "_reqBuf := make([]byte, _reqBufLen)\n")
 	}
 
 	fmt.Fprintf(w, "l := 0\n")
 	if protocol.Name == "wayland" {
-		fmt.Fprintf(w, "PutUint32(r[l:4], i.ID())\n")
+		fmt.Fprintf(w, "PutUint32(_reqBuf[l:4], i.ID())\n")
 	} else {
-		fmt.Fprintf(w, "client.PutUint32(r[l:4], i.ID())\n")
+		fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:4], i.ID())\n")
 	}
 	fmt.Fprintf(w, "l += 4\n")
 	if protocol.Name == "wayland" {
-		fmt.Fprintf(w, "PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))\n")
+		fmt.Fprintf(w, "PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))\n")
 	} else {
-		fmt.Fprintf(w, "client.PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))\n")
+		fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))\n")
 	}
 	fmt.Fprintf(w, "l += 4\n")
 
@@ -416,24 +416,24 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 			if arg.AllowNull {
 				fmt.Fprintf(w, "if %s == nil {\n", argNameLower)
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "PutUint32(r[l:l+4], 0)\n")
+					fmt.Fprintf(w, "PutUint32(_reqBuf[l:l+4], 0)\n")
 				} else {
-					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], 0)\n")
+					fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:l+4], 0)\n")
 				}
 				fmt.Fprintf(w, "l += 4\n")
 				fmt.Fprintf(w, "} else {\n")
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+					fmt.Fprintf(w, "PutUint32(_reqBuf[l:l+4], %s.ID())\n", argNameLower)
 				} else {
-					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+					fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:l+4], %s.ID())\n", argNameLower)
 				}
 				fmt.Fprintf(w, "l += 4\n")
 				fmt.Fprintf(w, "}\n")
 			} else {
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+					fmt.Fprintf(w, "PutUint32(_reqBuf[l:l+4], %s.ID())\n", argNameLower)
 				} else {
-					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+					fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:l+4], %s.ID())\n", argNameLower)
 				}
 				fmt.Fprintf(w, "l += 4\n")
 			}
@@ -441,63 +441,63 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 		case "new_id":
 			if arg.Interface != "" {
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+					fmt.Fprintf(w, "PutUint32(_reqBuf[l:l+4], %s.ID())\n", argNameLower)
 				} else {
-					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], %s.ID())\n", argNameLower)
+					fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:l+4], %s.ID())\n", argNameLower)
 				}
 				fmt.Fprintf(w, "l += 4\n")
 			} else {
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "PutString(r[l:l+(4 + ifaceLen)], iface, ifaceLen)\n")
+					fmt.Fprintf(w, "PutString(_reqBuf[l:l+(4 + ifaceLen)], iface, ifaceLen)\n")
 				} else {
-					fmt.Fprintf(w, "client.PutString(r[l:l+(4 + ifaceLen)], iface, ifaceLen)\n")
+					fmt.Fprintf(w, "client.PutString(_reqBuf[l:l+(4 + ifaceLen)], iface, ifaceLen)\n")
 				}
 				fmt.Fprintf(w, "l += (4 + ifaceLen)\n")
 
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "PutUint32(r[l:l+4], uint32(version))\n")
+					fmt.Fprintf(w, "PutUint32(_reqBuf[l:l+4], uint32(version))\n")
 				} else {
-					fmt.Fprintf(w, "client.PutUint32(r[l:l+4],  uint32(version))\n")
+					fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:l+4],  uint32(version))\n")
 				}
 				fmt.Fprintf(w, "l += 4\n")
 
 				if protocol.Name == "wayland" {
-					fmt.Fprintf(w, "PutUint32(r[l:l+4], id.ID())\n")
+					fmt.Fprintf(w, "PutUint32(_reqBuf[l:l+4], id.ID())\n")
 				} else {
-					fmt.Fprintf(w, "client.PutUint32(r[l:l+4], id.ID())\n")
+					fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:l+4], id.ID())\n")
 				}
 				fmt.Fprintf(w, "l += 4\n")
 			}
 
 		case "int", "uint":
 			if protocol.Name == "wayland" {
-				fmt.Fprintf(w, "PutUint32(r[l:l+4], uint32(%s))\n", argNameLower)
+				fmt.Fprintf(w, "PutUint32(_reqBuf[l:l+4], uint32(%s))\n", argNameLower)
 			} else {
-				fmt.Fprintf(w, "client.PutUint32(r[l:l+4], uint32(%s))\n", argNameLower)
+				fmt.Fprintf(w, "client.PutUint32(_reqBuf[l:l+4], uint32(%s))\n", argNameLower)
 			}
 			fmt.Fprintf(w, "l += 4\n")
 
 		case "fixed":
 			if protocol.Name == "wayland" {
-				fmt.Fprintf(w, "PutFixed(r[l:l+4], %s)\n", argNameLower)
+				fmt.Fprintf(w, "PutFixed(_reqBuf[l:l+4], %s)\n", argNameLower)
 			} else {
-				fmt.Fprintf(w, "client.PutFixed(r[l:l+4], %s)\n", argNameLower)
+				fmt.Fprintf(w, "client.PutFixed(_reqBuf[l:l+4], %s)\n", argNameLower)
 			}
 			fmt.Fprintf(w, "l += 4\n")
 
 		case "string":
 			if protocol.Name == "wayland" {
-				fmt.Fprintf(w, "PutString(r[l:l+(4 + %sLen)], %s, %sLen)\n", argNameLower, argNameLower, argNameLower)
+				fmt.Fprintf(w, "PutString(_reqBuf[l:l+(4 + %sLen)], %s, %sLen)\n", argNameLower, argNameLower, argNameLower)
 			} else {
-				fmt.Fprintf(w, "client.PutString(r[l:l+(4 + %sLen)], %s, %sLen)\n", argNameLower, argNameLower, argNameLower)
+				fmt.Fprintf(w, "client.PutString(_reqBuf[l:l+(4 + %sLen)], %s, %sLen)\n", argNameLower, argNameLower, argNameLower)
 			}
 			fmt.Fprintf(w, "l += (4 + %sLen)\n", argNameLower)
 
 		case "array":
 			if protocol.Name == "wayland" {
-				fmt.Fprintf(w, "PutArray(r[l:l+(4 + %sLen)], %s)\n", argNameLower, argNameLower)
+				fmt.Fprintf(w, "PutArray(_reqBuf[l:l+(4 + %sLen)], %s)\n", argNameLower, argNameLower)
 			} else {
-				fmt.Fprintf(w, "client.PutArray(r[l:l+(4 + %sLen)], %s)\n", argNameLower, argNameLower)
+				fmt.Fprintf(w, "client.PutArray(_reqBuf[l:l+(4 + %sLen)], %s)\n", argNameLower, argNameLower)
 			}
 			fmt.Fprintf(w, "l += %sLen\n", argNameLower)
 
@@ -513,15 +513,15 @@ func writeRequest(w io.Writer, ifaceName string, opcode int, r Request) {
 		fmt.Fprintf(w, "oob := unix.UnixRights(int(%s))\n", argNameLower)
 
 		if canBeConst {
-			fmt.Fprintf(w, "err := i.Context().WriteMsg(r[:], oob)\n")
+			fmt.Fprintf(w, "err := i.Context().WriteMsg(_reqBuf[:], oob)\n")
 		} else {
-			fmt.Fprintf(w, "err := i.Context().WriteMsg(r, oob)\n")
+			fmt.Fprintf(w, "err := i.Context().WriteMsg(_reqBuf, oob)\n")
 		}
 	} else {
 		if canBeConst {
-			fmt.Fprintf(w, "err := i.Context().WriteMsg(r[:], nil)\n")
+			fmt.Fprintf(w, "err := i.Context().WriteMsg(_reqBuf[:], nil)\n")
 		} else {
-			fmt.Fprintf(w, "err := i.Context().WriteMsg(r, nil)\n")
+			fmt.Fprintf(w, "err := i.Context().WriteMsg(_reqBuf, nil)\n")
 		}
 	}
 

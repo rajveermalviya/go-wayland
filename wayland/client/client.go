@@ -66,20 +66,19 @@ func NewDisplay(ctx *Context) *Display {
 // attempt to use it after that point.
 //
 // The callback_data passed in the callback is the event serial.
-//
 func (i *Display) Sync() (*Callback, error) {
 	callback := NewCallback(i.Context())
 	const opcode = 0
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], callback.ID())
+	PutUint32(_reqBuf[l:l+4], callback.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return callback, err
 }
 
@@ -94,20 +93,19 @@ func (i *Display) Sync() (*Callback, error) {
 // client disconnects, not when the client side proxy is destroyed.
 // Therefore, clients should invoke get_registry as infrequently as
 // possible to avoid wasting memory.
-//
 func (i *Display) GetRegistry() (*Registry, error) {
 	registry := NewRegistry(i.Context())
 	const opcode = 1
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], registry.ID())
+	PutUint32(_reqBuf[l:l+4], registry.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return registry, err
 }
 
@@ -307,26 +305,26 @@ func NewRegistry(ctx *Context) *Registry {
 // Binds a new, client-created object to the server using the
 // specified name as the identifier.
 //
-//  name: unique numeric name of the object
+//	name: unique numeric name of the object
 func (i *Registry) Bind(name uint32, iface string, version uint32, id Proxy) error {
 	const opcode = 0
 	ifaceLen := PaddedLen(len(iface) + 1)
-	rLen := 8 + 4 + (4 + ifaceLen) + 4 + 4
-	r := make([]byte, rLen)
+	_reqBufLen := 8 + 4 + (4 + ifaceLen) + 4 + 4
+	_reqBuf := make([]byte, _reqBufLen)
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(name))
+	PutUint32(_reqBuf[l:l+4], uint32(name))
 	l += 4
-	PutString(r[l:l+(4+ifaceLen)], iface, ifaceLen)
+	PutString(_reqBuf[l:l+(4+ifaceLen)], iface, ifaceLen)
 	l += (4 + ifaceLen)
-	PutUint32(r[l:l+4], uint32(version))
+	PutUint32(_reqBuf[l:l+4], uint32(version))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(_reqBuf, nil)
 	return err
 }
 
@@ -497,40 +495,38 @@ func NewCompositor(ctx *Context) *Compositor {
 // CreateSurface : create new surface
 //
 // Ask the compositor to create a new surface.
-//
 func (i *Compositor) CreateSurface() (*Surface, error) {
 	id := NewSurface(i.Context())
 	const opcode = 0
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
 // CreateRegion : create new region
 //
 // Ask the compositor to create a new region.
-//
 func (i *Compositor) CreateRegion() (*Region, error) {
 	id := NewRegion(i.Context())
 	const opcode = 1
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -581,34 +577,34 @@ func NewShmPool(ctx *Context) *ShmPool {
 // so it is valid to destroy the pool immediately after creating
 // a buffer from it.
 //
-//  offset: buffer byte offset within the pool
-//  width: buffer width, in pixels
-//  height: buffer height, in pixels
-//  stride: number of bytes from the beginning of one row to the beginning of the next row
-//  format: buffer pixel format
+//	offset: buffer byte offset within the pool
+//	width: buffer width, in pixels
+//	height: buffer height, in pixels
+//	stride: number of bytes from the beginning of one row to the beginning of the next row
+//	format: buffer pixel format
 func (i *ShmPool) CreateBuffer(offset, width, height, stride int32, format uint32) (*Buffer, error) {
 	id := NewBuffer(i.Context())
 	const opcode = 0
-	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(offset))
+	PutUint32(_reqBuf[l:l+4], uint32(offset))
 	l += 4
-	PutUint32(r[l:l+4], uint32(width))
+	PutUint32(_reqBuf[l:l+4], uint32(width))
 	l += 4
-	PutUint32(r[l:l+4], uint32(height))
+	PutUint32(_reqBuf[l:l+4], uint32(height))
 	l += 4
-	PutUint32(r[l:l+4], uint32(stride))
+	PutUint32(_reqBuf[l:l+4], uint32(stride))
 	l += 4
-	PutUint32(r[l:l+4], uint32(format))
+	PutUint32(_reqBuf[l:l+4], uint32(format))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -619,18 +615,17 @@ func (i *ShmPool) CreateBuffer(offset, width, height, stride int32, format uint3
 // The mmapped memory will be released when all
 // buffers that have been created from this pool
 // are gone.
-//
 func (i *ShmPool) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -647,19 +642,19 @@ func (i *ShmPool) Destroy() error {
 // responsibility to ensure that the file is at least as big as
 // the new pool size.
 //
-//  size: new size of the pool, in bytes
+//	size: new size of the pool, in bytes
 func (i *ShmPool) Resize(size int32) error {
 	const opcode = 2
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(size))
+	PutUint32(_reqBuf[l:l+4], uint32(size))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -704,24 +699,24 @@ func NewShm(ctx *Context) *Shm {
 // objects.  The server will mmap size bytes of the passed file
 // descriptor, to use as backing memory for the pool.
 //
-//  fd: file descriptor for the pool
-//  size: pool size, in bytes
+//	fd: file descriptor for the pool
+//	size: pool size, in bytes
 func (i *Shm) CreatePool(fd uintptr, size int32) (*ShmPool, error) {
 	id := NewShmPool(i.Context())
 	const opcode = 0
-	const rLen = 8 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(size))
+	PutUint32(_reqBuf[l:l+4], uint32(size))
 	l += 4
 	oob := unix.UnixRights(int(fd))
-	err := i.Context().WriteMsg(r[:], oob)
+	err := i.Context().WriteMsg(_reqBuf[:], oob)
 	return id, err
 }
 
@@ -1523,18 +1518,17 @@ func NewBuffer(ctx *Context) *Buffer {
 // storage is defined by the buffer factory interface.
 //
 // For possible side-effects to a surface, see wl_surface.attach.
-//
 func (i *Buffer) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -1623,23 +1617,23 @@ func NewDataOffer(ctx *Context) *DataOffer {
 // wl_data_source.cancelled. Clients may still use this event in
 // conjunction with wl_data_source.action for feedback.
 //
-//  serial: serial number of the accept request
-//  mimeType: mime type accepted by the client
+//	serial: serial number of the accept request
+//	mimeType: mime type accepted by the client
 func (i *DataOffer) Accept(serial uint32, mimeType string) error {
 	const opcode = 0
 	mimeTypeLen := PaddedLen(len(mimeType) + 1)
-	rLen := 8 + 4 + (4 + mimeTypeLen)
-	r := make([]byte, rLen)
+	_reqBufLen := 8 + 4 + (4 + mimeTypeLen)
+	_reqBuf := make([]byte, _reqBufLen)
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(serial))
+	PutUint32(_reqBuf[l:l+4], uint32(serial))
 	l += 4
-	PutString(r[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
+	PutString(_reqBuf[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
 	l += (4 + mimeTypeLen)
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(_reqBuf, nil)
 	return err
 }
 
@@ -1661,40 +1655,39 @@ func (i *DataOffer) Accept(serial uint32, mimeType string) error {
 // clients may preemptively fetch data or examine it more closely to
 // determine acceptance.
 //
-//  mimeType: mime type desired by receiver
-//  fd: file descriptor for data transfer
+//	mimeType: mime type desired by receiver
+//	fd: file descriptor for data transfer
 func (i *DataOffer) Receive(mimeType string, fd uintptr) error {
 	const opcode = 1
 	mimeTypeLen := PaddedLen(len(mimeType) + 1)
-	rLen := 8 + (4 + mimeTypeLen)
-	r := make([]byte, rLen)
+	_reqBufLen := 8 + (4 + mimeTypeLen)
+	_reqBuf := make([]byte, _reqBufLen)
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutString(r[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
+	PutString(_reqBuf[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
 	l += (4 + mimeTypeLen)
 	oob := unix.UnixRights(int(fd))
-	err := i.Context().WriteMsg(r, oob)
+	err := i.Context().WriteMsg(_reqBuf, oob)
 	return err
 }
 
 // Destroy : destroy data offer
 //
 // Destroy the data offer.
-//
 func (i *DataOffer) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 2
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -1714,17 +1707,16 @@ func (i *DataOffer) Destroy() error {
 //
 // If wl_data_offer.finish request is received for a non drag and drop
 // operation, the invalid_finish protocol error is raised.
-//
 func (i *DataOffer) Finish() error {
 	const opcode = 3
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -1762,22 +1754,22 @@ func (i *DataOffer) Finish() error {
 // This request can only be made on drag-and-drop offers, a protocol error
 // will be raised otherwise.
 //
-//  dndActions: actions supported by the destination client
-//  preferredAction: action preferred by the destination client
+//	dndActions: actions supported by the destination client
+//	preferredAction: action preferred by the destination client
 func (i *DataOffer) SetActions(dndActions, preferredAction uint32) error {
 	const opcode = 4
-	const rLen = 8 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(dndActions))
+	PutUint32(_reqBuf[l:l+4], uint32(dndActions))
 	l += 4
-	PutUint32(r[l:l+4], uint32(preferredAction))
+	PutUint32(_reqBuf[l:l+4], uint32(preferredAction))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -1991,38 +1983,37 @@ func NewDataSource(ctx *Context) *DataSource {
 // advertised to targets.  Can be called several times to offer
 // multiple types.
 //
-//  mimeType: mime type offered by the data source
+//	mimeType: mime type offered by the data source
 func (i *DataSource) Offer(mimeType string) error {
 	const opcode = 0
 	mimeTypeLen := PaddedLen(len(mimeType) + 1)
-	rLen := 8 + (4 + mimeTypeLen)
-	r := make([]byte, rLen)
+	_reqBufLen := 8 + (4 + mimeTypeLen)
+	_reqBuf := make([]byte, _reqBufLen)
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutString(r[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
+	PutString(_reqBuf[l:l+(4+mimeTypeLen)], mimeType, mimeTypeLen)
 	l += (4 + mimeTypeLen)
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(_reqBuf, nil)
 	return err
 }
 
 // Destroy : destroy the data source
 //
 // Destroy the data source.
-//
 func (i *DataSource) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -2042,19 +2033,19 @@ func (i *DataSource) Destroy() error {
 // wl_data_device.start_drag. Attempting to use the source other than
 // for drag-and-drop will raise a protocol error.
 //
-//  dndActions: actions supported by the data source
+//	dndActions: actions supported by the data source
 func (i *DataSource) SetActions(dndActions uint32) error {
 	const opcode = 2
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(dndActions))
+	PutUint32(_reqBuf[l:l+4], uint32(dndActions))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -2380,38 +2371,38 @@ func NewDataDevice(ctx *Context) *DataDevice {
 // as an icon ends, the current and pending input regions become
 // undefined, and the wl_surface is unmapped.
 //
-//  source: data source for the eventual transfer
-//  origin: surface where the drag originates
-//  icon: drag-and-drop icon surface
-//  serial: serial number of the implicit grab on the origin
+//	source: data source for the eventual transfer
+//	origin: surface where the drag originates
+//	icon: drag-and-drop icon surface
+//	serial: serial number of the implicit grab on the origin
 func (i *DataDevice) StartDrag(source *DataSource, origin, icon *Surface, serial uint32) error {
 	const opcode = 0
-	const rLen = 8 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
 	if source == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], source.ID())
+		PutUint32(_reqBuf[l:l+4], source.ID())
 		l += 4
 	}
-	PutUint32(r[l:l+4], origin.ID())
+	PutUint32(_reqBuf[l:l+4], origin.ID())
 	l += 4
 	if icon == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], icon.ID())
+		PutUint32(_reqBuf[l:l+4], icon.ID())
 		l += 4
 	}
-	PutUint32(r[l:l+4], uint32(serial))
+	PutUint32(_reqBuf[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -2422,45 +2413,44 @@ func (i *DataDevice) StartDrag(source *DataSource, origin, icon *Surface, serial
 //
 // To unset the selection, set the source to NULL.
 //
-//  source: data source for the selection
-//  serial: serial number of the event that triggered this request
+//	source: data source for the selection
+//	serial: serial number of the event that triggered this request
 func (i *DataDevice) SetSelection(source *DataSource, serial uint32) error {
 	const opcode = 1
-	const rLen = 8 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
 	if source == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], source.ID())
+		PutUint32(_reqBuf[l:l+4], source.ID())
 		l += 4
 	}
-	PutUint32(r[l:l+4], uint32(serial))
+	PutUint32(_reqBuf[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
 // Release : destroy data device
 //
 // This request destroys the data device.
-//
 func (i *DataDevice) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 2
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -2749,20 +2739,19 @@ func NewDataDeviceManager(ctx *Context) *DataDeviceManager {
 // CreateDataSource : create a new data source
 //
 // Create a new data source.
-//
 func (i *DataDeviceManager) CreateDataSource() (*DataSource, error) {
 	id := NewDataSource(i.Context())
 	const opcode = 0
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -2770,22 +2759,22 @@ func (i *DataDeviceManager) CreateDataSource() (*DataSource, error) {
 //
 // Create a new data device for a given seat.
 //
-//  seat: seat associated with the data device
+//	seat: seat associated with the data device
 func (i *DataDeviceManager) GetDataDevice(seat *Seat) (*DataDevice, error) {
 	id := NewDataDevice(i.Context())
 	const opcode = 1
-	const rLen = 8 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	PutUint32(r[l:l+4], seat.ID())
+	PutUint32(_reqBuf[l:l+4], seat.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -2906,22 +2895,22 @@ func NewShell(ctx *Context) *Shell {
 //
 // Only one shell surface can be associated with a given surface.
 //
-//  surface: surface to be given the shell surface role
+//	surface: surface to be given the shell surface role
 func (i *Shell) GetShellSurface(surface *Surface) (*ShellSurface, error) {
 	id := NewShellSurface(i.Context())
 	const opcode = 0
-	const rLen = 8 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	PutUint32(r[l:l+4], surface.ID())
+	PutUint32(_reqBuf[l:l+4], surface.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -3004,19 +2993,19 @@ func NewShellSurface(ctx *Context) *ShellSurface {
 // A client must respond to a ping event with a pong request or
 // the client may be deemed unresponsive.
 //
-//  serial: serial number of the ping event
+//	serial: serial number of the ping event
 func (i *ShellSurface) Pong(serial uint32) error {
 	const opcode = 0
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(serial))
+	PutUint32(_reqBuf[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3028,22 +3017,22 @@ func (i *ShellSurface) Pong(serial uint32) error {
 // The server may ignore move requests depending on the state of
 // the surface (e.g. fullscreen or maximized).
 //
-//  seat: seat whose pointer is used
-//  serial: serial number of the implicit grab on the pointer
+//	seat: seat whose pointer is used
+//	serial: serial number of the implicit grab on the pointer
 func (i *ShellSurface) Move(seat *Seat, serial uint32) error {
 	const opcode = 1
-	const rLen = 8 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], seat.ID())
+	PutUint32(_reqBuf[l:l+4], seat.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(serial))
+	PutUint32(_reqBuf[l:l+4], uint32(serial))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3055,25 +3044,25 @@ func (i *ShellSurface) Move(seat *Seat, serial uint32) error {
 // The server may ignore resize requests depending on the state of
 // the surface (e.g. fullscreen or maximized).
 //
-//  seat: seat whose pointer is used
-//  serial: serial number of the implicit grab on the pointer
-//  edges: which edge or corner is being dragged
+//	seat: seat whose pointer is used
+//	serial: serial number of the implicit grab on the pointer
+//	edges: which edge or corner is being dragged
 func (i *ShellSurface) Resize(seat *Seat, serial, edges uint32) error {
 	const opcode = 2
-	const rLen = 8 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], seat.ID())
+	PutUint32(_reqBuf[l:l+4], seat.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(serial))
+	PutUint32(_reqBuf[l:l+4], uint32(serial))
 	l += 4
-	PutUint32(r[l:l+4], uint32(edges))
+	PutUint32(_reqBuf[l:l+4], uint32(edges))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3082,17 +3071,16 @@ func (i *ShellSurface) Resize(seat *Seat, serial, edges uint32) error {
 // Map the surface as a toplevel surface.
 //
 // A toplevel surface is not fullscreen, maximized or transient.
-//
 func (i *ShellSurface) SetToplevel() error {
 	const opcode = 3
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3106,28 +3094,28 @@ func (i *ShellSurface) SetToplevel() error {
 //
 // The flags argument controls details of the transient behaviour.
 //
-//  parent: parent surface
-//  x: surface-local x coordinate
-//  y: surface-local y coordinate
-//  flags: transient surface behavior
+//	parent: parent surface
+//	x: surface-local x coordinate
+//	y: surface-local y coordinate
+//	flags: transient surface behavior
 func (i *ShellSurface) SetTransient(parent *Surface, x, y int32, flags uint32) error {
 	const opcode = 4
-	const rLen = 8 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], parent.ID())
+	PutUint32(_reqBuf[l:l+4], parent.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	PutUint32(r[l:l+4], uint32(flags))
+	PutUint32(_reqBuf[l:l+4], uint32(flags))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3167,30 +3155,30 @@ func (i *ShellSurface) SetTransient(parent *Surface, x, y int32, flags uint32) e
 // with the dimensions for the output on which the surface will
 // be made fullscreen.
 //
-//  method: method for resolving size conflict
-//  framerate: framerate in mHz
-//  output: output on which the surface is to be fullscreen
+//	method: method for resolving size conflict
+//	framerate: framerate in mHz
+//	output: output on which the surface is to be fullscreen
 func (i *ShellSurface) SetFullscreen(method, framerate uint32, output *Output) error {
 	const opcode = 5
-	const rLen = 8 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(method))
+	PutUint32(_reqBuf[l:l+4], uint32(method))
 	l += 4
-	PutUint32(r[l:l+4], uint32(framerate))
+	PutUint32(_reqBuf[l:l+4], uint32(framerate))
 	l += 4
 	if output == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], output.ID())
+		PutUint32(_reqBuf[l:l+4], output.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3216,34 +3204,34 @@ func (i *ShellSurface) SetFullscreen(method, framerate uint32, output *Output) e
 // corner of the surface relative to the upper left corner of the
 // parent surface, in surface-local coordinates.
 //
-//  seat: seat whose pointer is used
-//  serial: serial number of the implicit grab on the pointer
-//  parent: parent surface
-//  x: surface-local x coordinate
-//  y: surface-local y coordinate
-//  flags: transient surface behavior
+//	seat: seat whose pointer is used
+//	serial: serial number of the implicit grab on the pointer
+//	parent: parent surface
+//	x: surface-local x coordinate
+//	y: surface-local y coordinate
+//	flags: transient surface behavior
 func (i *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x, y int32, flags uint32) error {
 	const opcode = 6
-	const rLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], seat.ID())
+	PutUint32(_reqBuf[l:l+4], seat.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(serial))
+	PutUint32(_reqBuf[l:l+4], uint32(serial))
 	l += 4
-	PutUint32(r[l:l+4], parent.ID())
+	PutUint32(_reqBuf[l:l+4], parent.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	PutUint32(r[l:l+4], uint32(flags))
+	PutUint32(_reqBuf[l:l+4], uint32(flags))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3268,24 +3256,24 @@ func (i *ShellSurface) SetPopup(seat *Seat, serial uint32, parent *Surface, x, y
 //
 // The details depend on the compositor implementation.
 //
-//  output: output on which the surface is to be maximized
+//	output: output on which the surface is to be maximized
 func (i *ShellSurface) SetMaximized(output *Output) error {
 	const opcode = 7
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
 	if output == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], output.ID())
+		PutUint32(_reqBuf[l:l+4], output.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3299,20 +3287,20 @@ func (i *ShellSurface) SetMaximized(output *Output) error {
 //
 // The string must be encoded in UTF-8.
 //
-//  title: surface title
+//	title: surface title
 func (i *ShellSurface) SetTitle(title string) error {
 	const opcode = 8
 	titleLen := PaddedLen(len(title) + 1)
-	rLen := 8 + (4 + titleLen)
-	r := make([]byte, rLen)
+	_reqBufLen := 8 + (4 + titleLen)
+	_reqBuf := make([]byte, _reqBufLen)
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutString(r[l:l+(4+titleLen)], title, titleLen)
+	PutString(_reqBuf[l:l+(4+titleLen)], title, titleLen)
 	l += (4 + titleLen)
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(_reqBuf, nil)
 	return err
 }
 
@@ -3325,20 +3313,20 @@ func (i *ShellSurface) SetTitle(title string) error {
 // file name (or the full path if it is a non-standard location) of
 // the application's .desktop file as the class.
 //
-//  class: surface class
+//	class: surface class
 func (i *ShellSurface) SetClass(class string) error {
 	const opcode = 9
 	classLen := PaddedLen(len(class) + 1)
-	rLen := 8 + (4 + classLen)
-	r := make([]byte, rLen)
+	_reqBufLen := 8 + (4 + classLen)
+	_reqBuf := make([]byte, _reqBufLen)
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutString(r[l:l+(4+classLen)], class, classLen)
+	PutString(_reqBuf[l:l+(4+classLen)], class, classLen)
 	l += (4 + classLen)
-	err := i.Context().WriteMsg(r, nil)
+	err := i.Context().WriteMsg(_reqBuf, nil)
 	return err
 }
 
@@ -3725,18 +3713,17 @@ func NewSurface(ctx *Context) *Surface {
 // Destroy : delete surface
 //
 // Deletes the surface and invalidates its object ID.
-//
 func (i *Surface) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3799,30 +3786,30 @@ func (i *Surface) Destroy() error {
 // If wl_surface.attach is sent with a NULL wl_buffer, the
 // following wl_surface.commit will remove the surface content.
 //
-//  buffer: buffer of surface contents
-//  x: surface-local x coordinate
-//  y: surface-local y coordinate
+//	buffer: buffer of surface contents
+//	x: surface-local x coordinate
+//	y: surface-local y coordinate
 func (i *Surface) Attach(buffer *Buffer, x, y int32) error {
 	const opcode = 1
-	const rLen = 8 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
 	if buffer == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], buffer.ID())
+		PutUint32(_reqBuf[l:l+4], buffer.ID())
 		l += 4
 	}
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3850,28 +3837,28 @@ func (i *Surface) Attach(buffer *Buffer, x, y int32) error {
 // posted with wl_surface.damage_buffer which uses buffer coordinates
 // instead of surface coordinates.
 //
-//  x: surface-local x coordinate
-//  y: surface-local y coordinate
-//  width: width of damage rectangle
-//  height: height of damage rectangle
+//	x: surface-local x coordinate
+//	y: surface-local y coordinate
+//	width: width of damage rectangle
+//	height: height of damage rectangle
 func (i *Surface) Damage(x, y, width, height int32) error {
 	const opcode = 2
-	const rLen = 8 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	PutUint32(r[l:l+4], uint32(width))
+	PutUint32(_reqBuf[l:l+4], uint32(width))
 	l += 4
-	PutUint32(r[l:l+4], uint32(height))
+	PutUint32(_reqBuf[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3909,20 +3896,19 @@ func (i *Surface) Damage(x, y, width, height int32) error {
 //
 // The callback_data passed in the callback is the current time, in
 // milliseconds, with an undefined base.
-//
 func (i *Surface) Frame() (*Callback, error) {
 	callback := NewCallback(i.Context())
 	const opcode = 3
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], callback.ID())
+	PutUint32(_reqBuf[l:l+4], callback.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return callback, err
 }
 
@@ -3953,24 +3939,24 @@ func (i *Surface) Frame() (*Callback, error) {
 // destroyed immediately. A NULL wl_region causes the pending opaque
 // region to be set to empty.
 //
-//  region: opaque region of the surface
+//	region: opaque region of the surface
 func (i *Surface) SetOpaqueRegion(region *Region) error {
 	const opcode = 4
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
 	if region == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], region.ID())
+		PutUint32(_reqBuf[l:l+4], region.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -3999,24 +3985,24 @@ func (i *Surface) SetOpaqueRegion(region *Region) error {
 // immediately. A NULL wl_region causes the input region to be set
 // to infinite.
 //
-//  region: input region of the surface
+//	region: input region of the surface
 func (i *Surface) SetInputRegion(region *Region) error {
 	const opcode = 5
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
 	if region == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], region.ID())
+		PutUint32(_reqBuf[l:l+4], region.ID())
 		l += 4
 	}
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -4039,17 +4025,16 @@ func (i *Surface) SetInputRegion(region *Region) error {
 // to affect double-buffered state.
 //
 // Other interfaces may add further double-buffered surface state.
-//
 func (i *Surface) Commit() error {
 	const opcode = 6
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -4085,19 +4070,19 @@ func (i *Surface) Commit() error {
 // wl_output.transform enum the invalid_transform protocol error
 // is raised.
 //
-//  transform: transform for interpreting buffer contents
+//	transform: transform for interpreting buffer contents
 func (i *Surface) SetBufferTransform(transform int32) error {
 	const opcode = 7
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(transform))
+	PutUint32(_reqBuf[l:l+4], uint32(transform))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -4127,19 +4112,19 @@ func (i *Surface) SetBufferTransform(transform int32) error {
 // If scale is not positive the invalid_scale protocol error is
 // raised.
 //
-//  scale: positive scale for interpreting buffer contents
+//	scale: positive scale for interpreting buffer contents
 func (i *Surface) SetBufferScale(scale int32) error {
 	const opcode = 8
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(scale))
+	PutUint32(_reqBuf[l:l+4], uint32(scale))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -4178,28 +4163,28 @@ func (i *Surface) SetBufferScale(scale int32) error {
 // two requests separately and only transform from one to the other
 // after receiving the wl_surface.commit.
 //
-//  x: buffer-local x coordinate
-//  y: buffer-local y coordinate
-//  width: width of damage rectangle
-//  height: height of damage rectangle
+//	x: buffer-local x coordinate
+//	y: buffer-local y coordinate
+//	width: width of damage rectangle
+//	height: height of damage rectangle
 func (i *Surface) DamageBuffer(x, y, width, height int32) error {
 	const opcode = 9
-	const rLen = 8 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	PutUint32(r[l:l+4], uint32(width))
+	PutUint32(_reqBuf[l:l+4], uint32(width))
 	l += 4
-	PutUint32(r[l:l+4], uint32(height))
+	PutUint32(_reqBuf[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -4218,22 +4203,22 @@ func (i *Surface) DamageBuffer(x, y, width, height int32) error {
 // arguments in the wl_surface.attach request in wl_surface versions prior
 // to 5. See wl_surface.attach for details.
 //
-//  x: surface-local x coordinate
-//  y: surface-local y coordinate
+//	x: surface-local x coordinate
+//	y: surface-local y coordinate
 func (i *Surface) Offset(x, y int32) error {
 	const opcode = 10
-	const rLen = 8 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -4394,20 +4379,19 @@ func NewSeat(ctx *Context) *Seat {
 // It is a protocol violation to issue this request on a seat that has
 // never had the pointer capability. The missing_capability error will
 // be sent in this case.
-//
 func (i *Seat) GetPointer() (*Pointer, error) {
 	id := NewPointer(i.Context())
 	const opcode = 0
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -4421,20 +4405,19 @@ func (i *Seat) GetPointer() (*Pointer, error) {
 // It is a protocol violation to issue this request on a seat that has
 // never had the keyboard capability. The missing_capability error will
 // be sent in this case.
-//
 func (i *Seat) GetKeyboard() (*Keyboard, error) {
 	id := NewKeyboard(i.Context())
 	const opcode = 1
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -4448,20 +4431,19 @@ func (i *Seat) GetKeyboard() (*Keyboard, error) {
 // It is a protocol violation to issue this request on a seat that has
 // never had the touch capability. The missing_capability error will
 // be sent in this case.
-//
 func (i *Seat) GetTouch() (*Touch, error) {
 	id := NewTouch(i.Context())
 	const opcode = 2
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -4469,18 +4451,17 @@ func (i *Seat) GetTouch() (*Touch, error) {
 //
 // Using this request a client can tell the server that it is not going to
 // use the seat object anymore.
-//
 func (i *Seat) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 3
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -4740,33 +4721,33 @@ func NewPointer(ctx *Context) *Pointer {
 // serial number sent to the client. Otherwise the request will be
 // ignored.
 //
-//  serial: serial number of the enter event
-//  surface: pointer surface
-//  hotspotX: surface-local x coordinate
-//  hotspotY: surface-local y coordinate
+//	serial: serial number of the enter event
+//	surface: pointer surface
+//	hotspotX: surface-local x coordinate
+//	hotspotY: surface-local y coordinate
 func (i *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX, hotspotY int32) error {
 	const opcode = 0
-	const rLen = 8 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(serial))
+	PutUint32(_reqBuf[l:l+4], uint32(serial))
 	l += 4
 	if surface == nil {
-		PutUint32(r[l:l+4], 0)
+		PutUint32(_reqBuf[l:l+4], 0)
 		l += 4
 	} else {
-		PutUint32(r[l:l+4], surface.ID())
+		PutUint32(_reqBuf[l:l+4], surface.ID())
 		l += 4
 	}
-	PutUint32(r[l:l+4], uint32(hotspotX))
+	PutUint32(_reqBuf[l:l+4], uint32(hotspotX))
 	l += 4
-	PutUint32(r[l:l+4], uint32(hotspotY))
+	PutUint32(_reqBuf[l:l+4], uint32(hotspotY))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -4777,18 +4758,17 @@ func (i *Pointer) SetCursor(serial uint32, surface *Surface, hotspotX, hotspotY 
 //
 // This request destroys the pointer proxy object, so clients must not call
 // wl_pointer_destroy() after using this request.
-//
 func (i *Pointer) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 1
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -5469,18 +5449,17 @@ func NewKeyboard(ctx *Context) *Keyboard {
 }
 
 // Release : release the keyboard object
-//
 func (i *Keyboard) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -5849,18 +5828,17 @@ func NewTouch(ctx *Context) *Touch {
 }
 
 // Release : release the touch object
-//
 func (i *Touch) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -6193,18 +6171,17 @@ func NewOutput(ctx *Context) *Output {
 //
 // Using this request a client can tell the server that it is not going to
 // use the output object anymore.
-//
 func (i *Output) Release() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -6735,18 +6712,17 @@ func NewRegion(ctx *Context) *Region {
 // Destroy : destroy region
 //
 // Destroy the region.  This will invalidate the object ID.
-//
 func (i *Region) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -6754,28 +6730,28 @@ func (i *Region) Destroy() error {
 //
 // Add the specified rectangle to the region.
 //
-//  x: region-local x coordinate
-//  y: region-local y coordinate
-//  width: rectangle width
-//  height: rectangle height
+//	x: region-local x coordinate
+//	y: region-local y coordinate
+//	width: rectangle width
+//	height: rectangle height
 func (i *Region) Add(x, y, width, height int32) error {
 	const opcode = 1
-	const rLen = 8 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	PutUint32(r[l:l+4], uint32(width))
+	PutUint32(_reqBuf[l:l+4], uint32(width))
 	l += 4
-	PutUint32(r[l:l+4], uint32(height))
+	PutUint32(_reqBuf[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -6783,28 +6759,28 @@ func (i *Region) Add(x, y, width, height int32) error {
 //
 // Subtract the specified rectangle from the region.
 //
-//  x: region-local x coordinate
-//  y: region-local y coordinate
-//  width: rectangle width
-//  height: rectangle height
+//	x: region-local x coordinate
+//	y: region-local y coordinate
+//	width: rectangle width
+//	height: rectangle height
 func (i *Region) Subtract(x, y, width, height int32) error {
 	const opcode = 2
-	const rLen = 8 + 4 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	PutUint32(r[l:l+4], uint32(width))
+	PutUint32(_reqBuf[l:l+4], uint32(width))
 	l += 4
-	PutUint32(r[l:l+4], uint32(height))
+	PutUint32(_reqBuf[l:l+4], uint32(height))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -6865,18 +6841,17 @@ func NewSubcompositor(ctx *Context) *Subcompositor {
 // Informs the server that the client will not be using this
 // protocol object anymore. This does not affect any other
 // objects, wl_subsurface objects included.
-//
 func (i *Subcompositor) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -6898,25 +6873,25 @@ func (i *Subcompositor) Destroy() error {
 // This request modifies the behaviour of wl_surface.commit request on
 // the sub-surface, see the documentation on wl_subsurface interface.
 //
-//  surface: the surface to be turned into a sub-surface
-//  parent: the parent surface
+//	surface: the surface to be turned into a sub-surface
+//	parent: the parent surface
 func (i *Subcompositor) GetSubsurface(surface, parent *Surface) (*Subsurface, error) {
 	id := NewSubsurface(i.Context())
 	const opcode = 1
-	const rLen = 8 + 4 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], id.ID())
+	PutUint32(_reqBuf[l:l+4], id.ID())
 	l += 4
-	PutUint32(r[l:l+4], surface.ID())
+	PutUint32(_reqBuf[l:l+4], surface.ID())
 	l += 4
-	PutUint32(r[l:l+4], parent.ID())
+	PutUint32(_reqBuf[l:l+4], parent.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return id, err
 }
 
@@ -7069,18 +7044,17 @@ func NewSubsurface(ctx *Context) *Subsurface {
 // wl_subcompositor.get_subsurface request. The wl_surface's association
 // to the parent is deleted, and the wl_surface loses its role as
 // a sub-surface. The wl_surface is unmapped immediately.
-//
 func (i *Subsurface) Destroy() error {
 	defer i.Context().Unregister(i)
 	const opcode = 0
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -7103,22 +7077,22 @@ func (i *Subsurface) Destroy() error {
 //
 // The initial position is 0, 0.
 //
-//  x: x coordinate in the parent surface
-//  y: y coordinate in the parent surface
+//	x: x coordinate in the parent surface
+//	y: y coordinate in the parent surface
 func (i *Subsurface) SetPosition(x, y int32) error {
 	const opcode = 1
-	const rLen = 8 + 4 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], uint32(x))
+	PutUint32(_reqBuf[l:l+4], uint32(x))
 	l += 4
-	PutUint32(r[l:l+4], uint32(y))
+	PutUint32(_reqBuf[l:l+4], uint32(y))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -7140,19 +7114,19 @@ func (i *Subsurface) SetPosition(x, y int32) error {
 // A new sub-surface is initially added as the top-most in the stack
 // of its siblings and parent.
 //
-//  sibling: the reference surface
+//	sibling: the reference surface
 func (i *Subsurface) PlaceAbove(sibling *Surface) error {
 	const opcode = 2
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], sibling.ID())
+	PutUint32(_reqBuf[l:l+4], sibling.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -7161,19 +7135,19 @@ func (i *Subsurface) PlaceAbove(sibling *Surface) error {
 // The sub-surface is placed just below the reference surface.
 // See wl_subsurface.place_above.
 //
-//  sibling: the reference surface
+//	sibling: the reference surface
 func (i *Subsurface) PlaceBelow(sibling *Surface) error {
 	const opcode = 3
-	const rLen = 8 + 4
-	var r [rLen]byte
+	const _reqBufLen = 8 + 4
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	PutUint32(r[l:l+4], sibling.ID())
+	PutUint32(_reqBuf[l:l+4], sibling.ID())
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -7192,17 +7166,16 @@ func (i *Subsurface) PlaceBelow(sibling *Surface) error {
 // parent surface commits do not (re-)apply old state.
 //
 // See wl_subsurface for the recursive effect of this mode.
-//
 func (i *Subsurface) SetSync() error {
 	const opcode = 4
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
@@ -7227,17 +7200,16 @@ func (i *Subsurface) SetSync() error {
 //
 // If a surface's parent surface behaves as desynchronized, then
 // the cached state is applied on set_desync.
-//
 func (i *Subsurface) SetDesync() error {
 	const opcode = 5
-	const rLen = 8
-	var r [rLen]byte
+	const _reqBufLen = 8
+	var _reqBuf [_reqBufLen]byte
 	l := 0
-	PutUint32(r[l:4], i.ID())
+	PutUint32(_reqBuf[l:4], i.ID())
 	l += 4
-	PutUint32(r[l:l+4], uint32(rLen<<16|opcode&0x0000ffff))
+	PutUint32(_reqBuf[l:l+4], uint32(_reqBufLen<<16|opcode&0x0000ffff))
 	l += 4
-	err := i.Context().WriteMsg(r[:], nil)
+	err := i.Context().WriteMsg(_reqBuf[:], nil)
 	return err
 }
 
