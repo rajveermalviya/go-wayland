@@ -1,4 +1,4 @@
-module github.com/rajveermalviya/go-wayland/go-wayland-scanner
+module github.com/rajveermalviya/go-wayland/cmd/go-wayland-scanner
 
 go 1.17
 
