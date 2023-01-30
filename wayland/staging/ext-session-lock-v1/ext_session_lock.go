@@ -107,8 +107,8 @@ func (i *ExtSessionLockManager) Lock() (*ExtSessionLock, error) {
 // instance automatically.
 type ExtSessionLock struct {
 	client.BaseProxy
-	lockedHandlers   []ExtSessionLockLockedHandlerFunc
-	finishedHandlers []ExtSessionLockFinishedHandlerFunc
+	lockedHandler   ExtSessionLockLockedHandlerFunc
+	finishedHandler ExtSessionLockFinishedHandlerFunc
 }
 
 // NewExtSessionLock : manage lock state and create lock surfaces
@@ -308,13 +308,9 @@ func (e ExtSessionLockError) String() string {
 type ExtSessionLockLockedEvent struct{}
 type ExtSessionLockLockedHandlerFunc func(ExtSessionLockLockedEvent)
 
-// AddLockedHandler : adds handler for ExtSessionLockLockedEvent
-func (i *ExtSessionLock) AddLockedHandler(f ExtSessionLockLockedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.lockedHandlers = append(i.lockedHandlers, f)
+// SetLockedHandler : sets handler for ExtSessionLockLockedEvent
+func (i *ExtSessionLock) SetLockedHandler(f ExtSessionLockLockedHandlerFunc) {
+	i.lockedHandler = f
 }
 
 // ExtSessionLockFinishedEvent : the session lock object should be destroyed
@@ -340,33 +336,27 @@ func (i *ExtSessionLock) AddLockedHandler(f ExtSessionLockLockedHandlerFunc) {
 type ExtSessionLockFinishedEvent struct{}
 type ExtSessionLockFinishedHandlerFunc func(ExtSessionLockFinishedEvent)
 
-// AddFinishedHandler : adds handler for ExtSessionLockFinishedEvent
-func (i *ExtSessionLock) AddFinishedHandler(f ExtSessionLockFinishedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.finishedHandlers = append(i.finishedHandlers, f)
+// SetFinishedHandler : sets handler for ExtSessionLockFinishedEvent
+func (i *ExtSessionLock) SetFinishedHandler(f ExtSessionLockFinishedHandlerFunc) {
+	i.finishedHandler = f
 }
 
 func (i *ExtSessionLock) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.lockedHandlers) == 0 {
+		if i.lockedHandler == nil {
 			return
 		}
 		var e ExtSessionLockLockedEvent
-		for _, f := range i.lockedHandlers {
-			f(e)
-		}
+
+		i.lockedHandler(e)
 	case 1:
-		if len(i.finishedHandlers) == 0 {
+		if i.finishedHandler == nil {
 			return
 		}
 		var e ExtSessionLockFinishedEvent
-		for _, f := range i.finishedHandlers {
-			f(e)
-		}
+
+		i.finishedHandler(e)
 	}
 }
 
@@ -389,7 +379,7 @@ func (i *ExtSessionLock) Dispatch(opcode uint32, fd int, data []byte) {
 // focus if the user clicks on other surfaces.
 type ExtSessionLockSurface struct {
 	client.BaseProxy
-	configureHandlers []ExtSessionLockSurfaceConfigureHandlerFunc
+	configureHandler ExtSessionLockSurfaceConfigureHandlerFunc
 }
 
 // NewExtSessionLockSurface : a surface displayed while the session is locked
@@ -546,19 +536,15 @@ type ExtSessionLockSurfaceConfigureEvent struct {
 }
 type ExtSessionLockSurfaceConfigureHandlerFunc func(ExtSessionLockSurfaceConfigureEvent)
 
-// AddConfigureHandler : adds handler for ExtSessionLockSurfaceConfigureEvent
-func (i *ExtSessionLockSurface) AddConfigureHandler(f ExtSessionLockSurfaceConfigureHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.configureHandlers = append(i.configureHandlers, f)
+// SetConfigureHandler : sets handler for ExtSessionLockSurfaceConfigureEvent
+func (i *ExtSessionLockSurface) SetConfigureHandler(f ExtSessionLockSurfaceConfigureHandlerFunc) {
+	i.configureHandler = f
 }
 
 func (i *ExtSessionLockSurface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.configureHandlers) == 0 {
+		if i.configureHandler == nil {
 			return
 		}
 		var e ExtSessionLockSurfaceConfigureEvent
@@ -569,8 +555,7 @@ func (i *ExtSessionLockSurface) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Height = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.configureHandlers {
-			f(e)
-		}
+
+		i.configureHandler(e)
 	}
 }

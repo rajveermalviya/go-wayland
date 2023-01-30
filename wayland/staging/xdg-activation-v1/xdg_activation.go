@@ -137,7 +137,7 @@ func (i *Activation) Activate(token string, surface *client.Surface) error {
 // the compositor will provide an invalid token.
 type ActivationToken struct {
 	client.BaseProxy
-	doneHandlers []ActivationTokenDoneHandlerFunc
+	doneHandler ActivationTokenDoneHandlerFunc
 }
 
 // NewActivationToken : an exported activation handle
@@ -314,19 +314,15 @@ type ActivationTokenDoneEvent struct {
 }
 type ActivationTokenDoneHandlerFunc func(ActivationTokenDoneEvent)
 
-// AddDoneHandler : adds handler for ActivationTokenDoneEvent
-func (i *ActivationToken) AddDoneHandler(f ActivationTokenDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for ActivationTokenDoneEvent
+func (i *ActivationToken) SetDoneHandler(f ActivationTokenDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 func (i *ActivationToken) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e ActivationTokenDoneEvent
@@ -335,8 +331,7 @@ func (i *ActivationToken) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Token = client.String(data[l : l+tokenLen])
 		l += tokenLen
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	}
 }

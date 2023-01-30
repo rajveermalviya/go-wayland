@@ -14,8 +14,8 @@ func (app *appState) attachKeyboard() {
 	}
 	app.keyboard = keyboard
 
-	keyboard.AddKeyHandler(app.HandleKeyboardKey)
-	keyboard.AddKeymapHandler(app.HandleKeyboardKeymap)
+	keyboard.SetKeyHandler(app.HandleKeyboardKey)
+	keyboard.SetKeymapHandler(app.HandleKeyboardKeymap)
 
 	logPrintln("keyboard interface registered")
 }

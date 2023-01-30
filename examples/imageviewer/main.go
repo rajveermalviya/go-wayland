@@ -90,7 +90,7 @@ func (app *appState) initWindow() {
 	}
 	app.display = display
 
-	display.AddErrorHandler(app.HandleDisplayError)
+	display.SetErrorHandler(app.HandleDisplayError)
 
 	// Get global interfaces registry
 	registry, err := app.display.GetRegistry()
@@ -100,7 +100,7 @@ func (app *appState) initWindow() {
 	app.registry = registry
 
 	// Add global interfaces registrar handler
-	registry.AddGlobalHandler(app.HandleRegistryGlobal)
+	registry.SetGlobalHandler(app.HandleRegistryGlobal)
 	// Wait for interfaces to register
 	app.displayRoundTrip()
 	// Wait for handler events
@@ -126,7 +126,7 @@ func (app *appState) initWindow() {
 	logPrintln("got xdg_surface")
 
 	// Add xdg_surface configure handler `app.HandleSurfaceConfigure`
-	xdgSurface.AddConfigureHandler(app.HandleSurfaceConfigure)
+	xdgSurface.SetConfigureHandler(app.HandleSurfaceConfigure)
 	logPrintln("added configure handler")
 
 	// Get toplevel
@@ -138,9 +138,9 @@ func (app *appState) initWindow() {
 	logPrintln("got xdg_toplevel")
 
 	// Add xdg_toplevel configure handler for window resizing
-	xdgTopLevel.AddConfigureHandler(app.HandleToplevelConfigure)
+	xdgTopLevel.SetConfigureHandler(app.HandleToplevelConfigure)
 	// Add xdg_toplevel close handler
-	xdgTopLevel.AddCloseHandler(app.HandleToplevelClose)
+	xdgTopLevel.SetCloseHandler(app.HandleToplevelClose)
 
 	// Set title
 	if err2 := xdgTopLevel.SetTitle(app.title); err2 != nil {
@@ -190,7 +190,7 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 		}
 		app.shm = shm
 
-		shm.AddFormatHandler(app.HandleShmFormat)
+		shm.SetFormatHandler(app.HandleShmFormat)
 	case "xdg_wm_base":
 		xdgWmBase := xdg_shell.NewWmBase(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, xdgWmBase)
@@ -199,7 +199,7 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 		}
 		app.xdgWmBase = xdgWmBase
 		// Add xdg_wmbase ping handler
-		xdgWmBase.AddPingHandler(app.HandleWmBasePing)
+		xdgWmBase.SetPingHandler(app.HandleWmBasePing)
 	case "wl_seat":
 		seat := client.NewSeat(app.context())
 		err := app.registry.Bind(e.Name, e.Interface, e.Version, seat)
@@ -209,8 +209,8 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 		app.seat = seat
 		app.seatVersion = e.Version
 		// Add Keyboard & Pointer handlers
-		seat.AddCapabilitiesHandler(app.HandleSeatCapabilities)
-		seat.AddNameHandler(app.HandleSeatName)
+		seat.SetCapabilitiesHandler(app.HandleSeatCapabilities)
+		seat.SetNameHandler(app.HandleSeatName)
 	}
 }
 
@@ -307,7 +307,7 @@ func (app *appState) drawFrame() *client.Buffer {
 	copy(data, app.frame.Pix)
 	swizzle.BGRA(data)
 
-	buf.AddReleaseHandler(func(_ client.BufferReleaseEvent) {
+	buf.SetReleaseHandler(func(_ client.BufferReleaseEvent) {
 		if err := buf.Destroy(); err != nil {
 			logPrintf("unable to destroy buffer: %v", err)
 		}
@@ -369,7 +369,7 @@ func (app *appState) displayRoundTrip() {
 	}()
 
 	done := false
-	callback.AddDoneHandler(func(_ client.CallbackDoneEvent) {
+	callback.SetDoneHandler(func(_ client.CallbackDoneEvent) {
 		done = true
 	})
 

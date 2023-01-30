@@ -104,8 +104,8 @@ import (
 // interface version number is reset.
 type LinuxDmabuf struct {
 	client.BaseProxy
-	formatHandlers   []LinuxDmabufFormatHandlerFunc
-	modifierHandlers []LinuxDmabufModifierHandlerFunc
+	formatHandler   LinuxDmabufFormatHandlerFunc
+	modifierHandler LinuxDmabufModifierHandlerFunc
 }
 
 // NewLinuxDmabuf : factory for creating dmabuf-based wl_buffers
@@ -290,13 +290,9 @@ type LinuxDmabufFormatEvent struct {
 }
 type LinuxDmabufFormatHandlerFunc func(LinuxDmabufFormatEvent)
 
-// AddFormatHandler : adds handler for LinuxDmabufFormatEvent
-func (i *LinuxDmabuf) AddFormatHandler(f LinuxDmabufFormatHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.formatHandlers = append(i.formatHandlers, f)
+// SetFormatHandler : sets handler for LinuxDmabufFormatEvent
+func (i *LinuxDmabuf) SetFormatHandler(f LinuxDmabufFormatHandlerFunc) {
+	i.formatHandler = f
 }
 
 // LinuxDmabufModifierEvent : supported buffer format modifier
@@ -331,30 +327,25 @@ type LinuxDmabufModifierEvent struct {
 }
 type LinuxDmabufModifierHandlerFunc func(LinuxDmabufModifierEvent)
 
-// AddModifierHandler : adds handler for LinuxDmabufModifierEvent
-func (i *LinuxDmabuf) AddModifierHandler(f LinuxDmabufModifierHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.modifierHandlers = append(i.modifierHandlers, f)
+// SetModifierHandler : sets handler for LinuxDmabufModifierEvent
+func (i *LinuxDmabuf) SetModifierHandler(f LinuxDmabufModifierHandlerFunc) {
+	i.modifierHandler = f
 }
 
 func (i *LinuxDmabuf) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.formatHandlers) == 0 {
+		if i.formatHandler == nil {
 			return
 		}
 		var e LinuxDmabufFormatEvent
 		l := 0
 		e.Format = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.formatHandlers {
-			f(e)
-		}
+
+		i.formatHandler(e)
 	case 1:
-		if len(i.modifierHandlers) == 0 {
+		if i.modifierHandler == nil {
 			return
 		}
 		var e LinuxDmabufModifierEvent
@@ -365,9 +356,8 @@ func (i *LinuxDmabuf) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.ModifierLo = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.modifierHandlers {
-			f(e)
-		}
+
+		i.modifierHandler(e)
 	}
 }
 
@@ -389,8 +379,8 @@ func (i *LinuxDmabuf) Dispatch(opcode uint32, fd int, data []byte) {
 // be given in any order. Each plane index can be set only once.
 type LinuxBufferParams struct {
 	client.BaseProxy
-	createdHandlers []LinuxBufferParamsCreatedHandlerFunc
-	failedHandlers  []LinuxBufferParamsFailedHandlerFunc
+	createdHandler LinuxBufferParamsCreatedHandlerFunc
+	failedHandler  LinuxBufferParamsFailedHandlerFunc
 }
 
 // NewLinuxBufferParams : parameters for creating a dmabuf-based wl_buffer
@@ -749,13 +739,9 @@ type LinuxBufferParamsCreatedEvent struct {
 }
 type LinuxBufferParamsCreatedHandlerFunc func(LinuxBufferParamsCreatedEvent)
 
-// AddCreatedHandler : adds handler for LinuxBufferParamsCreatedEvent
-func (i *LinuxBufferParams) AddCreatedHandler(f LinuxBufferParamsCreatedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.createdHandlers = append(i.createdHandlers, f)
+// SetCreatedHandler : sets handler for LinuxBufferParamsCreatedEvent
+func (i *LinuxBufferParams) SetCreatedHandler(f LinuxBufferParamsCreatedHandlerFunc) {
+	i.createdHandler = f
 }
 
 // LinuxBufferParamsFailedEvent : buffer creation failed
@@ -769,36 +755,30 @@ func (i *LinuxBufferParams) AddCreatedHandler(f LinuxBufferParamsCreatedHandlerF
 type LinuxBufferParamsFailedEvent struct{}
 type LinuxBufferParamsFailedHandlerFunc func(LinuxBufferParamsFailedEvent)
 
-// AddFailedHandler : adds handler for LinuxBufferParamsFailedEvent
-func (i *LinuxBufferParams) AddFailedHandler(f LinuxBufferParamsFailedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.failedHandlers = append(i.failedHandlers, f)
+// SetFailedHandler : sets handler for LinuxBufferParamsFailedEvent
+func (i *LinuxBufferParams) SetFailedHandler(f LinuxBufferParamsFailedHandlerFunc) {
+	i.failedHandler = f
 }
 
 func (i *LinuxBufferParams) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.createdHandlers) == 0 {
+		if i.createdHandler == nil {
 			return
 		}
 		var e LinuxBufferParamsCreatedEvent
 		l := 0
 		e.Buffer = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Buffer)
 		l += 4
-		for _, f := range i.createdHandlers {
-			f(e)
-		}
+
+		i.createdHandler(e)
 	case 1:
-		if len(i.failedHandlers) == 0 {
+		if i.failedHandler == nil {
 			return
 		}
 		var e LinuxBufferParamsFailedEvent
-		for _, f := range i.failedHandlers {
-			f(e)
-		}
+
+		i.failedHandler(e)
 	}
 }
 
@@ -831,13 +811,13 @@ func (i *LinuxBufferParams) Dispatch(opcode uint32, fd int, data []byte) {
 // done event.
 type LinuxDmabufFeedback struct {
 	client.BaseProxy
-	doneHandlers                []LinuxDmabufFeedbackDoneHandlerFunc
-	formatTableHandlers         []LinuxDmabufFeedbackFormatTableHandlerFunc
-	mainDeviceHandlers          []LinuxDmabufFeedbackMainDeviceHandlerFunc
-	trancheDoneHandlers         []LinuxDmabufFeedbackTrancheDoneHandlerFunc
-	trancheTargetDeviceHandlers []LinuxDmabufFeedbackTrancheTargetDeviceHandlerFunc
-	trancheFormatsHandlers      []LinuxDmabufFeedbackTrancheFormatsHandlerFunc
-	trancheFlagsHandlers        []LinuxDmabufFeedbackTrancheFlagsHandlerFunc
+	doneHandler                LinuxDmabufFeedbackDoneHandlerFunc
+	formatTableHandler         LinuxDmabufFeedbackFormatTableHandlerFunc
+	mainDeviceHandler          LinuxDmabufFeedbackMainDeviceHandlerFunc
+	trancheDoneHandler         LinuxDmabufFeedbackTrancheDoneHandlerFunc
+	trancheTargetDeviceHandler LinuxDmabufFeedbackTrancheTargetDeviceHandlerFunc
+	trancheFormatsHandler      LinuxDmabufFeedbackTrancheFormatsHandlerFunc
+	trancheFlagsHandler        LinuxDmabufFeedbackTrancheFlagsHandlerFunc
 }
 
 // NewLinuxDmabufFeedback : dmabuf feedback
@@ -931,13 +911,9 @@ func (e LinuxDmabufFeedbackTrancheFlags) String() string {
 type LinuxDmabufFeedbackDoneEvent struct{}
 type LinuxDmabufFeedbackDoneHandlerFunc func(LinuxDmabufFeedbackDoneEvent)
 
-// AddDoneHandler : adds handler for LinuxDmabufFeedbackDoneEvent
-func (i *LinuxDmabufFeedback) AddDoneHandler(f LinuxDmabufFeedbackDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for LinuxDmabufFeedbackDoneEvent
+func (i *LinuxDmabufFeedback) SetDoneHandler(f LinuxDmabufFeedbackDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 // LinuxDmabufFeedbackFormatTableEvent : format and modifier table
@@ -962,13 +938,9 @@ type LinuxDmabufFeedbackFormatTableEvent struct {
 }
 type LinuxDmabufFeedbackFormatTableHandlerFunc func(LinuxDmabufFeedbackFormatTableEvent)
 
-// AddFormatTableHandler : adds handler for LinuxDmabufFeedbackFormatTableEvent
-func (i *LinuxDmabufFeedback) AddFormatTableHandler(f LinuxDmabufFeedbackFormatTableHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.formatTableHandlers = append(i.formatTableHandlers, f)
+// SetFormatTableHandler : sets handler for LinuxDmabufFeedbackFormatTableEvent
+func (i *LinuxDmabufFeedback) SetFormatTableHandler(f LinuxDmabufFeedbackFormatTableHandlerFunc) {
+	i.formatTableHandler = f
 }
 
 // LinuxDmabufFeedbackMainDeviceEvent : preferred main device
@@ -1001,13 +973,9 @@ type LinuxDmabufFeedbackMainDeviceEvent struct {
 }
 type LinuxDmabufFeedbackMainDeviceHandlerFunc func(LinuxDmabufFeedbackMainDeviceEvent)
 
-// AddMainDeviceHandler : adds handler for LinuxDmabufFeedbackMainDeviceEvent
-func (i *LinuxDmabufFeedback) AddMainDeviceHandler(f LinuxDmabufFeedbackMainDeviceHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.mainDeviceHandlers = append(i.mainDeviceHandlers, f)
+// SetMainDeviceHandler : sets handler for LinuxDmabufFeedbackMainDeviceEvent
+func (i *LinuxDmabufFeedback) SetMainDeviceHandler(f LinuxDmabufFeedbackMainDeviceHandlerFunc) {
+	i.mainDeviceHandler = f
 }
 
 // LinuxDmabufFeedbackTrancheDoneEvent : a preference tranche has been sent
@@ -1019,13 +987,9 @@ func (i *LinuxDmabufFeedback) AddMainDeviceHandler(f LinuxDmabufFeedbackMainDevi
 type LinuxDmabufFeedbackTrancheDoneEvent struct{}
 type LinuxDmabufFeedbackTrancheDoneHandlerFunc func(LinuxDmabufFeedbackTrancheDoneEvent)
 
-// AddTrancheDoneHandler : adds handler for LinuxDmabufFeedbackTrancheDoneEvent
-func (i *LinuxDmabufFeedback) AddTrancheDoneHandler(f LinuxDmabufFeedbackTrancheDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.trancheDoneHandlers = append(i.trancheDoneHandlers, f)
+// SetTrancheDoneHandler : sets handler for LinuxDmabufFeedbackTrancheDoneEvent
+func (i *LinuxDmabufFeedback) SetTrancheDoneHandler(f LinuxDmabufFeedbackTrancheDoneHandlerFunc) {
+	i.trancheDoneHandler = f
 }
 
 // LinuxDmabufFeedbackTrancheTargetDeviceEvent : target device
@@ -1061,13 +1025,9 @@ type LinuxDmabufFeedbackTrancheTargetDeviceEvent struct {
 }
 type LinuxDmabufFeedbackTrancheTargetDeviceHandlerFunc func(LinuxDmabufFeedbackTrancheTargetDeviceEvent)
 
-// AddTrancheTargetDeviceHandler : adds handler for LinuxDmabufFeedbackTrancheTargetDeviceEvent
-func (i *LinuxDmabufFeedback) AddTrancheTargetDeviceHandler(f LinuxDmabufFeedbackTrancheTargetDeviceHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.trancheTargetDeviceHandlers = append(i.trancheTargetDeviceHandlers, f)
+// SetTrancheTargetDeviceHandler : sets handler for LinuxDmabufFeedbackTrancheTargetDeviceEvent
+func (i *LinuxDmabufFeedback) SetTrancheTargetDeviceHandler(f LinuxDmabufFeedbackTrancheTargetDeviceHandlerFunc) {
+	i.trancheTargetDeviceHandler = f
 }
 
 // LinuxDmabufFeedbackTrancheFormatsEvent : supported buffer format modifier
@@ -1101,13 +1061,9 @@ type LinuxDmabufFeedbackTrancheFormatsEvent struct {
 }
 type LinuxDmabufFeedbackTrancheFormatsHandlerFunc func(LinuxDmabufFeedbackTrancheFormatsEvent)
 
-// AddTrancheFormatsHandler : adds handler for LinuxDmabufFeedbackTrancheFormatsEvent
-func (i *LinuxDmabufFeedback) AddTrancheFormatsHandler(f LinuxDmabufFeedbackTrancheFormatsHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.trancheFormatsHandlers = append(i.trancheFormatsHandlers, f)
+// SetTrancheFormatsHandler : sets handler for LinuxDmabufFeedbackTrancheFormatsEvent
+func (i *LinuxDmabufFeedback) SetTrancheFormatsHandler(f LinuxDmabufFeedbackTrancheFormatsHandlerFunc) {
+	i.trancheFormatsHandler = f
 }
 
 // LinuxDmabufFeedbackTrancheFlagsEvent : tranche flags
@@ -1125,27 +1081,25 @@ type LinuxDmabufFeedbackTrancheFlagsEvent struct {
 }
 type LinuxDmabufFeedbackTrancheFlagsHandlerFunc func(LinuxDmabufFeedbackTrancheFlagsEvent)
 
-// AddTrancheFlagsHandler : adds handler for LinuxDmabufFeedbackTrancheFlagsEvent
-func (i *LinuxDmabufFeedback) AddTrancheFlagsHandler(f LinuxDmabufFeedbackTrancheFlagsHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.trancheFlagsHandlers = append(i.trancheFlagsHandlers, f)
+// SetTrancheFlagsHandler : sets handler for LinuxDmabufFeedbackTrancheFlagsEvent
+func (i *LinuxDmabufFeedback) SetTrancheFlagsHandler(f LinuxDmabufFeedbackTrancheFlagsHandlerFunc) {
+	i.trancheFlagsHandler = f
 }
 
 func (i *LinuxDmabufFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e LinuxDmabufFeedbackDoneEvent
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	case 1:
-		if len(i.formatTableHandlers) == 0 {
+		if i.formatTableHandler == nil {
+			if fd != -1 {
+				unix.Close(fd)
+			}
 			return
 		}
 		var e LinuxDmabufFeedbackFormatTableEvent
@@ -1153,11 +1107,10 @@ func (i *LinuxDmabufFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Fd = fd
 		e.Size = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.formatTableHandlers {
-			f(e)
-		}
+
+		i.formatTableHandler(e)
 	case 2:
-		if len(i.mainDeviceHandlers) == 0 {
+		if i.mainDeviceHandler == nil {
 			return
 		}
 		var e LinuxDmabufFeedbackMainDeviceEvent
@@ -1167,19 +1120,17 @@ func (i *LinuxDmabufFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Device = make([]byte, deviceLen)
 		copy(e.Device, data[l:l+deviceLen])
 		l += deviceLen
-		for _, f := range i.mainDeviceHandlers {
-			f(e)
-		}
+
+		i.mainDeviceHandler(e)
 	case 3:
-		if len(i.trancheDoneHandlers) == 0 {
+		if i.trancheDoneHandler == nil {
 			return
 		}
 		var e LinuxDmabufFeedbackTrancheDoneEvent
-		for _, f := range i.trancheDoneHandlers {
-			f(e)
-		}
+
+		i.trancheDoneHandler(e)
 	case 4:
-		if len(i.trancheTargetDeviceHandlers) == 0 {
+		if i.trancheTargetDeviceHandler == nil {
 			return
 		}
 		var e LinuxDmabufFeedbackTrancheTargetDeviceEvent
@@ -1189,11 +1140,10 @@ func (i *LinuxDmabufFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Device = make([]byte, deviceLen)
 		copy(e.Device, data[l:l+deviceLen])
 		l += deviceLen
-		for _, f := range i.trancheTargetDeviceHandlers {
-			f(e)
-		}
+
+		i.trancheTargetDeviceHandler(e)
 	case 5:
-		if len(i.trancheFormatsHandlers) == 0 {
+		if i.trancheFormatsHandler == nil {
 			return
 		}
 		var e LinuxDmabufFeedbackTrancheFormatsEvent
@@ -1203,19 +1153,17 @@ func (i *LinuxDmabufFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Indices = make([]byte, indicesLen)
 		copy(e.Indices, data[l:l+indicesLen])
 		l += indicesLen
-		for _, f := range i.trancheFormatsHandlers {
-			f(e)
-		}
+
+		i.trancheFormatsHandler(e)
 	case 6:
-		if len(i.trancheFlagsHandlers) == 0 {
+		if i.trancheFlagsHandler == nil {
 			return
 		}
 		var e LinuxDmabufFeedbackTrancheFlagsEvent
 		l := 0
 		e.Flags = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.trancheFlagsHandlers {
-			f(e)
-		}
+
+		i.trancheFlagsHandler(e)
 	}
 }

@@ -417,8 +417,8 @@ func (e LinuxSurfaceSynchronizationError) String() string {
 // 'immediate_release' event it is automatically destroyed.
 type LinuxBufferRelease struct {
 	client.BaseProxy
-	fencedReleaseHandlers    []LinuxBufferReleaseFencedReleaseHandlerFunc
-	immediateReleaseHandlers []LinuxBufferReleaseImmediateReleaseHandlerFunc
+	fencedReleaseHandler    LinuxBufferReleaseFencedReleaseHandlerFunc
+	immediateReleaseHandler LinuxBufferReleaseImmediateReleaseHandlerFunc
 }
 
 // NewLinuxBufferRelease : buffer release explicit synchronization
@@ -469,13 +469,9 @@ type LinuxBufferReleaseFencedReleaseEvent struct {
 }
 type LinuxBufferReleaseFencedReleaseHandlerFunc func(LinuxBufferReleaseFencedReleaseEvent)
 
-// AddFencedReleaseHandler : adds handler for LinuxBufferReleaseFencedReleaseEvent
-func (i *LinuxBufferRelease) AddFencedReleaseHandler(f LinuxBufferReleaseFencedReleaseHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.fencedReleaseHandlers = append(i.fencedReleaseHandlers, f)
+// SetFencedReleaseHandler : sets handler for LinuxBufferReleaseFencedReleaseEvent
+func (i *LinuxBufferRelease) SetFencedReleaseHandler(f LinuxBufferReleaseFencedReleaseHandlerFunc) {
+	i.fencedReleaseHandler = f
 }
 
 // LinuxBufferReleaseImmediateReleaseEvent : release buffer immediately
@@ -494,33 +490,30 @@ func (i *LinuxBufferRelease) AddFencedReleaseHandler(f LinuxBufferReleaseFencedR
 type LinuxBufferReleaseImmediateReleaseEvent struct{}
 type LinuxBufferReleaseImmediateReleaseHandlerFunc func(LinuxBufferReleaseImmediateReleaseEvent)
 
-// AddImmediateReleaseHandler : adds handler for LinuxBufferReleaseImmediateReleaseEvent
-func (i *LinuxBufferRelease) AddImmediateReleaseHandler(f LinuxBufferReleaseImmediateReleaseHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.immediateReleaseHandlers = append(i.immediateReleaseHandlers, f)
+// SetImmediateReleaseHandler : sets handler for LinuxBufferReleaseImmediateReleaseEvent
+func (i *LinuxBufferRelease) SetImmediateReleaseHandler(f LinuxBufferReleaseImmediateReleaseHandlerFunc) {
+	i.immediateReleaseHandler = f
 }
 
 func (i *LinuxBufferRelease) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.fencedReleaseHandlers) == 0 {
+		if i.fencedReleaseHandler == nil {
+			if fd != -1 {
+				unix.Close(fd)
+			}
 			return
 		}
 		var e LinuxBufferReleaseFencedReleaseEvent
 		e.Fence = fd
-		for _, f := range i.fencedReleaseHandlers {
-			f(e)
-		}
+
+		i.fencedReleaseHandler(e)
 	case 1:
-		if len(i.immediateReleaseHandlers) == 0 {
+		if i.immediateReleaseHandler == nil {
 			return
 		}
 		var e LinuxBufferReleaseImmediateReleaseEvent
-		for _, f := range i.immediateReleaseHandlers {
-			f(e)
-		}
+
+		i.immediateReleaseHandler(e)
 	}
 }

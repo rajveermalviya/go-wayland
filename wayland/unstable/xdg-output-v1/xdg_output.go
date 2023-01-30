@@ -99,11 +99,11 @@ func (i *OutputManager) GetXdgOutput(output *client.Output) (*Output, error) {
 // properties to be seen as atomic, even if they happen via multiple events.
 type Output struct {
 	client.BaseProxy
-	logicalPositionHandlers []OutputLogicalPositionHandlerFunc
-	logicalSizeHandlers     []OutputLogicalSizeHandlerFunc
-	doneHandlers            []OutputDoneHandlerFunc
-	nameHandlers            []OutputNameHandlerFunc
-	descriptionHandlers     []OutputDescriptionHandlerFunc
+	logicalPositionHandler OutputLogicalPositionHandlerFunc
+	logicalSizeHandler     OutputLogicalSizeHandlerFunc
+	doneHandler            OutputDoneHandlerFunc
+	nameHandler            OutputNameHandlerFunc
+	descriptionHandler     OutputDescriptionHandlerFunc
 }
 
 // NewOutput : compositor logical output region
@@ -155,13 +155,9 @@ type OutputLogicalPositionEvent struct {
 }
 type OutputLogicalPositionHandlerFunc func(OutputLogicalPositionEvent)
 
-// AddLogicalPositionHandler : adds handler for OutputLogicalPositionEvent
-func (i *Output) AddLogicalPositionHandler(f OutputLogicalPositionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.logicalPositionHandlers = append(i.logicalPositionHandlers, f)
+// SetLogicalPositionHandler : sets handler for OutputLogicalPositionEvent
+func (i *Output) SetLogicalPositionHandler(f OutputLogicalPositionHandlerFunc) {
+	i.logicalPositionHandler = f
 }
 
 // OutputLogicalSizeEvent : size of the output in the global compositor space
@@ -206,13 +202,9 @@ type OutputLogicalSizeEvent struct {
 }
 type OutputLogicalSizeHandlerFunc func(OutputLogicalSizeEvent)
 
-// AddLogicalSizeHandler : adds handler for OutputLogicalSizeEvent
-func (i *Output) AddLogicalSizeHandler(f OutputLogicalSizeHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.logicalSizeHandlers = append(i.logicalSizeHandlers, f)
+// SetLogicalSizeHandler : sets handler for OutputLogicalSizeEvent
+func (i *Output) SetLogicalSizeHandler(f OutputLogicalSizeHandlerFunc) {
+	i.logicalSizeHandler = f
 }
 
 // OutputDoneEvent : all information about the output have been sent
@@ -229,13 +221,9 @@ func (i *Output) AddLogicalSizeHandler(f OutputLogicalSizeHandlerFunc) {
 type OutputDoneEvent struct{}
 type OutputDoneHandlerFunc func(OutputDoneEvent)
 
-// AddDoneHandler : adds handler for OutputDoneEvent
-func (i *Output) AddDoneHandler(f OutputDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for OutputDoneEvent
+func (i *Output) SetDoneHandler(f OutputDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 // OutputNameEvent : name of this output
@@ -263,13 +251,9 @@ type OutputNameEvent struct {
 }
 type OutputNameHandlerFunc func(OutputNameEvent)
 
-// AddNameHandler : adds handler for OutputNameEvent
-func (i *Output) AddNameHandler(f OutputNameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.nameHandlers = append(i.nameHandlers, f)
+// SetNameHandler : sets handler for OutputNameEvent
+func (i *Output) SetNameHandler(f OutputNameHandlerFunc) {
+	i.nameHandler = f
 }
 
 // OutputDescriptionEvent : human-readable description of this output
@@ -294,19 +278,15 @@ type OutputDescriptionEvent struct {
 }
 type OutputDescriptionHandlerFunc func(OutputDescriptionEvent)
 
-// AddDescriptionHandler : adds handler for OutputDescriptionEvent
-func (i *Output) AddDescriptionHandler(f OutputDescriptionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.descriptionHandlers = append(i.descriptionHandlers, f)
+// SetDescriptionHandler : sets handler for OutputDescriptionEvent
+func (i *Output) SetDescriptionHandler(f OutputDescriptionHandlerFunc) {
+	i.descriptionHandler = f
 }
 
 func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.logicalPositionHandlers) == 0 {
+		if i.logicalPositionHandler == nil {
 			return
 		}
 		var e OutputLogicalPositionEvent
@@ -315,11 +295,10 @@ func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Y = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.logicalPositionHandlers {
-			f(e)
-		}
+
+		i.logicalPositionHandler(e)
 	case 1:
-		if len(i.logicalSizeHandlers) == 0 {
+		if i.logicalSizeHandler == nil {
 			return
 		}
 		var e OutputLogicalSizeEvent
@@ -328,19 +307,17 @@ func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Height = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.logicalSizeHandlers {
-			f(e)
-		}
+
+		i.logicalSizeHandler(e)
 	case 2:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e OutputDoneEvent
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	case 3:
-		if len(i.nameHandlers) == 0 {
+		if i.nameHandler == nil {
 			return
 		}
 		var e OutputNameEvent
@@ -349,11 +326,10 @@ func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Name = client.String(data[l : l+nameLen])
 		l += nameLen
-		for _, f := range i.nameHandlers {
-			f(e)
-		}
+
+		i.nameHandler(e)
 	case 4:
-		if len(i.descriptionHandlers) == 0 {
+		if i.descriptionHandler == nil {
 			return
 		}
 		var e OutputDescriptionEvent
@@ -362,8 +338,7 @@ func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Description = client.String(data[l : l+descriptionLen])
 		l += descriptionLen
-		for _, f := range i.descriptionHandlers {
-			f(e)
-		}
+
+		i.descriptionHandler(e)
 	}
 }

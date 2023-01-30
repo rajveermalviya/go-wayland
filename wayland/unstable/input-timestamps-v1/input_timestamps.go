@@ -163,7 +163,7 @@ func (i *InputTimestampsManager) GetTouchTimestamps(touch *client.Touch) (*Input
 // zwp_input_timestamps_manager_v1 request used to create this object.
 type InputTimestamps struct {
 	client.BaseProxy
-	timestampHandlers []InputTimestampsTimestampHandlerFunc
+	timestampHandler InputTimestampsTimestampHandlerFunc
 }
 
 // NewInputTimestamps : context object for input timestamps
@@ -219,19 +219,15 @@ type InputTimestampsTimestampEvent struct {
 }
 type InputTimestampsTimestampHandlerFunc func(InputTimestampsTimestampEvent)
 
-// AddTimestampHandler : adds handler for InputTimestampsTimestampEvent
-func (i *InputTimestamps) AddTimestampHandler(f InputTimestampsTimestampHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.timestampHandlers = append(i.timestampHandlers, f)
+// SetTimestampHandler : sets handler for InputTimestampsTimestampEvent
+func (i *InputTimestamps) SetTimestampHandler(f InputTimestampsTimestampHandlerFunc) {
+	i.timestampHandler = f
 }
 
 func (i *InputTimestamps) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.timestampHandlers) == 0 {
+		if i.timestampHandler == nil {
 			return
 		}
 		var e InputTimestampsTimestampEvent
@@ -242,8 +238,7 @@ func (i *InputTimestamps) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.TvNsec = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.timestampHandlers {
-			f(e)
-		}
+
+		i.timestampHandler(e)
 	}
 }

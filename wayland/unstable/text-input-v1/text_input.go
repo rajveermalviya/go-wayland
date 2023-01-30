@@ -62,19 +62,19 @@ import "github.com/rajveermalviya/go-wayland/wayland/client"
 // interface version number is reset.
 type TextInput struct {
 	client.BaseProxy
-	enterHandlers                 []TextInputEnterHandlerFunc
-	leaveHandlers                 []TextInputLeaveHandlerFunc
-	modifiersMapHandlers          []TextInputModifiersMapHandlerFunc
-	inputPanelStateHandlers       []TextInputInputPanelStateHandlerFunc
-	preeditStringHandlers         []TextInputPreeditStringHandlerFunc
-	preeditStylingHandlers        []TextInputPreeditStylingHandlerFunc
-	preeditCursorHandlers         []TextInputPreeditCursorHandlerFunc
-	commitStringHandlers          []TextInputCommitStringHandlerFunc
-	cursorPositionHandlers        []TextInputCursorPositionHandlerFunc
-	deleteSurroundingTextHandlers []TextInputDeleteSurroundingTextHandlerFunc
-	keysymHandlers                []TextInputKeysymHandlerFunc
-	languageHandlers              []TextInputLanguageHandlerFunc
-	textDirectionHandlers         []TextInputTextDirectionHandlerFunc
+	enterHandler                 TextInputEnterHandlerFunc
+	leaveHandler                 TextInputLeaveHandlerFunc
+	modifiersMapHandler          TextInputModifiersMapHandlerFunc
+	inputPanelStateHandler       TextInputInputPanelStateHandlerFunc
+	preeditStringHandler         TextInputPreeditStringHandlerFunc
+	preeditStylingHandler        TextInputPreeditStylingHandlerFunc
+	preeditCursorHandler         TextInputPreeditCursorHandlerFunc
+	commitStringHandler          TextInputCommitStringHandlerFunc
+	cursorPositionHandler        TextInputCursorPositionHandlerFunc
+	deleteSurroundingTextHandler TextInputDeleteSurroundingTextHandlerFunc
+	keysymHandler                TextInputKeysymHandlerFunc
+	languageHandler              TextInputLanguageHandlerFunc
+	textDirectionHandler         TextInputTextDirectionHandlerFunc
 }
 
 // NewTextInput : text input
@@ -681,13 +681,9 @@ type TextInputEnterEvent struct {
 }
 type TextInputEnterHandlerFunc func(TextInputEnterEvent)
 
-// AddEnterHandler : adds handler for TextInputEnterEvent
-func (i *TextInput) AddEnterHandler(f TextInputEnterHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.enterHandlers = append(i.enterHandlers, f)
+// SetEnterHandler : sets handler for TextInputEnterEvent
+func (i *TextInput) SetEnterHandler(f TextInputEnterHandlerFunc) {
+	i.enterHandler = f
 }
 
 // TextInputLeaveEvent : leave event
@@ -698,13 +694,9 @@ func (i *TextInput) AddEnterHandler(f TextInputEnterHandlerFunc) {
 type TextInputLeaveEvent struct{}
 type TextInputLeaveHandlerFunc func(TextInputLeaveEvent)
 
-// AddLeaveHandler : adds handler for TextInputLeaveEvent
-func (i *TextInput) AddLeaveHandler(f TextInputLeaveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.leaveHandlers = append(i.leaveHandlers, f)
+// SetLeaveHandler : sets handler for TextInputLeaveEvent
+func (i *TextInput) SetLeaveHandler(f TextInputLeaveHandlerFunc) {
+	i.leaveHandler = f
 }
 
 // TextInputModifiersMapEvent : modifiers map
@@ -717,13 +709,9 @@ type TextInputModifiersMapEvent struct {
 }
 type TextInputModifiersMapHandlerFunc func(TextInputModifiersMapEvent)
 
-// AddModifiersMapHandler : adds handler for TextInputModifiersMapEvent
-func (i *TextInput) AddModifiersMapHandler(f TextInputModifiersMapHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.modifiersMapHandlers = append(i.modifiersMapHandlers, f)
+// SetModifiersMapHandler : sets handler for TextInputModifiersMapEvent
+func (i *TextInput) SetModifiersMapHandler(f TextInputModifiersMapHandlerFunc) {
+	i.modifiersMapHandler = f
 }
 
 // TextInputInputPanelStateEvent : state of the input panel
@@ -734,13 +722,9 @@ type TextInputInputPanelStateEvent struct {
 }
 type TextInputInputPanelStateHandlerFunc func(TextInputInputPanelStateEvent)
 
-// AddInputPanelStateHandler : adds handler for TextInputInputPanelStateEvent
-func (i *TextInput) AddInputPanelStateHandler(f TextInputInputPanelStateHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.inputPanelStateHandlers = append(i.inputPanelStateHandlers, f)
+// SetInputPanelStateHandler : sets handler for TextInputInputPanelStateEvent
+func (i *TextInput) SetInputPanelStateHandler(f TextInputInputPanelStateHandlerFunc) {
+	i.inputPanelStateHandler = f
 }
 
 // TextInputPreeditStringEvent : pre-edit
@@ -761,13 +745,9 @@ type TextInputPreeditStringEvent struct {
 }
 type TextInputPreeditStringHandlerFunc func(TextInputPreeditStringEvent)
 
-// AddPreeditStringHandler : adds handler for TextInputPreeditStringEvent
-func (i *TextInput) AddPreeditStringHandler(f TextInputPreeditStringHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.preeditStringHandlers = append(i.preeditStringHandlers, f)
+// SetPreeditStringHandler : sets handler for TextInputPreeditStringEvent
+func (i *TextInput) SetPreeditStringHandler(f TextInputPreeditStringHandlerFunc) {
+	i.preeditStringHandler = f
 }
 
 // TextInputPreeditStylingEvent : pre-edit styling
@@ -786,13 +766,9 @@ type TextInputPreeditStylingEvent struct {
 }
 type TextInputPreeditStylingHandlerFunc func(TextInputPreeditStylingEvent)
 
-// AddPreeditStylingHandler : adds handler for TextInputPreeditStylingEvent
-func (i *TextInput) AddPreeditStylingHandler(f TextInputPreeditStylingHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.preeditStylingHandlers = append(i.preeditStylingHandlers, f)
+// SetPreeditStylingHandler : sets handler for TextInputPreeditStylingEvent
+func (i *TextInput) SetPreeditStylingHandler(f TextInputPreeditStylingHandlerFunc) {
+	i.preeditStylingHandler = f
 }
 
 // TextInputPreeditCursorEvent : pre-edit cursor
@@ -807,13 +783,9 @@ type TextInputPreeditCursorEvent struct {
 }
 type TextInputPreeditCursorHandlerFunc func(TextInputPreeditCursorEvent)
 
-// AddPreeditCursorHandler : adds handler for TextInputPreeditCursorEvent
-func (i *TextInput) AddPreeditCursorHandler(f TextInputPreeditCursorHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.preeditCursorHandlers = append(i.preeditCursorHandlers, f)
+// SetPreeditCursorHandler : sets handler for TextInputPreeditCursorEvent
+func (i *TextInput) SetPreeditCursorHandler(f TextInputPreeditCursorHandlerFunc) {
+	i.preeditCursorHandler = f
 }
 
 // TextInputCommitStringEvent : commit
@@ -831,13 +803,9 @@ type TextInputCommitStringEvent struct {
 }
 type TextInputCommitStringHandlerFunc func(TextInputCommitStringEvent)
 
-// AddCommitStringHandler : adds handler for TextInputCommitStringEvent
-func (i *TextInput) AddCommitStringHandler(f TextInputCommitStringHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.commitStringHandlers = append(i.commitStringHandlers, f)
+// SetCommitStringHandler : sets handler for TextInputCommitStringEvent
+func (i *TextInput) SetCommitStringHandler(f TextInputCommitStringHandlerFunc) {
+	i.commitStringHandler = f
 }
 
 // TextInputCursorPositionEvent : set cursor to new position
@@ -852,13 +820,9 @@ type TextInputCursorPositionEvent struct {
 }
 type TextInputCursorPositionHandlerFunc func(TextInputCursorPositionEvent)
 
-// AddCursorPositionHandler : adds handler for TextInputCursorPositionEvent
-func (i *TextInput) AddCursorPositionHandler(f TextInputCursorPositionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.cursorPositionHandlers = append(i.cursorPositionHandlers, f)
+// SetCursorPositionHandler : sets handler for TextInputCursorPositionEvent
+func (i *TextInput) SetCursorPositionHandler(f TextInputCursorPositionHandlerFunc) {
+	i.cursorPositionHandler = f
 }
 
 // TextInputDeleteSurroundingTextEvent : delete surrounding text
@@ -877,13 +841,9 @@ type TextInputDeleteSurroundingTextEvent struct {
 }
 type TextInputDeleteSurroundingTextHandlerFunc func(TextInputDeleteSurroundingTextEvent)
 
-// AddDeleteSurroundingTextHandler : adds handler for TextInputDeleteSurroundingTextEvent
-func (i *TextInput) AddDeleteSurroundingTextHandler(f TextInputDeleteSurroundingTextHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.deleteSurroundingTextHandlers = append(i.deleteSurroundingTextHandlers, f)
+// SetDeleteSurroundingTextHandler : sets handler for TextInputDeleteSurroundingTextEvent
+func (i *TextInput) SetDeleteSurroundingTextHandler(f TextInputDeleteSurroundingTextHandlerFunc) {
+	i.deleteSurroundingTextHandler = f
 }
 
 // TextInputKeysymEvent : keysym
@@ -903,13 +863,9 @@ type TextInputKeysymEvent struct {
 }
 type TextInputKeysymHandlerFunc func(TextInputKeysymEvent)
 
-// AddKeysymHandler : adds handler for TextInputKeysymEvent
-func (i *TextInput) AddKeysymHandler(f TextInputKeysymHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.keysymHandlers = append(i.keysymHandlers, f)
+// SetKeysymHandler : sets handler for TextInputKeysymEvent
+func (i *TextInput) SetKeysymHandler(f TextInputKeysymHandlerFunc) {
+	i.keysymHandler = f
 }
 
 // TextInputLanguageEvent : language
@@ -922,13 +878,9 @@ type TextInputLanguageEvent struct {
 }
 type TextInputLanguageHandlerFunc func(TextInputLanguageEvent)
 
-// AddLanguageHandler : adds handler for TextInputLanguageEvent
-func (i *TextInput) AddLanguageHandler(f TextInputLanguageHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.languageHandlers = append(i.languageHandlers, f)
+// SetLanguageHandler : sets handler for TextInputLanguageEvent
+func (i *TextInput) SetLanguageHandler(f TextInputLanguageHandlerFunc) {
+	i.languageHandler = f
 }
 
 // TextInputTextDirectionEvent : text direction
@@ -944,38 +896,32 @@ type TextInputTextDirectionEvent struct {
 }
 type TextInputTextDirectionHandlerFunc func(TextInputTextDirectionEvent)
 
-// AddTextDirectionHandler : adds handler for TextInputTextDirectionEvent
-func (i *TextInput) AddTextDirectionHandler(f TextInputTextDirectionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.textDirectionHandlers = append(i.textDirectionHandlers, f)
+// SetTextDirectionHandler : sets handler for TextInputTextDirectionEvent
+func (i *TextInput) SetTextDirectionHandler(f TextInputTextDirectionHandlerFunc) {
+	i.textDirectionHandler = f
 }
 
 func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.enterHandlers) == 0 {
+		if i.enterHandler == nil {
 			return
 		}
 		var e TextInputEnterEvent
 		l := 0
 		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
 		l += 4
-		for _, f := range i.enterHandlers {
-			f(e)
-		}
+
+		i.enterHandler(e)
 	case 1:
-		if len(i.leaveHandlers) == 0 {
+		if i.leaveHandler == nil {
 			return
 		}
 		var e TextInputLeaveEvent
-		for _, f := range i.leaveHandlers {
-			f(e)
-		}
+
+		i.leaveHandler(e)
 	case 2:
-		if len(i.modifiersMapHandlers) == 0 {
+		if i.modifiersMapHandler == nil {
 			return
 		}
 		var e TextInputModifiersMapEvent
@@ -985,22 +931,20 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Map = make([]byte, _mapLen)
 		copy(e.Map, data[l:l+_mapLen])
 		l += _mapLen
-		for _, f := range i.modifiersMapHandlers {
-			f(e)
-		}
+
+		i.modifiersMapHandler(e)
 	case 3:
-		if len(i.inputPanelStateHandlers) == 0 {
+		if i.inputPanelStateHandler == nil {
 			return
 		}
 		var e TextInputInputPanelStateEvent
 		l := 0
 		e.State = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.inputPanelStateHandlers {
-			f(e)
-		}
+
+		i.inputPanelStateHandler(e)
 	case 4:
-		if len(i.preeditStringHandlers) == 0 {
+		if i.preeditStringHandler == nil {
 			return
 		}
 		var e TextInputPreeditStringEvent
@@ -1015,11 +959,10 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Commit = client.String(data[l : l+commitLen])
 		l += commitLen
-		for _, f := range i.preeditStringHandlers {
-			f(e)
-		}
+
+		i.preeditStringHandler(e)
 	case 5:
-		if len(i.preeditStylingHandlers) == 0 {
+		if i.preeditStylingHandler == nil {
 			return
 		}
 		var e TextInputPreeditStylingEvent
@@ -1030,22 +973,20 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Style = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.preeditStylingHandlers {
-			f(e)
-		}
+
+		i.preeditStylingHandler(e)
 	case 6:
-		if len(i.preeditCursorHandlers) == 0 {
+		if i.preeditCursorHandler == nil {
 			return
 		}
 		var e TextInputPreeditCursorEvent
 		l := 0
 		e.Index = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.preeditCursorHandlers {
-			f(e)
-		}
+
+		i.preeditCursorHandler(e)
 	case 7:
-		if len(i.commitStringHandlers) == 0 {
+		if i.commitStringHandler == nil {
 			return
 		}
 		var e TextInputCommitStringEvent
@@ -1056,11 +997,10 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Text = client.String(data[l : l+textLen])
 		l += textLen
-		for _, f := range i.commitStringHandlers {
-			f(e)
-		}
+
+		i.commitStringHandler(e)
 	case 8:
-		if len(i.cursorPositionHandlers) == 0 {
+		if i.cursorPositionHandler == nil {
 			return
 		}
 		var e TextInputCursorPositionEvent
@@ -1069,11 +1009,10 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Anchor = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.cursorPositionHandlers {
-			f(e)
-		}
+
+		i.cursorPositionHandler(e)
 	case 9:
-		if len(i.deleteSurroundingTextHandlers) == 0 {
+		if i.deleteSurroundingTextHandler == nil {
 			return
 		}
 		var e TextInputDeleteSurroundingTextEvent
@@ -1082,11 +1021,10 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Length = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.deleteSurroundingTextHandlers {
-			f(e)
-		}
+
+		i.deleteSurroundingTextHandler(e)
 	case 10:
-		if len(i.keysymHandlers) == 0 {
+		if i.keysymHandler == nil {
 			return
 		}
 		var e TextInputKeysymEvent
@@ -1101,11 +1039,10 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Modifiers = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.keysymHandlers {
-			f(e)
-		}
+
+		i.keysymHandler(e)
 	case 11:
-		if len(i.languageHandlers) == 0 {
+		if i.languageHandler == nil {
 			return
 		}
 		var e TextInputLanguageEvent
@@ -1116,11 +1053,10 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Language = client.String(data[l : l+languageLen])
 		l += languageLen
-		for _, f := range i.languageHandlers {
-			f(e)
-		}
+
+		i.languageHandler(e)
 	case 12:
-		if len(i.textDirectionHandlers) == 0 {
+		if i.textDirectionHandler == nil {
 			return
 		}
 		var e TextInputTextDirectionEvent
@@ -1129,9 +1065,8 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Direction = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.textDirectionHandlers {
-			f(e)
-		}
+
+		i.textDirectionHandler(e)
 	}
 }
 

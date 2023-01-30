@@ -64,12 +64,12 @@ import "github.com/rajveermalviya/go-wayland/wayland/client"
 // needs to be resent by the client.
 type TextInput struct {
 	client.BaseProxy
-	enterHandlers                 []TextInputEnterHandlerFunc
-	leaveHandlers                 []TextInputLeaveHandlerFunc
-	preeditStringHandlers         []TextInputPreeditStringHandlerFunc
-	commitStringHandlers          []TextInputCommitStringHandlerFunc
-	deleteSurroundingTextHandlers []TextInputDeleteSurroundingTextHandlerFunc
-	doneHandlers                  []TextInputDoneHandlerFunc
+	enterHandler                 TextInputEnterHandlerFunc
+	leaveHandler                 TextInputLeaveHandlerFunc
+	preeditStringHandler         TextInputPreeditStringHandlerFunc
+	commitStringHandler          TextInputCommitStringHandlerFunc
+	deleteSurroundingTextHandler TextInputDeleteSurroundingTextHandlerFunc
+	doneHandler                  TextInputDoneHandlerFunc
 }
 
 // NewTextInput : text input
@@ -640,13 +640,9 @@ type TextInputEnterEvent struct {
 }
 type TextInputEnterHandlerFunc func(TextInputEnterEvent)
 
-// AddEnterHandler : adds handler for TextInputEnterEvent
-func (i *TextInput) AddEnterHandler(f TextInputEnterHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.enterHandlers = append(i.enterHandlers, f)
+// SetEnterHandler : sets handler for TextInputEnterEvent
+func (i *TextInput) SetEnterHandler(f TextInputEnterHandlerFunc) {
+	i.enterHandler = f
 }
 
 // TextInputLeaveEvent : leave event
@@ -667,13 +663,9 @@ type TextInputLeaveEvent struct {
 }
 type TextInputLeaveHandlerFunc func(TextInputLeaveEvent)
 
-// AddLeaveHandler : adds handler for TextInputLeaveEvent
-func (i *TextInput) AddLeaveHandler(f TextInputLeaveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.leaveHandlers = append(i.leaveHandlers, f)
+// SetLeaveHandler : sets handler for TextInputLeaveEvent
+func (i *TextInput) SetLeaveHandler(f TextInputLeaveHandlerFunc) {
+	i.leaveHandler = f
 }
 
 // TextInputPreeditStringEvent : pre-edit
@@ -703,13 +695,9 @@ type TextInputPreeditStringEvent struct {
 }
 type TextInputPreeditStringHandlerFunc func(TextInputPreeditStringEvent)
 
-// AddPreeditStringHandler : adds handler for TextInputPreeditStringEvent
-func (i *TextInput) AddPreeditStringHandler(f TextInputPreeditStringHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.preeditStringHandlers = append(i.preeditStringHandlers, f)
+// SetPreeditStringHandler : sets handler for TextInputPreeditStringEvent
+func (i *TextInput) SetPreeditStringHandler(f TextInputPreeditStringHandlerFunc) {
+	i.preeditStringHandler = f
 }
 
 // TextInputCommitStringEvent : text commit
@@ -727,13 +715,9 @@ type TextInputCommitStringEvent struct {
 }
 type TextInputCommitStringHandlerFunc func(TextInputCommitStringEvent)
 
-// AddCommitStringHandler : adds handler for TextInputCommitStringEvent
-func (i *TextInput) AddCommitStringHandler(f TextInputCommitStringHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.commitStringHandlers = append(i.commitStringHandlers, f)
+// SetCommitStringHandler : sets handler for TextInputCommitStringEvent
+func (i *TextInput) SetCommitStringHandler(f TextInputCommitStringHandlerFunc) {
+	i.commitStringHandler = f
 }
 
 // TextInputDeleteSurroundingTextEvent : delete surrounding text
@@ -758,13 +742,9 @@ type TextInputDeleteSurroundingTextEvent struct {
 }
 type TextInputDeleteSurroundingTextHandlerFunc func(TextInputDeleteSurroundingTextEvent)
 
-// AddDeleteSurroundingTextHandler : adds handler for TextInputDeleteSurroundingTextEvent
-func (i *TextInput) AddDeleteSurroundingTextHandler(f TextInputDeleteSurroundingTextHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.deleteSurroundingTextHandlers = append(i.deleteSurroundingTextHandlers, f)
+// SetDeleteSurroundingTextHandler : sets handler for TextInputDeleteSurroundingTextEvent
+func (i *TextInput) SetDeleteSurroundingTextHandler(f TextInputDeleteSurroundingTextHandlerFunc) {
+	i.deleteSurroundingTextHandler = f
 }
 
 // TextInputDoneEvent : apply changes
@@ -801,41 +781,35 @@ type TextInputDoneEvent struct {
 }
 type TextInputDoneHandlerFunc func(TextInputDoneEvent)
 
-// AddDoneHandler : adds handler for TextInputDoneEvent
-func (i *TextInput) AddDoneHandler(f TextInputDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for TextInputDoneEvent
+func (i *TextInput) SetDoneHandler(f TextInputDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.enterHandlers) == 0 {
+		if i.enterHandler == nil {
 			return
 		}
 		var e TextInputEnterEvent
 		l := 0
 		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
 		l += 4
-		for _, f := range i.enterHandlers {
-			f(e)
-		}
+
+		i.enterHandler(e)
 	case 1:
-		if len(i.leaveHandlers) == 0 {
+		if i.leaveHandler == nil {
 			return
 		}
 		var e TextInputLeaveEvent
 		l := 0
 		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
 		l += 4
-		for _, f := range i.leaveHandlers {
-			f(e)
-		}
+
+		i.leaveHandler(e)
 	case 2:
-		if len(i.preeditStringHandlers) == 0 {
+		if i.preeditStringHandler == nil {
 			return
 		}
 		var e TextInputPreeditStringEvent
@@ -848,11 +822,10 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.CursorEnd = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.preeditStringHandlers {
-			f(e)
-		}
+
+		i.preeditStringHandler(e)
 	case 3:
-		if len(i.commitStringHandlers) == 0 {
+		if i.commitStringHandler == nil {
 			return
 		}
 		var e TextInputCommitStringEvent
@@ -861,11 +834,10 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Text = client.String(data[l : l+textLen])
 		l += textLen
-		for _, f := range i.commitStringHandlers {
-			f(e)
-		}
+
+		i.commitStringHandler(e)
 	case 4:
-		if len(i.deleteSurroundingTextHandlers) == 0 {
+		if i.deleteSurroundingTextHandler == nil {
 			return
 		}
 		var e TextInputDeleteSurroundingTextEvent
@@ -874,20 +846,18 @@ func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.AfterLength = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.deleteSurroundingTextHandlers {
-			f(e)
-		}
+
+		i.deleteSurroundingTextHandler(e)
 	case 5:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e TextInputDoneEvent
 		l := 0
 		e.Serial = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	}
 }
 

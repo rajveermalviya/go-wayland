@@ -43,7 +43,7 @@ import "github.com/rajveermalviya/go-wayland/wayland/client"
 // creating transient windows such as popup menus.
 type WmBase struct {
 	client.BaseProxy
-	pingHandlers []WmBasePingHandlerFunc
+	pingHandler WmBasePingHandlerFunc
 }
 
 // NewWmBase : create desktop-style surfaces
@@ -242,28 +242,23 @@ type WmBasePingEvent struct {
 }
 type WmBasePingHandlerFunc func(WmBasePingEvent)
 
-// AddPingHandler : adds handler for WmBasePingEvent
-func (i *WmBase) AddPingHandler(f WmBasePingHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.pingHandlers = append(i.pingHandlers, f)
+// SetPingHandler : sets handler for WmBasePingEvent
+func (i *WmBase) SetPingHandler(f WmBasePingHandlerFunc) {
+	i.pingHandler = f
 }
 
 func (i *WmBase) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.pingHandlers) == 0 {
+		if i.pingHandler == nil {
 			return
 		}
 		var e WmBasePingEvent
 		l := 0
 		e.Serial = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.pingHandlers {
-			f(e)
-		}
+
+		i.pingHandler(e)
 	}
 }
 
@@ -878,7 +873,7 @@ func (e PositionerConstraintAdjustment) String() string {
 // again before attaching a buffer.
 type Surface struct {
 	client.BaseProxy
-	configureHandlers []SurfaceConfigureHandlerFunc
+	configureHandler SurfaceConfigureHandlerFunc
 }
 
 // NewSurface : desktop user interface surface base interface
@@ -1197,28 +1192,23 @@ type SurfaceConfigureEvent struct {
 }
 type SurfaceConfigureHandlerFunc func(SurfaceConfigureEvent)
 
-// AddConfigureHandler : adds handler for SurfaceConfigureEvent
-func (i *Surface) AddConfigureHandler(f SurfaceConfigureHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.configureHandlers = append(i.configureHandlers, f)
+// SetConfigureHandler : sets handler for SurfaceConfigureEvent
+func (i *Surface) SetConfigureHandler(f SurfaceConfigureHandlerFunc) {
+	i.configureHandler = f
 }
 
 func (i *Surface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.configureHandlers) == 0 {
+		if i.configureHandler == nil {
 			return
 		}
 		var e SurfaceConfigureEvent
 		l := 0
 		e.Serial = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.configureHandlers {
-			f(e)
-		}
+
+		i.configureHandler(e)
 	}
 }
 
@@ -1243,10 +1233,10 @@ func (i *Surface) Dispatch(opcode uint32, fd int, data []byte) {
 // Attaching a null buffer to a toplevel unmaps the surface.
 type Toplevel struct {
 	client.BaseProxy
-	configureHandlers       []ToplevelConfigureHandlerFunc
-	closeHandlers           []ToplevelCloseHandlerFunc
-	configureBoundsHandlers []ToplevelConfigureBoundsHandlerFunc
-	wmCapabilitiesHandlers  []ToplevelWmCapabilitiesHandlerFunc
+	configureHandler       ToplevelConfigureHandlerFunc
+	closeHandler           ToplevelCloseHandlerFunc
+	configureBoundsHandler ToplevelConfigureBoundsHandlerFunc
+	wmCapabilitiesHandler  ToplevelWmCapabilitiesHandlerFunc
 }
 
 // NewToplevel : toplevel surface
@@ -2076,13 +2066,9 @@ type ToplevelConfigureEvent struct {
 }
 type ToplevelConfigureHandlerFunc func(ToplevelConfigureEvent)
 
-// AddConfigureHandler : adds handler for ToplevelConfigureEvent
-func (i *Toplevel) AddConfigureHandler(f ToplevelConfigureHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.configureHandlers = append(i.configureHandlers, f)
+// SetConfigureHandler : sets handler for ToplevelConfigureEvent
+func (i *Toplevel) SetConfigureHandler(f ToplevelConfigureHandlerFunc) {
+	i.configureHandler = f
 }
 
 // ToplevelCloseEvent : surface wants to be closed
@@ -2098,13 +2084,9 @@ func (i *Toplevel) AddConfigureHandler(f ToplevelConfigureHandlerFunc) {
 type ToplevelCloseEvent struct{}
 type ToplevelCloseHandlerFunc func(ToplevelCloseEvent)
 
-// AddCloseHandler : adds handler for ToplevelCloseEvent
-func (i *Toplevel) AddCloseHandler(f ToplevelCloseHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.closeHandlers = append(i.closeHandlers, f)
+// SetCloseHandler : sets handler for ToplevelCloseEvent
+func (i *Toplevel) SetCloseHandler(f ToplevelCloseHandlerFunc) {
+	i.closeHandler = f
 }
 
 // ToplevelConfigureBoundsEvent : recommended window geometry bounds
@@ -2130,13 +2112,9 @@ type ToplevelConfigureBoundsEvent struct {
 }
 type ToplevelConfigureBoundsHandlerFunc func(ToplevelConfigureBoundsEvent)
 
-// AddConfigureBoundsHandler : adds handler for ToplevelConfigureBoundsEvent
-func (i *Toplevel) AddConfigureBoundsHandler(f ToplevelConfigureBoundsHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.configureBoundsHandlers = append(i.configureBoundsHandlers, f)
+// SetConfigureBoundsHandler : sets handler for ToplevelConfigureBoundsEvent
+func (i *Toplevel) SetConfigureBoundsHandler(f ToplevelConfigureBoundsHandlerFunc) {
+	i.configureBoundsHandler = f
 }
 
 // ToplevelWmCapabilitiesEvent : compositor capabilities
@@ -2166,19 +2144,15 @@ type ToplevelWmCapabilitiesEvent struct {
 }
 type ToplevelWmCapabilitiesHandlerFunc func(ToplevelWmCapabilitiesEvent)
 
-// AddWmCapabilitiesHandler : adds handler for ToplevelWmCapabilitiesEvent
-func (i *Toplevel) AddWmCapabilitiesHandler(f ToplevelWmCapabilitiesHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.wmCapabilitiesHandlers = append(i.wmCapabilitiesHandlers, f)
+// SetWmCapabilitiesHandler : sets handler for ToplevelWmCapabilitiesEvent
+func (i *Toplevel) SetWmCapabilitiesHandler(f ToplevelWmCapabilitiesHandlerFunc) {
+	i.wmCapabilitiesHandler = f
 }
 
 func (i *Toplevel) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.configureHandlers) == 0 {
+		if i.configureHandler == nil {
 			return
 		}
 		var e ToplevelConfigureEvent
@@ -2192,19 +2166,17 @@ func (i *Toplevel) Dispatch(opcode uint32, fd int, data []byte) {
 		e.States = make([]byte, statesLen)
 		copy(e.States, data[l:l+statesLen])
 		l += statesLen
-		for _, f := range i.configureHandlers {
-			f(e)
-		}
+
+		i.configureHandler(e)
 	case 1:
-		if len(i.closeHandlers) == 0 {
+		if i.closeHandler == nil {
 			return
 		}
 		var e ToplevelCloseEvent
-		for _, f := range i.closeHandlers {
-			f(e)
-		}
+
+		i.closeHandler(e)
 	case 2:
-		if len(i.configureBoundsHandlers) == 0 {
+		if i.configureBoundsHandler == nil {
 			return
 		}
 		var e ToplevelConfigureBoundsEvent
@@ -2213,11 +2185,10 @@ func (i *Toplevel) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Height = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.configureBoundsHandlers {
-			f(e)
-		}
+
+		i.configureBoundsHandler(e)
 	case 3:
-		if len(i.wmCapabilitiesHandlers) == 0 {
+		if i.wmCapabilitiesHandler == nil {
 			return
 		}
 		var e ToplevelWmCapabilitiesEvent
@@ -2227,9 +2198,8 @@ func (i *Toplevel) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Capabilities = make([]byte, capabilitiesLen)
 		copy(e.Capabilities, data[l:l+capabilitiesLen])
 		l += capabilitiesLen
-		for _, f := range i.wmCapabilitiesHandlers {
-			f(e)
-		}
+
+		i.wmCapabilitiesHandler(e)
 	}
 }
 
@@ -2261,9 +2231,9 @@ func (i *Toplevel) Dispatch(opcode uint32, fd int, data []byte) {
 // for the xdg_popup state to take effect.
 type Popup struct {
 	client.BaseProxy
-	configureHandlers    []PopupConfigureHandlerFunc
-	popupDoneHandlers    []PopupPopupDoneHandlerFunc
-	repositionedHandlers []PopupRepositionedHandlerFunc
+	configureHandler    PopupConfigureHandlerFunc
+	popupDoneHandler    PopupPopupDoneHandlerFunc
+	repositionedHandler PopupRepositionedHandlerFunc
 }
 
 // NewPopup : short-lived, popup surfaces for menus
@@ -2474,13 +2444,9 @@ type PopupConfigureEvent struct {
 }
 type PopupConfigureHandlerFunc func(PopupConfigureEvent)
 
-// AddConfigureHandler : adds handler for PopupConfigureEvent
-func (i *Popup) AddConfigureHandler(f PopupConfigureHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.configureHandlers = append(i.configureHandlers, f)
+// SetConfigureHandler : sets handler for PopupConfigureEvent
+func (i *Popup) SetConfigureHandler(f PopupConfigureHandlerFunc) {
+	i.configureHandler = f
 }
 
 // PopupPopupDoneEvent : popup interaction is done
@@ -2491,13 +2457,9 @@ func (i *Popup) AddConfigureHandler(f PopupConfigureHandlerFunc) {
 type PopupPopupDoneEvent struct{}
 type PopupPopupDoneHandlerFunc func(PopupPopupDoneEvent)
 
-// AddPopupDoneHandler : adds handler for PopupPopupDoneEvent
-func (i *Popup) AddPopupDoneHandler(f PopupPopupDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.popupDoneHandlers = append(i.popupDoneHandlers, f)
+// SetPopupDoneHandler : sets handler for PopupPopupDoneEvent
+func (i *Popup) SetPopupDoneHandler(f PopupPopupDoneHandlerFunc) {
+	i.popupDoneHandler = f
 }
 
 // PopupRepositionedEvent : signal the completion of a repositioned request
@@ -2522,19 +2484,15 @@ type PopupRepositionedEvent struct {
 }
 type PopupRepositionedHandlerFunc func(PopupRepositionedEvent)
 
-// AddRepositionedHandler : adds handler for PopupRepositionedEvent
-func (i *Popup) AddRepositionedHandler(f PopupRepositionedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.repositionedHandlers = append(i.repositionedHandlers, f)
+// SetRepositionedHandler : sets handler for PopupRepositionedEvent
+func (i *Popup) SetRepositionedHandler(f PopupRepositionedHandlerFunc) {
+	i.repositionedHandler = f
 }
 
 func (i *Popup) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.configureHandlers) == 0 {
+		if i.configureHandler == nil {
 			return
 		}
 		var e PopupConfigureEvent
@@ -2547,27 +2505,24 @@ func (i *Popup) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Height = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.configureHandlers {
-			f(e)
-		}
+
+		i.configureHandler(e)
 	case 1:
-		if len(i.popupDoneHandlers) == 0 {
+		if i.popupDoneHandler == nil {
 			return
 		}
 		var e PopupPopupDoneEvent
-		for _, f := range i.popupDoneHandlers {
-			f(e)
-		}
+
+		i.popupDoneHandler(e)
 	case 2:
-		if len(i.repositionedHandlers) == 0 {
+		if i.repositionedHandler == nil {
 			return
 		}
 		var e PopupRepositionedEvent
 		l := 0
 		e.Token = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.repositionedHandlers {
-			f(e)
-		}
+
+		i.repositionedHandler(e)
 	}
 }

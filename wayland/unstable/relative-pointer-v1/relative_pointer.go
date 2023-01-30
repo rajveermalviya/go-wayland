@@ -96,7 +96,7 @@ func (i *RelativePointerManager) GetRelativePointer(pointer *client.Pointer) (*R
 // focus.
 type RelativePointer struct {
 	client.BaseProxy
-	relativeMotionHandlers []RelativePointerRelativeMotionHandlerFunc
+	relativeMotionHandler RelativePointerRelativeMotionHandlerFunc
 }
 
 // NewRelativePointer : relative pointer object
@@ -168,19 +168,15 @@ type RelativePointerRelativeMotionEvent struct {
 }
 type RelativePointerRelativeMotionHandlerFunc func(RelativePointerRelativeMotionEvent)
 
-// AddRelativeMotionHandler : adds handler for RelativePointerRelativeMotionEvent
-func (i *RelativePointer) AddRelativeMotionHandler(f RelativePointerRelativeMotionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.relativeMotionHandlers = append(i.relativeMotionHandlers, f)
+// SetRelativeMotionHandler : sets handler for RelativePointerRelativeMotionEvent
+func (i *RelativePointer) SetRelativeMotionHandler(f RelativePointerRelativeMotionHandlerFunc) {
+	i.relativeMotionHandler = f
 }
 
 func (i *RelativePointer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.relativeMotionHandlers) == 0 {
+		if i.relativeMotionHandler == nil {
 			return
 		}
 		var e RelativePointerRelativeMotionEvent
@@ -197,8 +193,7 @@ func (i *RelativePointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.DyUnaccel = client.Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.relativeMotionHandlers {
-			f(e)
-		}
+
+		i.relativeMotionHandler(e)
 	}
 }

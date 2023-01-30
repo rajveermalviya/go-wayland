@@ -120,8 +120,8 @@ func (i *IdleNotifier) GetIdleNotification(timeout uint32, seat *client.Seat) (*
 // a resumed event is sent and the timeout is restarted.
 type IdleNotification struct {
 	client.BaseProxy
-	idledHandlers   []IdleNotificationIdledHandlerFunc
-	resumedHandlers []IdleNotificationResumedHandlerFunc
+	idledHandler   IdleNotificationIdledHandlerFunc
+	resumedHandler IdleNotificationResumedHandlerFunc
 }
 
 // NewIdleNotification : idle notification
@@ -172,13 +172,9 @@ func (i *IdleNotification) Destroy() error {
 type IdleNotificationIdledEvent struct{}
 type IdleNotificationIdledHandlerFunc func(IdleNotificationIdledEvent)
 
-// AddIdledHandler : adds handler for IdleNotificationIdledEvent
-func (i *IdleNotification) AddIdledHandler(f IdleNotificationIdledHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.idledHandlers = append(i.idledHandlers, f)
+// SetIdledHandler : sets handler for IdleNotificationIdledEvent
+func (i *IdleNotification) SetIdledHandler(f IdleNotificationIdledHandlerFunc) {
+	i.idledHandler = f
 }
 
 // IdleNotificationResumedEvent : notification object is no longer idle
@@ -191,32 +187,26 @@ func (i *IdleNotification) AddIdledHandler(f IdleNotificationIdledHandlerFunc) {
 type IdleNotificationResumedEvent struct{}
 type IdleNotificationResumedHandlerFunc func(IdleNotificationResumedEvent)
 
-// AddResumedHandler : adds handler for IdleNotificationResumedEvent
-func (i *IdleNotification) AddResumedHandler(f IdleNotificationResumedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.resumedHandlers = append(i.resumedHandlers, f)
+// SetResumedHandler : sets handler for IdleNotificationResumedEvent
+func (i *IdleNotification) SetResumedHandler(f IdleNotificationResumedHandlerFunc) {
+	i.resumedHandler = f
 }
 
 func (i *IdleNotification) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.idledHandlers) == 0 {
+		if i.idledHandler == nil {
 			return
 		}
 		var e IdleNotificationIdledEvent
-		for _, f := range i.idledHandlers {
-			f(e)
-		}
+
+		i.idledHandler(e)
 	case 1:
-		if len(i.resumedHandlers) == 0 {
+		if i.resumedHandler == nil {
 			return
 		}
 		var e IdleNotificationResumedEvent
-		for _, f := range i.resumedHandlers {
-			f(e)
-		}
+
+		i.resumedHandler(e)
 	}
 }

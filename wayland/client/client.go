@@ -39,8 +39,8 @@ import "golang.org/x/sys/unix"
 // is used for internal Wayland protocol features.
 type Display struct {
 	BaseProxy
-	errorHandlers    []DisplayErrorHandlerFunc
-	deleteIdHandlers []DisplayDeleteIdHandlerFunc
+	errorHandler    DisplayErrorHandlerFunc
+	deleteIdHandler DisplayDeleteIdHandlerFunc
 }
 
 // NewDisplay : core global object
@@ -181,13 +181,9 @@ type DisplayErrorEvent struct {
 }
 type DisplayErrorHandlerFunc func(DisplayErrorEvent)
 
-// AddErrorHandler : adds handler for DisplayErrorEvent
-func (i *Display) AddErrorHandler(f DisplayErrorHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.errorHandlers = append(i.errorHandlers, f)
+// SetErrorHandler : sets handler for DisplayErrorEvent
+func (i *Display) SetErrorHandler(f DisplayErrorHandlerFunc) {
+	i.errorHandler = f
 }
 
 // DisplayDeleteIdEvent : acknowledge object ID deletion
@@ -202,19 +198,15 @@ type DisplayDeleteIdEvent struct {
 }
 type DisplayDeleteIdHandlerFunc func(DisplayDeleteIdEvent)
 
-// AddDeleteIdHandler : adds handler for DisplayDeleteIdEvent
-func (i *Display) AddDeleteIdHandler(f DisplayDeleteIdHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.deleteIdHandlers = append(i.deleteIdHandlers, f)
+// SetDeleteIdHandler : sets handler for DisplayDeleteIdEvent
+func (i *Display) SetDeleteIdHandler(f DisplayDeleteIdHandlerFunc) {
+	i.deleteIdHandler = f
 }
 
 func (i *Display) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.errorHandlers) == 0 {
+		if i.errorHandler == nil {
 			return
 		}
 		var e DisplayErrorEvent
@@ -227,20 +219,18 @@ func (i *Display) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Message = String(data[l : l+messageLen])
 		l += messageLen
-		for _, f := range i.errorHandlers {
-			f(e)
-		}
+
+		i.errorHandler(e)
 	case 1:
-		if len(i.deleteIdHandlers) == 0 {
+		if i.deleteIdHandler == nil {
 			return
 		}
 		var e DisplayDeleteIdEvent
 		l := 0
 		e.Id = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.deleteIdHandlers {
-			f(e)
-		}
+
+		i.deleteIdHandler(e)
 	}
 }
 
@@ -268,8 +258,8 @@ func (i *Display) Dispatch(opcode uint32, fd int, data []byte) {
 // the object.
 type Registry struct {
 	BaseProxy
-	globalHandlers       []RegistryGlobalHandlerFunc
-	globalRemoveHandlers []RegistryGlobalRemoveHandlerFunc
+	globalHandler       RegistryGlobalHandlerFunc
+	globalRemoveHandler RegistryGlobalRemoveHandlerFunc
 }
 
 // NewRegistry : global registry object
@@ -347,13 +337,9 @@ type RegistryGlobalEvent struct {
 }
 type RegistryGlobalHandlerFunc func(RegistryGlobalEvent)
 
-// AddGlobalHandler : adds handler for RegistryGlobalEvent
-func (i *Registry) AddGlobalHandler(f RegistryGlobalHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.globalHandlers = append(i.globalHandlers, f)
+// SetGlobalHandler : sets handler for RegistryGlobalEvent
+func (i *Registry) SetGlobalHandler(f RegistryGlobalHandlerFunc) {
+	i.globalHandler = f
 }
 
 // RegistryGlobalRemoveEvent : announce removal of global object
@@ -373,19 +359,15 @@ type RegistryGlobalRemoveEvent struct {
 }
 type RegistryGlobalRemoveHandlerFunc func(RegistryGlobalRemoveEvent)
 
-// AddGlobalRemoveHandler : adds handler for RegistryGlobalRemoveEvent
-func (i *Registry) AddGlobalRemoveHandler(f RegistryGlobalRemoveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.globalRemoveHandlers = append(i.globalRemoveHandlers, f)
+// SetGlobalRemoveHandler : sets handler for RegistryGlobalRemoveEvent
+func (i *Registry) SetGlobalRemoveHandler(f RegistryGlobalRemoveHandlerFunc) {
+	i.globalRemoveHandler = f
 }
 
 func (i *Registry) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.globalHandlers) == 0 {
+		if i.globalHandler == nil {
 			return
 		}
 		var e RegistryGlobalEvent
@@ -398,20 +380,18 @@ func (i *Registry) Dispatch(opcode uint32, fd int, data []byte) {
 		l += interfaceLen
 		e.Version = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.globalHandlers {
-			f(e)
-		}
+
+		i.globalHandler(e)
 	case 1:
-		if len(i.globalRemoveHandlers) == 0 {
+		if i.globalRemoveHandler == nil {
 			return
 		}
 		var e RegistryGlobalRemoveEvent
 		l := 0
 		e.Name = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.globalRemoveHandlers {
-			f(e)
-		}
+
+		i.globalRemoveHandler(e)
 	}
 }
 
@@ -421,7 +401,7 @@ func (i *Registry) Dispatch(opcode uint32, fd int, data []byte) {
 // the related request is done.
 type Callback struct {
 	BaseProxy
-	doneHandlers []CallbackDoneHandlerFunc
+	doneHandler CallbackDoneHandlerFunc
 }
 
 // NewCallback : callback object
@@ -447,28 +427,23 @@ type CallbackDoneEvent struct {
 }
 type CallbackDoneHandlerFunc func(CallbackDoneEvent)
 
-// AddDoneHandler : adds handler for CallbackDoneEvent
-func (i *Callback) AddDoneHandler(f CallbackDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for CallbackDoneEvent
+func (i *Callback) SetDoneHandler(f CallbackDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 func (i *Callback) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e CallbackDoneEvent
 		l := 0
 		e.CallbackData = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	}
 }
 
@@ -671,7 +646,7 @@ func (i *ShmPool) Resize(size int32) error {
 // that can be used for buffers.
 type Shm struct {
 	BaseProxy
-	formatHandlers []ShmFormatHandlerFunc
+	formatHandler ShmFormatHandlerFunc
 }
 
 // NewShm : shared memory support
@@ -1452,28 +1427,23 @@ type ShmFormatEvent struct {
 }
 type ShmFormatHandlerFunc func(ShmFormatEvent)
 
-// AddFormatHandler : adds handler for ShmFormatEvent
-func (i *Shm) AddFormatHandler(f ShmFormatHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.formatHandlers = append(i.formatHandlers, f)
+// SetFormatHandler : sets handler for ShmFormatEvent
+func (i *Shm) SetFormatHandler(f ShmFormatHandlerFunc) {
+	i.formatHandler = f
 }
 
 func (i *Shm) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.formatHandlers) == 0 {
+		if i.formatHandler == nil {
 			return
 		}
 		var e ShmFormatEvent
 		l := 0
 		e.Format = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.formatHandlers {
-			f(e)
-		}
+
+		i.formatHandler(e)
 	}
 }
 
@@ -1491,7 +1461,7 @@ func (i *Shm) Dispatch(opcode uint32, fd int, data []byte) {
 // specified.
 type Buffer struct {
 	BaseProxy
-	releaseHandlers []BufferReleaseHandlerFunc
+	releaseHandler BufferReleaseHandlerFunc
 }
 
 // NewBuffer : content for a wl_surface
@@ -1549,25 +1519,20 @@ func (i *Buffer) Destroy() error {
 type BufferReleaseEvent struct{}
 type BufferReleaseHandlerFunc func(BufferReleaseEvent)
 
-// AddReleaseHandler : adds handler for BufferReleaseEvent
-func (i *Buffer) AddReleaseHandler(f BufferReleaseHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.releaseHandlers = append(i.releaseHandlers, f)
+// SetReleaseHandler : sets handler for BufferReleaseEvent
+func (i *Buffer) SetReleaseHandler(f BufferReleaseHandlerFunc) {
+	i.releaseHandler = f
 }
 
 func (i *Buffer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.releaseHandlers) == 0 {
+		if i.releaseHandler == nil {
 			return
 		}
 		var e BufferReleaseEvent
-		for _, f := range i.releaseHandlers {
-			f(e)
-		}
+
+		i.releaseHandler(e)
 	}
 }
 
@@ -1581,9 +1546,9 @@ func (i *Buffer) Dispatch(opcode uint32, fd int, data []byte) {
 // data directly from the source client.
 type DataOffer struct {
 	BaseProxy
-	offerHandlers         []DataOfferOfferHandlerFunc
-	sourceActionsHandlers []DataOfferSourceActionsHandlerFunc
-	actionHandlers        []DataOfferActionHandlerFunc
+	offerHandler         DataOfferOfferHandlerFunc
+	sourceActionsHandler DataOfferSourceActionsHandlerFunc
+	actionHandler        DataOfferActionHandlerFunc
 }
 
 // NewDataOffer : offer to transfer data
@@ -1830,13 +1795,9 @@ type DataOfferOfferEvent struct {
 }
 type DataOfferOfferHandlerFunc func(DataOfferOfferEvent)
 
-// AddOfferHandler : adds handler for DataOfferOfferEvent
-func (i *DataOffer) AddOfferHandler(f DataOfferOfferHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.offerHandlers = append(i.offerHandlers, f)
+// SetOfferHandler : sets handler for DataOfferOfferEvent
+func (i *DataOffer) SetOfferHandler(f DataOfferOfferHandlerFunc) {
+	i.offerHandler = f
 }
 
 // DataOfferSourceActionsEvent : notify the source-side available actions
@@ -1849,13 +1810,9 @@ type DataOfferSourceActionsEvent struct {
 }
 type DataOfferSourceActionsHandlerFunc func(DataOfferSourceActionsEvent)
 
-// AddSourceActionsHandler : adds handler for DataOfferSourceActionsEvent
-func (i *DataOffer) AddSourceActionsHandler(f DataOfferSourceActionsHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.sourceActionsHandlers = append(i.sourceActionsHandlers, f)
+// SetSourceActionsHandler : sets handler for DataOfferSourceActionsEvent
+func (i *DataOffer) SetSourceActionsHandler(f DataOfferSourceActionsHandlerFunc) {
+	i.sourceActionsHandler = f
 }
 
 // DataOfferActionEvent : notify the selected action
@@ -1900,19 +1857,15 @@ type DataOfferActionEvent struct {
 }
 type DataOfferActionHandlerFunc func(DataOfferActionEvent)
 
-// AddActionHandler : adds handler for DataOfferActionEvent
-func (i *DataOffer) AddActionHandler(f DataOfferActionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.actionHandlers = append(i.actionHandlers, f)
+// SetActionHandler : sets handler for DataOfferActionEvent
+func (i *DataOffer) SetActionHandler(f DataOfferActionHandlerFunc) {
+	i.actionHandler = f
 }
 
 func (i *DataOffer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.offerHandlers) == 0 {
+		if i.offerHandler == nil {
 			return
 		}
 		var e DataOfferOfferEvent
@@ -1921,31 +1874,28 @@ func (i *DataOffer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.MimeType = String(data[l : l+mimeTypeLen])
 		l += mimeTypeLen
-		for _, f := range i.offerHandlers {
-			f(e)
-		}
+
+		i.offerHandler(e)
 	case 1:
-		if len(i.sourceActionsHandlers) == 0 {
+		if i.sourceActionsHandler == nil {
 			return
 		}
 		var e DataOfferSourceActionsEvent
 		l := 0
 		e.SourceActions = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.sourceActionsHandlers {
-			f(e)
-		}
+
+		i.sourceActionsHandler(e)
 	case 2:
-		if len(i.actionHandlers) == 0 {
+		if i.actionHandler == nil {
 			return
 		}
 		var e DataOfferActionEvent
 		l := 0
 		e.DndAction = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.actionHandlers {
-			f(e)
-		}
+
+		i.actionHandler(e)
 	}
 }
 
@@ -1957,12 +1907,12 @@ func (i *DataOffer) Dispatch(opcode uint32, fd int, data []byte) {
 // to requests to transfer the data.
 type DataSource struct {
 	BaseProxy
-	targetHandlers           []DataSourceTargetHandlerFunc
-	sendHandlers             []DataSourceSendHandlerFunc
-	cancelledHandlers        []DataSourceCancelledHandlerFunc
-	dndDropPerformedHandlers []DataSourceDndDropPerformedHandlerFunc
-	dndFinishedHandlers      []DataSourceDndFinishedHandlerFunc
-	actionHandlers           []DataSourceActionHandlerFunc
+	targetHandler           DataSourceTargetHandlerFunc
+	sendHandler             DataSourceSendHandlerFunc
+	cancelledHandler        DataSourceCancelledHandlerFunc
+	dndDropPerformedHandler DataSourceDndDropPerformedHandlerFunc
+	dndFinishedHandler      DataSourceDndFinishedHandlerFunc
+	actionHandler           DataSourceActionHandlerFunc
 }
 
 // NewDataSource : offer to transfer data
@@ -2096,13 +2046,9 @@ type DataSourceTargetEvent struct {
 }
 type DataSourceTargetHandlerFunc func(DataSourceTargetEvent)
 
-// AddTargetHandler : adds handler for DataSourceTargetEvent
-func (i *DataSource) AddTargetHandler(f DataSourceTargetHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.targetHandlers = append(i.targetHandlers, f)
+// SetTargetHandler : sets handler for DataSourceTargetEvent
+func (i *DataSource) SetTargetHandler(f DataSourceTargetHandlerFunc) {
+	i.targetHandler = f
 }
 
 // DataSourceSendEvent : send the data
@@ -2116,13 +2062,9 @@ type DataSourceSendEvent struct {
 }
 type DataSourceSendHandlerFunc func(DataSourceSendEvent)
 
-// AddSendHandler : adds handler for DataSourceSendEvent
-func (i *DataSource) AddSendHandler(f DataSourceSendHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.sendHandlers = append(i.sendHandlers, f)
+// SetSendHandler : sets handler for DataSourceSendEvent
+func (i *DataSource) SetSendHandler(f DataSourceSendHandlerFunc) {
+	i.sendHandler = f
 }
 
 // DataSourceCancelledEvent : selection was cancelled
@@ -2150,13 +2092,9 @@ func (i *DataSource) AddSendHandler(f DataSourceSendHandlerFunc) {
 type DataSourceCancelledEvent struct{}
 type DataSourceCancelledHandlerFunc func(DataSourceCancelledEvent)
 
-// AddCancelledHandler : adds handler for DataSourceCancelledEvent
-func (i *DataSource) AddCancelledHandler(f DataSourceCancelledHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.cancelledHandlers = append(i.cancelledHandlers, f)
+// SetCancelledHandler : sets handler for DataSourceCancelledEvent
+func (i *DataSource) SetCancelledHandler(f DataSourceCancelledHandlerFunc) {
+	i.cancelledHandler = f
 }
 
 // DataSourceDndDropPerformedEvent : the drag-and-drop operation physically finished
@@ -2173,13 +2111,9 @@ func (i *DataSource) AddCancelledHandler(f DataSourceCancelledHandlerFunc) {
 type DataSourceDndDropPerformedEvent struct{}
 type DataSourceDndDropPerformedHandlerFunc func(DataSourceDndDropPerformedEvent)
 
-// AddDndDropPerformedHandler : adds handler for DataSourceDndDropPerformedEvent
-func (i *DataSource) AddDndDropPerformedHandler(f DataSourceDndDropPerformedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.dndDropPerformedHandlers = append(i.dndDropPerformedHandlers, f)
+// SetDndDropPerformedHandler : sets handler for DataSourceDndDropPerformedEvent
+func (i *DataSource) SetDndDropPerformedHandler(f DataSourceDndDropPerformedHandlerFunc) {
+	i.dndDropPerformedHandler = f
 }
 
 // DataSourceDndFinishedEvent : the drag-and-drop operation concluded
@@ -2193,13 +2127,9 @@ func (i *DataSource) AddDndDropPerformedHandler(f DataSourceDndDropPerformedHand
 type DataSourceDndFinishedEvent struct{}
 type DataSourceDndFinishedHandlerFunc func(DataSourceDndFinishedEvent)
 
-// AddDndFinishedHandler : adds handler for DataSourceDndFinishedEvent
-func (i *DataSource) AddDndFinishedHandler(f DataSourceDndFinishedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.dndFinishedHandlers = append(i.dndFinishedHandlers, f)
+// SetDndFinishedHandler : sets handler for DataSourceDndFinishedEvent
+func (i *DataSource) SetDndFinishedHandler(f DataSourceDndFinishedHandlerFunc) {
+	i.dndFinishedHandler = f
 }
 
 // DataSourceActionEvent : notify the selected action
@@ -2234,19 +2164,15 @@ type DataSourceActionEvent struct {
 }
 type DataSourceActionHandlerFunc func(DataSourceActionEvent)
 
-// AddActionHandler : adds handler for DataSourceActionEvent
-func (i *DataSource) AddActionHandler(f DataSourceActionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.actionHandlers = append(i.actionHandlers, f)
+// SetActionHandler : sets handler for DataSourceActionEvent
+func (i *DataSource) SetActionHandler(f DataSourceActionHandlerFunc) {
+	i.actionHandler = f
 }
 
 func (i *DataSource) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.targetHandlers) == 0 {
+		if i.targetHandler == nil {
 			return
 		}
 		var e DataSourceTargetEvent
@@ -2255,11 +2181,13 @@ func (i *DataSource) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.MimeType = String(data[l : l+mimeTypeLen])
 		l += mimeTypeLen
-		for _, f := range i.targetHandlers {
-			f(e)
-		}
+
+		i.targetHandler(e)
 	case 1:
-		if len(i.sendHandlers) == 0 {
+		if i.sendHandler == nil {
+			if fd != -1 {
+				unix.Close(fd)
+			}
 			return
 		}
 		var e DataSourceSendEvent
@@ -2269,44 +2197,39 @@ func (i *DataSource) Dispatch(opcode uint32, fd int, data []byte) {
 		e.MimeType = String(data[l : l+mimeTypeLen])
 		l += mimeTypeLen
 		e.Fd = fd
-		for _, f := range i.sendHandlers {
-			f(e)
-		}
+
+		i.sendHandler(e)
 	case 2:
-		if len(i.cancelledHandlers) == 0 {
+		if i.cancelledHandler == nil {
 			return
 		}
 		var e DataSourceCancelledEvent
-		for _, f := range i.cancelledHandlers {
-			f(e)
-		}
+
+		i.cancelledHandler(e)
 	case 3:
-		if len(i.dndDropPerformedHandlers) == 0 {
+		if i.dndDropPerformedHandler == nil {
 			return
 		}
 		var e DataSourceDndDropPerformedEvent
-		for _, f := range i.dndDropPerformedHandlers {
-			f(e)
-		}
+
+		i.dndDropPerformedHandler(e)
 	case 4:
-		if len(i.dndFinishedHandlers) == 0 {
+		if i.dndFinishedHandler == nil {
 			return
 		}
 		var e DataSourceDndFinishedEvent
-		for _, f := range i.dndFinishedHandlers {
-			f(e)
-		}
+
+		i.dndFinishedHandler(e)
 	case 5:
-		if len(i.actionHandlers) == 0 {
+		if i.actionHandler == nil {
 			return
 		}
 		var e DataSourceActionEvent
 		l := 0
 		e.DndAction = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.actionHandlers {
-			f(e)
-		}
+
+		i.actionHandler(e)
 	}
 }
 
@@ -2319,12 +2242,12 @@ func (i *DataSource) Dispatch(opcode uint32, fd int, data []byte) {
 // mechanisms such as copy-and-paste and drag-and-drop.
 type DataDevice struct {
 	BaseProxy
-	dataOfferHandlers []DataDeviceDataOfferHandlerFunc
-	enterHandlers     []DataDeviceEnterHandlerFunc
-	leaveHandlers     []DataDeviceLeaveHandlerFunc
-	motionHandlers    []DataDeviceMotionHandlerFunc
-	dropHandlers      []DataDeviceDropHandlerFunc
-	selectionHandlers []DataDeviceSelectionHandlerFunc
+	dataOfferHandler DataDeviceDataOfferHandlerFunc
+	enterHandler     DataDeviceEnterHandlerFunc
+	leaveHandler     DataDeviceLeaveHandlerFunc
+	motionHandler    DataDeviceMotionHandlerFunc
+	dropHandler      DataDeviceDropHandlerFunc
+	selectionHandler DataDeviceSelectionHandlerFunc
 }
 
 // NewDataDevice : data transfer device
@@ -2498,13 +2421,9 @@ type DataDeviceDataOfferEvent struct {
 }
 type DataDeviceDataOfferHandlerFunc func(DataDeviceDataOfferEvent)
 
-// AddDataOfferHandler : adds handler for DataDeviceDataOfferEvent
-func (i *DataDevice) AddDataOfferHandler(f DataDeviceDataOfferHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.dataOfferHandlers = append(i.dataOfferHandlers, f)
+// SetDataOfferHandler : sets handler for DataDeviceDataOfferEvent
+func (i *DataDevice) SetDataOfferHandler(f DataDeviceDataOfferHandlerFunc) {
+	i.dataOfferHandler = f
 }
 
 // DataDeviceEnterEvent : initiate drag-and-drop session
@@ -2522,13 +2441,9 @@ type DataDeviceEnterEvent struct {
 }
 type DataDeviceEnterHandlerFunc func(DataDeviceEnterEvent)
 
-// AddEnterHandler : adds handler for DataDeviceEnterEvent
-func (i *DataDevice) AddEnterHandler(f DataDeviceEnterHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.enterHandlers = append(i.enterHandlers, f)
+// SetEnterHandler : sets handler for DataDeviceEnterEvent
+func (i *DataDevice) SetEnterHandler(f DataDeviceEnterHandlerFunc) {
+	i.enterHandler = f
 }
 
 // DataDeviceLeaveEvent : end drag-and-drop session
@@ -2539,13 +2454,9 @@ func (i *DataDevice) AddEnterHandler(f DataDeviceEnterHandlerFunc) {
 type DataDeviceLeaveEvent struct{}
 type DataDeviceLeaveHandlerFunc func(DataDeviceLeaveEvent)
 
-// AddLeaveHandler : adds handler for DataDeviceLeaveEvent
-func (i *DataDevice) AddLeaveHandler(f DataDeviceLeaveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.leaveHandlers = append(i.leaveHandlers, f)
+// SetLeaveHandler : sets handler for DataDeviceLeaveEvent
+func (i *DataDevice) SetLeaveHandler(f DataDeviceLeaveHandlerFunc) {
+	i.leaveHandler = f
 }
 
 // DataDeviceMotionEvent : drag-and-drop session motion
@@ -2561,13 +2472,9 @@ type DataDeviceMotionEvent struct {
 }
 type DataDeviceMotionHandlerFunc func(DataDeviceMotionEvent)
 
-// AddMotionHandler : adds handler for DataDeviceMotionEvent
-func (i *DataDevice) AddMotionHandler(f DataDeviceMotionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.motionHandlers = append(i.motionHandlers, f)
+// SetMotionHandler : sets handler for DataDeviceMotionEvent
+func (i *DataDevice) SetMotionHandler(f DataDeviceMotionHandlerFunc) {
+	i.motionHandler = f
 }
 
 // DataDeviceDropEvent : end drag-and-drop session successfully
@@ -2588,13 +2495,9 @@ func (i *DataDevice) AddMotionHandler(f DataDeviceMotionHandlerFunc) {
 type DataDeviceDropEvent struct{}
 type DataDeviceDropHandlerFunc func(DataDeviceDropEvent)
 
-// AddDropHandler : adds handler for DataDeviceDropEvent
-func (i *DataDevice) AddDropHandler(f DataDeviceDropHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.dropHandlers = append(i.dropHandlers, f)
+// SetDropHandler : sets handler for DataDeviceDropEvent
+func (i *DataDevice) SetDropHandler(f DataDeviceDropHandlerFunc) {
+	i.dropHandler = f
 }
 
 // DataDeviceSelectionEvent : advertise new selection
@@ -2616,30 +2519,25 @@ type DataDeviceSelectionEvent struct {
 }
 type DataDeviceSelectionHandlerFunc func(DataDeviceSelectionEvent)
 
-// AddSelectionHandler : adds handler for DataDeviceSelectionEvent
-func (i *DataDevice) AddSelectionHandler(f DataDeviceSelectionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.selectionHandlers = append(i.selectionHandlers, f)
+// SetSelectionHandler : sets handler for DataDeviceSelectionEvent
+func (i *DataDevice) SetSelectionHandler(f DataDeviceSelectionHandlerFunc) {
+	i.selectionHandler = f
 }
 
 func (i *DataDevice) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.dataOfferHandlers) == 0 {
+		if i.dataOfferHandler == nil {
 			return
 		}
 		var e DataDeviceDataOfferEvent
 		l := 0
 		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
-		for _, f := range i.dataOfferHandlers {
-			f(e)
-		}
+
+		i.dataOfferHandler(e)
 	case 1:
-		if len(i.enterHandlers) == 0 {
+		if i.enterHandler == nil {
 			return
 		}
 		var e DataDeviceEnterEvent
@@ -2654,19 +2552,17 @@ func (i *DataDevice) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
-		for _, f := range i.enterHandlers {
-			f(e)
-		}
+
+		i.enterHandler(e)
 	case 2:
-		if len(i.leaveHandlers) == 0 {
+		if i.leaveHandler == nil {
 			return
 		}
 		var e DataDeviceLeaveEvent
-		for _, f := range i.leaveHandlers {
-			f(e)
-		}
+
+		i.leaveHandler(e)
 	case 3:
-		if len(i.motionHandlers) == 0 {
+		if i.motionHandler == nil {
 			return
 		}
 		var e DataDeviceMotionEvent
@@ -2677,28 +2573,25 @@ func (i *DataDevice) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Y = Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.motionHandlers {
-			f(e)
-		}
+
+		i.motionHandler(e)
 	case 4:
-		if len(i.dropHandlers) == 0 {
+		if i.dropHandler == nil {
 			return
 		}
 		var e DataDeviceDropEvent
-		for _, f := range i.dropHandlers {
-			f(e)
-		}
+
+		i.dropHandler(e)
 	case 5:
-		if len(i.selectionHandlers) == 0 {
+		if i.selectionHandler == nil {
 			return
 		}
 		var e DataDeviceSelectionEvent
 		l := 0
 		e.Id = i.Context().GetProxy(Uint32(data[l : l+4])).(*DataOffer)
 		l += 4
-		for _, f := range i.selectionHandlers {
-			f(e)
-		}
+
+		i.selectionHandler(e)
 	}
 }
 
@@ -2964,9 +2857,9 @@ func (e ShellError) String() string {
 // the wl_surface object.
 type ShellSurface struct {
 	BaseProxy
-	pingHandlers      []ShellSurfacePingHandlerFunc
-	configureHandlers []ShellSurfaceConfigureHandlerFunc
-	popupDoneHandlers []ShellSurfacePopupDoneHandlerFunc
+	pingHandler      ShellSurfacePingHandlerFunc
+	configureHandler ShellSurfaceConfigureHandlerFunc
+	popupDoneHandler ShellSurfacePopupDoneHandlerFunc
 }
 
 // NewShellSurface : desktop-style metadata interface
@@ -3512,13 +3405,9 @@ type ShellSurfacePingEvent struct {
 }
 type ShellSurfacePingHandlerFunc func(ShellSurfacePingEvent)
 
-// AddPingHandler : adds handler for ShellSurfacePingEvent
-func (i *ShellSurface) AddPingHandler(f ShellSurfacePingHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.pingHandlers = append(i.pingHandlers, f)
+// SetPingHandler : sets handler for ShellSurfacePingEvent
+func (i *ShellSurface) SetPingHandler(f ShellSurfacePingHandlerFunc) {
+	i.pingHandler = f
 }
 
 // ShellSurfaceConfigureEvent : suggest resize
@@ -3547,13 +3436,9 @@ type ShellSurfaceConfigureEvent struct {
 }
 type ShellSurfaceConfigureHandlerFunc func(ShellSurfaceConfigureEvent)
 
-// AddConfigureHandler : adds handler for ShellSurfaceConfigureEvent
-func (i *ShellSurface) AddConfigureHandler(f ShellSurfaceConfigureHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.configureHandlers = append(i.configureHandlers, f)
+// SetConfigureHandler : sets handler for ShellSurfaceConfigureEvent
+func (i *ShellSurface) SetConfigureHandler(f ShellSurfaceConfigureHandlerFunc) {
+	i.configureHandler = f
 }
 
 // ShellSurfacePopupDoneEvent : popup interaction is done
@@ -3564,30 +3449,25 @@ func (i *ShellSurface) AddConfigureHandler(f ShellSurfaceConfigureHandlerFunc) {
 type ShellSurfacePopupDoneEvent struct{}
 type ShellSurfacePopupDoneHandlerFunc func(ShellSurfacePopupDoneEvent)
 
-// AddPopupDoneHandler : adds handler for ShellSurfacePopupDoneEvent
-func (i *ShellSurface) AddPopupDoneHandler(f ShellSurfacePopupDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.popupDoneHandlers = append(i.popupDoneHandlers, f)
+// SetPopupDoneHandler : sets handler for ShellSurfacePopupDoneEvent
+func (i *ShellSurface) SetPopupDoneHandler(f ShellSurfacePopupDoneHandlerFunc) {
+	i.popupDoneHandler = f
 }
 
 func (i *ShellSurface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.pingHandlers) == 0 {
+		if i.pingHandler == nil {
 			return
 		}
 		var e ShellSurfacePingEvent
 		l := 0
 		e.Serial = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.pingHandlers {
-			f(e)
-		}
+
+		i.pingHandler(e)
 	case 1:
-		if len(i.configureHandlers) == 0 {
+		if i.configureHandler == nil {
 			return
 		}
 		var e ShellSurfaceConfigureEvent
@@ -3598,17 +3478,15 @@ func (i *ShellSurface) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Height = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.configureHandlers {
-			f(e)
-		}
+
+		i.configureHandler(e)
 	case 2:
-		if len(i.popupDoneHandlers) == 0 {
+		if i.popupDoneHandler == nil {
 			return
 		}
 		var e ShellSurfacePopupDoneEvent
-		for _, f := range i.popupDoneHandlers {
-			f(e)
-		}
+
+		i.popupDoneHandler(e)
 	}
 }
 
@@ -3657,8 +3535,8 @@ func (i *ShellSurface) Dispatch(opcode uint32, fd int, data []byte) {
 // switching is not allowed).
 type Surface struct {
 	BaseProxy
-	enterHandlers []SurfaceEnterHandlerFunc
-	leaveHandlers []SurfaceLeaveHandlerFunc
+	enterHandler SurfaceEnterHandlerFunc
+	leaveHandler SurfaceLeaveHandlerFunc
 }
 
 // NewSurface : an onscreen surface
@@ -4284,13 +4162,9 @@ type SurfaceEnterEvent struct {
 }
 type SurfaceEnterHandlerFunc func(SurfaceEnterEvent)
 
-// AddEnterHandler : adds handler for SurfaceEnterEvent
-func (i *Surface) AddEnterHandler(f SurfaceEnterHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.enterHandlers = append(i.enterHandlers, f)
+// SetEnterHandler : sets handler for SurfaceEnterEvent
+func (i *Surface) SetEnterHandler(f SurfaceEnterHandlerFunc) {
+	i.enterHandler = f
 }
 
 // SurfaceLeaveEvent : surface leaves an output
@@ -4309,39 +4183,33 @@ type SurfaceLeaveEvent struct {
 }
 type SurfaceLeaveHandlerFunc func(SurfaceLeaveEvent)
 
-// AddLeaveHandler : adds handler for SurfaceLeaveEvent
-func (i *Surface) AddLeaveHandler(f SurfaceLeaveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.leaveHandlers = append(i.leaveHandlers, f)
+// SetLeaveHandler : sets handler for SurfaceLeaveEvent
+func (i *Surface) SetLeaveHandler(f SurfaceLeaveHandlerFunc) {
+	i.leaveHandler = f
 }
 
 func (i *Surface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.enterHandlers) == 0 {
+		if i.enterHandler == nil {
 			return
 		}
 		var e SurfaceEnterEvent
 		l := 0
 		e.Output = i.Context().GetProxy(Uint32(data[l : l+4])).(*Output)
 		l += 4
-		for _, f := range i.enterHandlers {
-			f(e)
-		}
+
+		i.enterHandler(e)
 	case 1:
-		if len(i.leaveHandlers) == 0 {
+		if i.leaveHandler == nil {
 			return
 		}
 		var e SurfaceLeaveEvent
 		l := 0
 		e.Output = i.Context().GetProxy(Uint32(data[l : l+4])).(*Output)
 		l += 4
-		for _, f := range i.leaveHandlers {
-			f(e)
-		}
+
+		i.leaveHandler(e)
 	}
 }
 
@@ -4353,8 +4221,8 @@ func (i *Surface) Dispatch(opcode uint32, fd int, data []byte) {
 // maintains a keyboard focus and a pointer focus.
 type Seat struct {
 	BaseProxy
-	capabilitiesHandlers []SeatCapabilitiesHandlerFunc
-	nameHandlers         []SeatNameHandlerFunc
+	capabilitiesHandler SeatCapabilitiesHandlerFunc
+	nameHandler         SeatNameHandlerFunc
 }
 
 // NewSeat : group of input devices
@@ -4573,13 +4441,9 @@ type SeatCapabilitiesEvent struct {
 }
 type SeatCapabilitiesHandlerFunc func(SeatCapabilitiesEvent)
 
-// AddCapabilitiesHandler : adds handler for SeatCapabilitiesEvent
-func (i *Seat) AddCapabilitiesHandler(f SeatCapabilitiesHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.capabilitiesHandlers = append(i.capabilitiesHandlers, f)
+// SetCapabilitiesHandler : sets handler for SeatCapabilitiesEvent
+func (i *Seat) SetCapabilitiesHandler(f SeatCapabilitiesHandlerFunc) {
+	i.capabilitiesHandler = f
 }
 
 // SeatNameEvent : unique identifier for this seat
@@ -4605,30 +4469,25 @@ type SeatNameEvent struct {
 }
 type SeatNameHandlerFunc func(SeatNameEvent)
 
-// AddNameHandler : adds handler for SeatNameEvent
-func (i *Seat) AddNameHandler(f SeatNameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.nameHandlers = append(i.nameHandlers, f)
+// SetNameHandler : sets handler for SeatNameEvent
+func (i *Seat) SetNameHandler(f SeatNameHandlerFunc) {
+	i.nameHandler = f
 }
 
 func (i *Seat) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.capabilitiesHandlers) == 0 {
+		if i.capabilitiesHandler == nil {
 			return
 		}
 		var e SeatCapabilitiesEvent
 		l := 0
 		e.Capabilities = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.capabilitiesHandlers {
-			f(e)
-		}
+
+		i.capabilitiesHandler(e)
 	case 1:
-		if len(i.nameHandlers) == 0 {
+		if i.nameHandler == nil {
 			return
 		}
 		var e SeatNameEvent
@@ -4637,9 +4496,8 @@ func (i *Seat) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Name = String(data[l : l+nameLen])
 		l += nameLen
-		for _, f := range i.nameHandlers {
-			f(e)
-		}
+
+		i.nameHandler(e)
 	}
 }
 
@@ -4655,16 +4513,16 @@ func (i *Seat) Dispatch(opcode uint32, fd int, data []byte) {
 // and scrolling.
 type Pointer struct {
 	BaseProxy
-	enterHandlers        []PointerEnterHandlerFunc
-	leaveHandlers        []PointerLeaveHandlerFunc
-	motionHandlers       []PointerMotionHandlerFunc
-	buttonHandlers       []PointerButtonHandlerFunc
-	axisHandlers         []PointerAxisHandlerFunc
-	frameHandlers        []PointerFrameHandlerFunc
-	axisSourceHandlers   []PointerAxisSourceHandlerFunc
-	axisStopHandlers     []PointerAxisStopHandlerFunc
-	axisDiscreteHandlers []PointerAxisDiscreteHandlerFunc
-	axisValue120Handlers []PointerAxisValue120HandlerFunc
+	enterHandler        PointerEnterHandlerFunc
+	leaveHandler        PointerLeaveHandlerFunc
+	motionHandler       PointerMotionHandlerFunc
+	buttonHandler       PointerButtonHandlerFunc
+	axisHandler         PointerAxisHandlerFunc
+	frameHandler        PointerFrameHandlerFunc
+	axisSourceHandler   PointerAxisSourceHandlerFunc
+	axisStopHandler     PointerAxisStopHandlerFunc
+	axisDiscreteHandler PointerAxisDiscreteHandlerFunc
+	axisValue120Handler PointerAxisValue120HandlerFunc
 }
 
 // NewPointer : pointer input device
@@ -4960,13 +4818,9 @@ type PointerEnterEvent struct {
 }
 type PointerEnterHandlerFunc func(PointerEnterEvent)
 
-// AddEnterHandler : adds handler for PointerEnterEvent
-func (i *Pointer) AddEnterHandler(f PointerEnterHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.enterHandlers = append(i.enterHandlers, f)
+// SetEnterHandler : sets handler for PointerEnterEvent
+func (i *Pointer) SetEnterHandler(f PointerEnterHandlerFunc) {
+	i.enterHandler = f
 }
 
 // PointerLeaveEvent : leave event
@@ -4982,13 +4836,9 @@ type PointerLeaveEvent struct {
 }
 type PointerLeaveHandlerFunc func(PointerLeaveEvent)
 
-// AddLeaveHandler : adds handler for PointerLeaveEvent
-func (i *Pointer) AddLeaveHandler(f PointerLeaveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.leaveHandlers = append(i.leaveHandlers, f)
+// SetLeaveHandler : sets handler for PointerLeaveEvent
+func (i *Pointer) SetLeaveHandler(f PointerLeaveHandlerFunc) {
+	i.leaveHandler = f
 }
 
 // PointerMotionEvent : pointer motion event
@@ -5003,13 +4853,9 @@ type PointerMotionEvent struct {
 }
 type PointerMotionHandlerFunc func(PointerMotionEvent)
 
-// AddMotionHandler : adds handler for PointerMotionEvent
-func (i *Pointer) AddMotionHandler(f PointerMotionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.motionHandlers = append(i.motionHandlers, f)
+// SetMotionHandler : sets handler for PointerMotionEvent
+func (i *Pointer) SetMotionHandler(f PointerMotionHandlerFunc) {
+	i.motionHandler = f
 }
 
 // PointerButtonEvent : pointer button event
@@ -5036,13 +4882,9 @@ type PointerButtonEvent struct {
 }
 type PointerButtonHandlerFunc func(PointerButtonEvent)
 
-// AddButtonHandler : adds handler for PointerButtonEvent
-func (i *Pointer) AddButtonHandler(f PointerButtonHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.buttonHandlers = append(i.buttonHandlers, f)
+// SetButtonHandler : sets handler for PointerButtonEvent
+func (i *Pointer) SetButtonHandler(f PointerButtonHandlerFunc) {
+	i.buttonHandler = f
 }
 
 // PointerAxisEvent : axis event
@@ -5070,13 +4912,9 @@ type PointerAxisEvent struct {
 }
 type PointerAxisHandlerFunc func(PointerAxisEvent)
 
-// AddAxisHandler : adds handler for PointerAxisEvent
-func (i *Pointer) AddAxisHandler(f PointerAxisHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.axisHandlers = append(i.axisHandlers, f)
+// SetAxisHandler : sets handler for PointerAxisEvent
+func (i *Pointer) SetAxisHandler(f PointerAxisHandlerFunc) {
+	i.axisHandler = f
 }
 
 // PointerFrameEvent : end of a pointer event sequence
@@ -5118,13 +4956,9 @@ func (i *Pointer) AddAxisHandler(f PointerAxisHandlerFunc) {
 type PointerFrameEvent struct{}
 type PointerFrameHandlerFunc func(PointerFrameEvent)
 
-// AddFrameHandler : adds handler for PointerFrameEvent
-func (i *Pointer) AddFrameHandler(f PointerFrameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.frameHandlers = append(i.frameHandlers, f)
+// SetFrameHandler : sets handler for PointerFrameEvent
+func (i *Pointer) SetFrameHandler(f PointerFrameHandlerFunc) {
+	i.frameHandler = f
 }
 
 // PointerAxisSourceEvent : axis source event
@@ -5159,13 +4993,9 @@ type PointerAxisSourceEvent struct {
 }
 type PointerAxisSourceHandlerFunc func(PointerAxisSourceEvent)
 
-// AddAxisSourceHandler : adds handler for PointerAxisSourceEvent
-func (i *Pointer) AddAxisSourceHandler(f PointerAxisSourceHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.axisSourceHandlers = append(i.axisSourceHandlers, f)
+// SetAxisSourceHandler : sets handler for PointerAxisSourceEvent
+func (i *Pointer) SetAxisSourceHandler(f PointerAxisSourceHandlerFunc) {
+	i.axisSourceHandler = f
 }
 
 // PointerAxisStopEvent : axis stop event
@@ -5190,13 +5020,9 @@ type PointerAxisStopEvent struct {
 }
 type PointerAxisStopHandlerFunc func(PointerAxisStopEvent)
 
-// AddAxisStopHandler : adds handler for PointerAxisStopEvent
-func (i *Pointer) AddAxisStopHandler(f PointerAxisStopHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.axisStopHandlers = append(i.axisStopHandlers, f)
+// SetAxisStopHandler : sets handler for PointerAxisStopEvent
+func (i *Pointer) SetAxisStopHandler(f PointerAxisStopHandlerFunc) {
+	i.axisStopHandler = f
 }
 
 // PointerAxisDiscreteEvent : axis click event
@@ -5237,13 +5063,9 @@ type PointerAxisDiscreteEvent struct {
 }
 type PointerAxisDiscreteHandlerFunc func(PointerAxisDiscreteEvent)
 
-// AddAxisDiscreteHandler : adds handler for PointerAxisDiscreteEvent
-func (i *Pointer) AddAxisDiscreteHandler(f PointerAxisDiscreteHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.axisDiscreteHandlers = append(i.axisDiscreteHandlers, f)
+// SetAxisDiscreteHandler : sets handler for PointerAxisDiscreteEvent
+func (i *Pointer) SetAxisDiscreteHandler(f PointerAxisDiscreteHandlerFunc) {
+	i.axisDiscreteHandler = f
 }
 
 // PointerAxisValue120Event : axis high-resolution scroll event
@@ -5275,19 +5097,15 @@ type PointerAxisValue120Event struct {
 }
 type PointerAxisValue120HandlerFunc func(PointerAxisValue120Event)
 
-// AddAxisValue120Handler : adds handler for PointerAxisValue120Event
-func (i *Pointer) AddAxisValue120Handler(f PointerAxisValue120HandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.axisValue120Handlers = append(i.axisValue120Handlers, f)
+// SetAxisValue120Handler : sets handler for PointerAxisValue120Event
+func (i *Pointer) SetAxisValue120Handler(f PointerAxisValue120HandlerFunc) {
+	i.axisValue120Handler = f
 }
 
 func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.enterHandlers) == 0 {
+		if i.enterHandler == nil {
 			return
 		}
 		var e PointerEnterEvent
@@ -5300,11 +5118,10 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.SurfaceY = Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.enterHandlers {
-			f(e)
-		}
+
+		i.enterHandler(e)
 	case 1:
-		if len(i.leaveHandlers) == 0 {
+		if i.leaveHandler == nil {
 			return
 		}
 		var e PointerLeaveEvent
@@ -5313,11 +5130,10 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
 		l += 4
-		for _, f := range i.leaveHandlers {
-			f(e)
-		}
+
+		i.leaveHandler(e)
 	case 2:
-		if len(i.motionHandlers) == 0 {
+		if i.motionHandler == nil {
 			return
 		}
 		var e PointerMotionEvent
@@ -5328,11 +5144,10 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.SurfaceY = Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.motionHandlers {
-			f(e)
-		}
+
+		i.motionHandler(e)
 	case 3:
-		if len(i.buttonHandlers) == 0 {
+		if i.buttonHandler == nil {
 			return
 		}
 		var e PointerButtonEvent
@@ -5345,11 +5160,10 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.State = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.buttonHandlers {
-			f(e)
-		}
+
+		i.buttonHandler(e)
 	case 4:
-		if len(i.axisHandlers) == 0 {
+		if i.axisHandler == nil {
 			return
 		}
 		var e PointerAxisEvent
@@ -5360,30 +5174,27 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Value = Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.axisHandlers {
-			f(e)
-		}
+
+		i.axisHandler(e)
 	case 5:
-		if len(i.frameHandlers) == 0 {
+		if i.frameHandler == nil {
 			return
 		}
 		var e PointerFrameEvent
-		for _, f := range i.frameHandlers {
-			f(e)
-		}
+
+		i.frameHandler(e)
 	case 6:
-		if len(i.axisSourceHandlers) == 0 {
+		if i.axisSourceHandler == nil {
 			return
 		}
 		var e PointerAxisSourceEvent
 		l := 0
 		e.AxisSource = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.axisSourceHandlers {
-			f(e)
-		}
+
+		i.axisSourceHandler(e)
 	case 7:
-		if len(i.axisStopHandlers) == 0 {
+		if i.axisStopHandler == nil {
 			return
 		}
 		var e PointerAxisStopEvent
@@ -5392,11 +5203,10 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Axis = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.axisStopHandlers {
-			f(e)
-		}
+
+		i.axisStopHandler(e)
 	case 8:
-		if len(i.axisDiscreteHandlers) == 0 {
+		if i.axisDiscreteHandler == nil {
 			return
 		}
 		var e PointerAxisDiscreteEvent
@@ -5405,11 +5215,10 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Discrete = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.axisDiscreteHandlers {
-			f(e)
-		}
+
+		i.axisDiscreteHandler(e)
 	case 9:
-		if len(i.axisValue120Handlers) == 0 {
+		if i.axisValue120Handler == nil {
 			return
 		}
 		var e PointerAxisValue120Event
@@ -5418,9 +5227,8 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Value120 = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.axisValue120Handlers {
-			f(e)
-		}
+
+		i.axisValue120Handler(e)
 	}
 }
 
@@ -5430,12 +5238,12 @@ func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 // associated with a seat.
 type Keyboard struct {
 	BaseProxy
-	keymapHandlers     []KeyboardKeymapHandlerFunc
-	enterHandlers      []KeyboardEnterHandlerFunc
-	leaveHandlers      []KeyboardLeaveHandlerFunc
-	keyHandlers        []KeyboardKeyHandlerFunc
-	modifiersHandlers  []KeyboardModifiersHandlerFunc
-	repeatInfoHandlers []KeyboardRepeatInfoHandlerFunc
+	keymapHandler     KeyboardKeymapHandlerFunc
+	enterHandler      KeyboardEnterHandlerFunc
+	leaveHandler      KeyboardLeaveHandlerFunc
+	keyHandler        KeyboardKeyHandlerFunc
+	modifiersHandler  KeyboardModifiersHandlerFunc
+	repeatInfoHandler KeyboardRepeatInfoHandlerFunc
 }
 
 // NewKeyboard : keyboard input device
@@ -5555,13 +5363,9 @@ type KeyboardKeymapEvent struct {
 }
 type KeyboardKeymapHandlerFunc func(KeyboardKeymapEvent)
 
-// AddKeymapHandler : adds handler for KeyboardKeymapEvent
-func (i *Keyboard) AddKeymapHandler(f KeyboardKeymapHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.keymapHandlers = append(i.keymapHandlers, f)
+// SetKeymapHandler : sets handler for KeyboardKeymapEvent
+func (i *Keyboard) SetKeymapHandler(f KeyboardKeymapHandlerFunc) {
+	i.keymapHandler = f
 }
 
 // KeyboardEnterEvent : enter event
@@ -5578,13 +5382,9 @@ type KeyboardEnterEvent struct {
 }
 type KeyboardEnterHandlerFunc func(KeyboardEnterEvent)
 
-// AddEnterHandler : adds handler for KeyboardEnterEvent
-func (i *Keyboard) AddEnterHandler(f KeyboardEnterHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.enterHandlers = append(i.enterHandlers, f)
+// SetEnterHandler : sets handler for KeyboardEnterEvent
+func (i *Keyboard) SetEnterHandler(f KeyboardEnterHandlerFunc) {
+	i.enterHandler = f
 }
 
 // KeyboardLeaveEvent : leave event
@@ -5603,13 +5403,9 @@ type KeyboardLeaveEvent struct {
 }
 type KeyboardLeaveHandlerFunc func(KeyboardLeaveEvent)
 
-// AddLeaveHandler : adds handler for KeyboardLeaveEvent
-func (i *Keyboard) AddLeaveHandler(f KeyboardLeaveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.leaveHandlers = append(i.leaveHandlers, f)
+// SetLeaveHandler : sets handler for KeyboardLeaveEvent
+func (i *Keyboard) SetLeaveHandler(f KeyboardLeaveHandlerFunc) {
+	i.leaveHandler = f
 }
 
 // KeyboardKeyEvent : key event
@@ -5631,13 +5427,9 @@ type KeyboardKeyEvent struct {
 }
 type KeyboardKeyHandlerFunc func(KeyboardKeyEvent)
 
-// AddKeyHandler : adds handler for KeyboardKeyEvent
-func (i *Keyboard) AddKeyHandler(f KeyboardKeyHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.keyHandlers = append(i.keyHandlers, f)
+// SetKeyHandler : sets handler for KeyboardKeyEvent
+func (i *Keyboard) SetKeyHandler(f KeyboardKeyHandlerFunc) {
+	i.keyHandler = f
 }
 
 // KeyboardModifiersEvent : modifier and group state
@@ -5653,13 +5445,9 @@ type KeyboardModifiersEvent struct {
 }
 type KeyboardModifiersHandlerFunc func(KeyboardModifiersEvent)
 
-// AddModifiersHandler : adds handler for KeyboardModifiersEvent
-func (i *Keyboard) AddModifiersHandler(f KeyboardModifiersHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.modifiersHandlers = append(i.modifiersHandlers, f)
+// SetModifiersHandler : sets handler for KeyboardModifiersEvent
+func (i *Keyboard) SetModifiersHandler(f KeyboardModifiersHandlerFunc) {
+	i.modifiersHandler = f
 }
 
 // KeyboardRepeatInfoEvent : repeat rate and delay
@@ -5682,19 +5470,18 @@ type KeyboardRepeatInfoEvent struct {
 }
 type KeyboardRepeatInfoHandlerFunc func(KeyboardRepeatInfoEvent)
 
-// AddRepeatInfoHandler : adds handler for KeyboardRepeatInfoEvent
-func (i *Keyboard) AddRepeatInfoHandler(f KeyboardRepeatInfoHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.repeatInfoHandlers = append(i.repeatInfoHandlers, f)
+// SetRepeatInfoHandler : sets handler for KeyboardRepeatInfoEvent
+func (i *Keyboard) SetRepeatInfoHandler(f KeyboardRepeatInfoHandlerFunc) {
+	i.repeatInfoHandler = f
 }
 
 func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.keymapHandlers) == 0 {
+		if i.keymapHandler == nil {
+			if fd != -1 {
+				unix.Close(fd)
+			}
 			return
 		}
 		var e KeyboardKeymapEvent
@@ -5704,11 +5491,10 @@ func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Fd = fd
 		e.Size = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.keymapHandlers {
-			f(e)
-		}
+
+		i.keymapHandler(e)
 	case 1:
-		if len(i.enterHandlers) == 0 {
+		if i.enterHandler == nil {
 			return
 		}
 		var e KeyboardEnterEvent
@@ -5722,11 +5508,10 @@ func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Keys = make([]byte, keysLen)
 		copy(e.Keys, data[l:l+keysLen])
 		l += keysLen
-		for _, f := range i.enterHandlers {
-			f(e)
-		}
+
+		i.enterHandler(e)
 	case 2:
-		if len(i.leaveHandlers) == 0 {
+		if i.leaveHandler == nil {
 			return
 		}
 		var e KeyboardLeaveEvent
@@ -5735,11 +5520,10 @@ func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(Uint32(data[l : l+4])).(*Surface)
 		l += 4
-		for _, f := range i.leaveHandlers {
-			f(e)
-		}
+
+		i.leaveHandler(e)
 	case 3:
-		if len(i.keyHandlers) == 0 {
+		if i.keyHandler == nil {
 			return
 		}
 		var e KeyboardKeyEvent
@@ -5752,11 +5536,10 @@ func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.State = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.keyHandlers {
-			f(e)
-		}
+
+		i.keyHandler(e)
 	case 4:
-		if len(i.modifiersHandlers) == 0 {
+		if i.modifiersHandler == nil {
 			return
 		}
 		var e KeyboardModifiersEvent
@@ -5771,11 +5554,10 @@ func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Group = Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.modifiersHandlers {
-			f(e)
-		}
+
+		i.modifiersHandler(e)
 	case 5:
-		if len(i.repeatInfoHandlers) == 0 {
+		if i.repeatInfoHandler == nil {
 			return
 		}
 		var e KeyboardRepeatInfoEvent
@@ -5784,9 +5566,8 @@ func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Delay = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.repeatInfoHandlers {
-			f(e)
-		}
+
+		i.repeatInfoHandler(e)
 	}
 }
 
@@ -5802,13 +5583,13 @@ func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 // contact point can be identified by the ID of the sequence.
 type Touch struct {
 	BaseProxy
-	downHandlers        []TouchDownHandlerFunc
-	upHandlers          []TouchUpHandlerFunc
-	motionHandlers      []TouchMotionHandlerFunc
-	frameHandlers       []TouchFrameHandlerFunc
-	cancelHandlers      []TouchCancelHandlerFunc
-	shapeHandlers       []TouchShapeHandlerFunc
-	orientationHandlers []TouchOrientationHandlerFunc
+	downHandler        TouchDownHandlerFunc
+	upHandler          TouchUpHandlerFunc
+	motionHandler      TouchMotionHandlerFunc
+	frameHandler       TouchFrameHandlerFunc
+	cancelHandler      TouchCancelHandlerFunc
+	shapeHandler       TouchShapeHandlerFunc
+	orientationHandler TouchOrientationHandlerFunc
 }
 
 // NewTouch : touchscreen input device
@@ -5858,13 +5639,9 @@ type TouchDownEvent struct {
 }
 type TouchDownHandlerFunc func(TouchDownEvent)
 
-// AddDownHandler : adds handler for TouchDownEvent
-func (i *Touch) AddDownHandler(f TouchDownHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.downHandlers = append(i.downHandlers, f)
+// SetDownHandler : sets handler for TouchDownEvent
+func (i *Touch) SetDownHandler(f TouchDownHandlerFunc) {
+	i.downHandler = f
 }
 
 // TouchUpEvent : end of a touch event sequence
@@ -5879,13 +5656,9 @@ type TouchUpEvent struct {
 }
 type TouchUpHandlerFunc func(TouchUpEvent)
 
-// AddUpHandler : adds handler for TouchUpEvent
-func (i *Touch) AddUpHandler(f TouchUpHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.upHandlers = append(i.upHandlers, f)
+// SetUpHandler : sets handler for TouchUpEvent
+func (i *Touch) SetUpHandler(f TouchUpHandlerFunc) {
+	i.upHandler = f
 }
 
 // TouchMotionEvent : update of touch point coordinates
@@ -5899,13 +5672,9 @@ type TouchMotionEvent struct {
 }
 type TouchMotionHandlerFunc func(TouchMotionEvent)
 
-// AddMotionHandler : adds handler for TouchMotionEvent
-func (i *Touch) AddMotionHandler(f TouchMotionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.motionHandlers = append(i.motionHandlers, f)
+// SetMotionHandler : sets handler for TouchMotionEvent
+func (i *Touch) SetMotionHandler(f TouchMotionHandlerFunc) {
+	i.motionHandler = f
 }
 
 // TouchFrameEvent : end of touch frame event
@@ -5921,13 +5690,9 @@ func (i *Touch) AddMotionHandler(f TouchMotionHandlerFunc) {
 type TouchFrameEvent struct{}
 type TouchFrameHandlerFunc func(TouchFrameEvent)
 
-// AddFrameHandler : adds handler for TouchFrameEvent
-func (i *Touch) AddFrameHandler(f TouchFrameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.frameHandlers = append(i.frameHandlers, f)
+// SetFrameHandler : sets handler for TouchFrameEvent
+func (i *Touch) SetFrameHandler(f TouchFrameHandlerFunc) {
+	i.frameHandler = f
 }
 
 // TouchCancelEvent : touch session cancelled
@@ -5941,13 +5706,9 @@ func (i *Touch) AddFrameHandler(f TouchFrameHandlerFunc) {
 type TouchCancelEvent struct{}
 type TouchCancelHandlerFunc func(TouchCancelEvent)
 
-// AddCancelHandler : adds handler for TouchCancelEvent
-func (i *Touch) AddCancelHandler(f TouchCancelHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.cancelHandlers = append(i.cancelHandlers, f)
+// SetCancelHandler : sets handler for TouchCancelEvent
+func (i *Touch) SetCancelHandler(f TouchCancelHandlerFunc) {
+	i.cancelHandler = f
 }
 
 // TouchShapeEvent : update shape of touch point
@@ -5984,13 +5745,9 @@ type TouchShapeEvent struct {
 }
 type TouchShapeHandlerFunc func(TouchShapeEvent)
 
-// AddShapeHandler : adds handler for TouchShapeEvent
-func (i *Touch) AddShapeHandler(f TouchShapeHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.shapeHandlers = append(i.shapeHandlers, f)
+// SetShapeHandler : sets handler for TouchShapeEvent
+func (i *Touch) SetShapeHandler(f TouchShapeHandlerFunc) {
+	i.shapeHandler = f
 }
 
 // TouchOrientationEvent : update orientation of touch point
@@ -6024,19 +5781,15 @@ type TouchOrientationEvent struct {
 }
 type TouchOrientationHandlerFunc func(TouchOrientationEvent)
 
-// AddOrientationHandler : adds handler for TouchOrientationEvent
-func (i *Touch) AddOrientationHandler(f TouchOrientationHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.orientationHandlers = append(i.orientationHandlers, f)
+// SetOrientationHandler : sets handler for TouchOrientationEvent
+func (i *Touch) SetOrientationHandler(f TouchOrientationHandlerFunc) {
+	i.orientationHandler = f
 }
 
 func (i *Touch) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.downHandlers) == 0 {
+		if i.downHandler == nil {
 			return
 		}
 		var e TouchDownEvent
@@ -6053,11 +5806,10 @@ func (i *Touch) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Y = Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.downHandlers {
-			f(e)
-		}
+
+		i.downHandler(e)
 	case 1:
-		if len(i.upHandlers) == 0 {
+		if i.upHandler == nil {
 			return
 		}
 		var e TouchUpEvent
@@ -6068,11 +5820,10 @@ func (i *Touch) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Id = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.upHandlers {
-			f(e)
-		}
+
+		i.upHandler(e)
 	case 2:
-		if len(i.motionHandlers) == 0 {
+		if i.motionHandler == nil {
 			return
 		}
 		var e TouchMotionEvent
@@ -6085,27 +5836,24 @@ func (i *Touch) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Y = Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.motionHandlers {
-			f(e)
-		}
+
+		i.motionHandler(e)
 	case 3:
-		if len(i.frameHandlers) == 0 {
+		if i.frameHandler == nil {
 			return
 		}
 		var e TouchFrameEvent
-		for _, f := range i.frameHandlers {
-			f(e)
-		}
+
+		i.frameHandler(e)
 	case 4:
-		if len(i.cancelHandlers) == 0 {
+		if i.cancelHandler == nil {
 			return
 		}
 		var e TouchCancelEvent
-		for _, f := range i.cancelHandlers {
-			f(e)
-		}
+
+		i.cancelHandler(e)
 	case 5:
-		if len(i.shapeHandlers) == 0 {
+		if i.shapeHandler == nil {
 			return
 		}
 		var e TouchShapeEvent
@@ -6116,11 +5864,10 @@ func (i *Touch) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Minor = Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.shapeHandlers {
-			f(e)
-		}
+
+		i.shapeHandler(e)
 	case 6:
-		if len(i.orientationHandlers) == 0 {
+		if i.orientationHandler == nil {
 			return
 		}
 		var e TouchOrientationEvent
@@ -6129,9 +5876,8 @@ func (i *Touch) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Orientation = Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.orientationHandlers {
-			f(e)
-		}
+
+		i.orientationHandler(e)
 	}
 }
 
@@ -6145,12 +5891,12 @@ func (i *Touch) Dispatch(opcode uint32, fd int, data []byte) {
 // as global during start up, or when a monitor is hotplugged.
 type Output struct {
 	BaseProxy
-	geometryHandlers    []OutputGeometryHandlerFunc
-	modeHandlers        []OutputModeHandlerFunc
-	doneHandlers        []OutputDoneHandlerFunc
-	scaleHandlers       []OutputScaleHandlerFunc
-	nameHandlers        []OutputNameHandlerFunc
-	descriptionHandlers []OutputDescriptionHandlerFunc
+	geometryHandler    OutputGeometryHandlerFunc
+	modeHandler        OutputModeHandlerFunc
+	doneHandler        OutputDoneHandlerFunc
+	scaleHandler       OutputScaleHandlerFunc
+	nameHandler        OutputNameHandlerFunc
+	descriptionHandler OutputDescriptionHandlerFunc
 }
 
 // NewOutput : compositor output region
@@ -6401,13 +6147,9 @@ type OutputGeometryEvent struct {
 }
 type OutputGeometryHandlerFunc func(OutputGeometryEvent)
 
-// AddGeometryHandler : adds handler for OutputGeometryEvent
-func (i *Output) AddGeometryHandler(f OutputGeometryHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.geometryHandlers = append(i.geometryHandlers, f)
+// SetGeometryHandler : sets handler for OutputGeometryEvent
+func (i *Output) SetGeometryHandler(f OutputGeometryHandlerFunc) {
+	i.geometryHandler = f
 }
 
 // OutputModeEvent : advertise available modes for the output
@@ -6453,13 +6195,9 @@ type OutputModeEvent struct {
 }
 type OutputModeHandlerFunc func(OutputModeEvent)
 
-// AddModeHandler : adds handler for OutputModeEvent
-func (i *Output) AddModeHandler(f OutputModeHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.modeHandlers = append(i.modeHandlers, f)
+// SetModeHandler : sets handler for OutputModeEvent
+func (i *Output) SetModeHandler(f OutputModeHandlerFunc) {
+	i.modeHandler = f
 }
 
 // OutputDoneEvent : sent all information about output
@@ -6472,13 +6210,9 @@ func (i *Output) AddModeHandler(f OutputModeHandlerFunc) {
 type OutputDoneEvent struct{}
 type OutputDoneHandlerFunc func(OutputDoneEvent)
 
-// AddDoneHandler : adds handler for OutputDoneEvent
-func (i *Output) AddDoneHandler(f OutputDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for OutputDoneEvent
+func (i *Output) SetDoneHandler(f OutputDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 // OutputScaleEvent : output scaling properties
@@ -6508,13 +6242,9 @@ type OutputScaleEvent struct {
 }
 type OutputScaleHandlerFunc func(OutputScaleEvent)
 
-// AddScaleHandler : adds handler for OutputScaleEvent
-func (i *Output) AddScaleHandler(f OutputScaleHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.scaleHandlers = append(i.scaleHandlers, f)
+// SetScaleHandler : sets handler for OutputScaleEvent
+func (i *Output) SetScaleHandler(f OutputScaleHandlerFunc) {
+	i.scaleHandler = f
 }
 
 // OutputNameEvent : name of this output
@@ -6552,13 +6282,9 @@ type OutputNameEvent struct {
 }
 type OutputNameHandlerFunc func(OutputNameEvent)
 
-// AddNameHandler : adds handler for OutputNameEvent
-func (i *Output) AddNameHandler(f OutputNameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.nameHandlers = append(i.nameHandlers, f)
+// SetNameHandler : sets handler for OutputNameEvent
+func (i *Output) SetNameHandler(f OutputNameHandlerFunc) {
+	i.nameHandler = f
 }
 
 // OutputDescriptionEvent : human-readable description of this output
@@ -6582,19 +6308,15 @@ type OutputDescriptionEvent struct {
 }
 type OutputDescriptionHandlerFunc func(OutputDescriptionEvent)
 
-// AddDescriptionHandler : adds handler for OutputDescriptionEvent
-func (i *Output) AddDescriptionHandler(f OutputDescriptionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.descriptionHandlers = append(i.descriptionHandlers, f)
+// SetDescriptionHandler : sets handler for OutputDescriptionEvent
+func (i *Output) SetDescriptionHandler(f OutputDescriptionHandlerFunc) {
+	i.descriptionHandler = f
 }
 
 func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.geometryHandlers) == 0 {
+		if i.geometryHandler == nil {
 			return
 		}
 		var e OutputGeometryEvent
@@ -6619,11 +6341,10 @@ func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 		l += modelLen
 		e.Transform = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.geometryHandlers {
-			f(e)
-		}
+
+		i.geometryHandler(e)
 	case 1:
-		if len(i.modeHandlers) == 0 {
+		if i.modeHandler == nil {
 			return
 		}
 		var e OutputModeEvent
@@ -6636,30 +6357,27 @@ func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Refresh = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.modeHandlers {
-			f(e)
-		}
+
+		i.modeHandler(e)
 	case 2:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e OutputDoneEvent
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	case 3:
-		if len(i.scaleHandlers) == 0 {
+		if i.scaleHandler == nil {
 			return
 		}
 		var e OutputScaleEvent
 		l := 0
 		e.Factor = int32(Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.scaleHandlers {
-			f(e)
-		}
+
+		i.scaleHandler(e)
 	case 4:
-		if len(i.nameHandlers) == 0 {
+		if i.nameHandler == nil {
 			return
 		}
 		var e OutputNameEvent
@@ -6668,11 +6386,10 @@ func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Name = String(data[l : l+nameLen])
 		l += nameLen
-		for _, f := range i.nameHandlers {
-			f(e)
-		}
+
+		i.nameHandler(e)
 	case 5:
-		if len(i.descriptionHandlers) == 0 {
+		if i.descriptionHandler == nil {
 			return
 		}
 		var e OutputDescriptionEvent
@@ -6681,9 +6398,8 @@ func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Description = String(data[l : l+descriptionLen])
 		l += descriptionLen
-		for _, f := range i.descriptionHandlers {
-			f(e)
-		}
+
+		i.descriptionHandler(e)
 	}
 }
 

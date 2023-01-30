@@ -50,7 +50,7 @@ import "github.com/rajveermalviya/go-wayland/wayland/client"
 // when the compositor misses its target vertical blanking period.
 type Presentation struct {
 	client.BaseProxy
-	clockIdHandlers []PresentationClockIdHandlerFunc
+	clockIdHandler PresentationClockIdHandlerFunc
 }
 
 // NewPresentation : timed presentation related wl_surface requests
@@ -202,28 +202,23 @@ type PresentationClockIdEvent struct {
 }
 type PresentationClockIdHandlerFunc func(PresentationClockIdEvent)
 
-// AddClockIdHandler : adds handler for PresentationClockIdEvent
-func (i *Presentation) AddClockIdHandler(f PresentationClockIdHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.clockIdHandlers = append(i.clockIdHandlers, f)
+// SetClockIdHandler : sets handler for PresentationClockIdEvent
+func (i *Presentation) SetClockIdHandler(f PresentationClockIdHandlerFunc) {
+	i.clockIdHandler = f
 }
 
 func (i *Presentation) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.clockIdHandlers) == 0 {
+		if i.clockIdHandler == nil {
 			return
 		}
 		var e PresentationClockIdEvent
 		l := 0
 		e.ClkId = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.clockIdHandlers {
-			f(e)
-		}
+
+		i.clockIdHandler(e)
 	}
 }
 
@@ -242,9 +237,9 @@ func (i *Presentation) Dispatch(opcode uint32, fd int, data []byte) {
 // or 'discarded' event it is automatically destroyed.
 type PresentationFeedback struct {
 	client.BaseProxy
-	syncOutputHandlers []PresentationFeedbackSyncOutputHandlerFunc
-	presentedHandlers  []PresentationFeedbackPresentedHandlerFunc
-	discardedHandlers  []PresentationFeedbackDiscardedHandlerFunc
+	syncOutputHandler PresentationFeedbackSyncOutputHandlerFunc
+	presentedHandler  PresentationFeedbackPresentedHandlerFunc
+	discardedHandler  PresentationFeedbackDiscardedHandlerFunc
 }
 
 // NewPresentationFeedback : presentation time feedback event
@@ -335,13 +330,9 @@ type PresentationFeedbackSyncOutputEvent struct {
 }
 type PresentationFeedbackSyncOutputHandlerFunc func(PresentationFeedbackSyncOutputEvent)
 
-// AddSyncOutputHandler : adds handler for PresentationFeedbackSyncOutputEvent
-func (i *PresentationFeedback) AddSyncOutputHandler(f PresentationFeedbackSyncOutputHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.syncOutputHandlers = append(i.syncOutputHandlers, f)
+// SetSyncOutputHandler : sets handler for PresentationFeedbackSyncOutputEvent
+func (i *PresentationFeedback) SetSyncOutputHandler(f PresentationFeedbackSyncOutputHandlerFunc) {
+	i.syncOutputHandler = f
 }
 
 // PresentationFeedbackPresentedEvent : the content update was displayed
@@ -398,13 +389,9 @@ type PresentationFeedbackPresentedEvent struct {
 }
 type PresentationFeedbackPresentedHandlerFunc func(PresentationFeedbackPresentedEvent)
 
-// AddPresentedHandler : adds handler for PresentationFeedbackPresentedEvent
-func (i *PresentationFeedback) AddPresentedHandler(f PresentationFeedbackPresentedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.presentedHandlers = append(i.presentedHandlers, f)
+// SetPresentedHandler : sets handler for PresentationFeedbackPresentedEvent
+func (i *PresentationFeedback) SetPresentedHandler(f PresentationFeedbackPresentedHandlerFunc) {
+	i.presentedHandler = f
 }
 
 // PresentationFeedbackDiscardedEvent : the content update was not displayed
@@ -413,30 +400,25 @@ func (i *PresentationFeedback) AddPresentedHandler(f PresentationFeedbackPresent
 type PresentationFeedbackDiscardedEvent struct{}
 type PresentationFeedbackDiscardedHandlerFunc func(PresentationFeedbackDiscardedEvent)
 
-// AddDiscardedHandler : adds handler for PresentationFeedbackDiscardedEvent
-func (i *PresentationFeedback) AddDiscardedHandler(f PresentationFeedbackDiscardedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.discardedHandlers = append(i.discardedHandlers, f)
+// SetDiscardedHandler : sets handler for PresentationFeedbackDiscardedEvent
+func (i *PresentationFeedback) SetDiscardedHandler(f PresentationFeedbackDiscardedHandlerFunc) {
+	i.discardedHandler = f
 }
 
 func (i *PresentationFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.syncOutputHandlers) == 0 {
+		if i.syncOutputHandler == nil {
 			return
 		}
 		var e PresentationFeedbackSyncOutputEvent
 		l := 0
 		e.Output = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Output)
 		l += 4
-		for _, f := range i.syncOutputHandlers {
-			f(e)
-		}
+
+		i.syncOutputHandler(e)
 	case 1:
-		if len(i.presentedHandlers) == 0 {
+		if i.presentedHandler == nil {
 			return
 		}
 		var e PresentationFeedbackPresentedEvent
@@ -455,16 +437,14 @@ func (i *PresentationFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Flags = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.presentedHandlers {
-			f(e)
-		}
+
+		i.presentedHandler(e)
 	case 2:
-		if len(i.discardedHandlers) == 0 {
+		if i.discardedHandler == nil {
 			return
 		}
 		var e PresentationFeedbackDiscardedEvent
-		for _, f := range i.discardedHandlers {
-			f(e)
-		}
+
+		i.discardedHandler(e)
 	}
 }

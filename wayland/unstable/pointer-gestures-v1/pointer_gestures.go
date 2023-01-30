@@ -157,9 +157,9 @@ func (i *PointerGestures) GetHoldGesture(pointer *client.Pointer) (*PointerGestu
 // actions until the end of a gesture has been received.
 type PointerGestureSwipe struct {
 	client.BaseProxy
-	beginHandlers  []PointerGestureSwipeBeginHandlerFunc
-	updateHandlers []PointerGestureSwipeUpdateHandlerFunc
-	endHandlers    []PointerGestureSwipeEndHandlerFunc
+	beginHandler  PointerGestureSwipeBeginHandlerFunc
+	updateHandler PointerGestureSwipeUpdateHandlerFunc
+	endHandler    PointerGestureSwipeEndHandlerFunc
 }
 
 // NewPointerGestureSwipe : a swipe gesture object
@@ -212,13 +212,9 @@ type PointerGestureSwipeBeginEvent struct {
 }
 type PointerGestureSwipeBeginHandlerFunc func(PointerGestureSwipeBeginEvent)
 
-// AddBeginHandler : adds handler for PointerGestureSwipeBeginEvent
-func (i *PointerGestureSwipe) AddBeginHandler(f PointerGestureSwipeBeginHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.beginHandlers = append(i.beginHandlers, f)
+// SetBeginHandler : sets handler for PointerGestureSwipeBeginEvent
+func (i *PointerGestureSwipe) SetBeginHandler(f PointerGestureSwipeBeginHandlerFunc) {
+	i.beginHandler = f
 }
 
 // PointerGestureSwipeUpdateEvent : multi-finger swipe motion
@@ -235,13 +231,9 @@ type PointerGestureSwipeUpdateEvent struct {
 }
 type PointerGestureSwipeUpdateHandlerFunc func(PointerGestureSwipeUpdateEvent)
 
-// AddUpdateHandler : adds handler for PointerGestureSwipeUpdateEvent
-func (i *PointerGestureSwipe) AddUpdateHandler(f PointerGestureSwipeUpdateHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.updateHandlers = append(i.updateHandlers, f)
+// SetUpdateHandler : sets handler for PointerGestureSwipeUpdateEvent
+func (i *PointerGestureSwipe) SetUpdateHandler(f PointerGestureSwipeUpdateHandlerFunc) {
+	i.updateHandler = f
 }
 
 // PointerGestureSwipeEndEvent : multi-finger swipe end
@@ -260,19 +252,15 @@ type PointerGestureSwipeEndEvent struct {
 }
 type PointerGestureSwipeEndHandlerFunc func(PointerGestureSwipeEndEvent)
 
-// AddEndHandler : adds handler for PointerGestureSwipeEndEvent
-func (i *PointerGestureSwipe) AddEndHandler(f PointerGestureSwipeEndHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.endHandlers = append(i.endHandlers, f)
+// SetEndHandler : sets handler for PointerGestureSwipeEndEvent
+func (i *PointerGestureSwipe) SetEndHandler(f PointerGestureSwipeEndHandlerFunc) {
+	i.endHandler = f
 }
 
 func (i *PointerGestureSwipe) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.beginHandlers) == 0 {
+		if i.beginHandler == nil {
 			return
 		}
 		var e PointerGestureSwipeBeginEvent
@@ -285,11 +273,10 @@ func (i *PointerGestureSwipe) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Fingers = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.beginHandlers {
-			f(e)
-		}
+
+		i.beginHandler(e)
 	case 1:
-		if len(i.updateHandlers) == 0 {
+		if i.updateHandler == nil {
 			return
 		}
 		var e PointerGestureSwipeUpdateEvent
@@ -300,11 +287,10 @@ func (i *PointerGestureSwipe) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Dy = client.Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.updateHandlers {
-			f(e)
-		}
+
+		i.updateHandler(e)
 	case 2:
-		if len(i.endHandlers) == 0 {
+		if i.endHandler == nil {
 			return
 		}
 		var e PointerGestureSwipeEndEvent
@@ -315,9 +301,8 @@ func (i *PointerGestureSwipe) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Cancelled = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.endHandlers {
-			f(e)
-		}
+
+		i.endHandler(e)
 	}
 }
 
@@ -340,9 +325,9 @@ func (i *PointerGestureSwipe) Dispatch(opcode uint32, fd int, data []byte) {
 // actions until the end of a gesture has been received.
 type PointerGesturePinch struct {
 	client.BaseProxy
-	beginHandlers  []PointerGesturePinchBeginHandlerFunc
-	updateHandlers []PointerGesturePinchUpdateHandlerFunc
-	endHandlers    []PointerGesturePinchEndHandlerFunc
+	beginHandler  PointerGesturePinchBeginHandlerFunc
+	updateHandler PointerGesturePinchUpdateHandlerFunc
+	endHandler    PointerGesturePinchEndHandlerFunc
 }
 
 // NewPointerGesturePinch : a pinch gesture object
@@ -395,13 +380,9 @@ type PointerGesturePinchBeginEvent struct {
 }
 type PointerGesturePinchBeginHandlerFunc func(PointerGesturePinchBeginEvent)
 
-// AddBeginHandler : adds handler for PointerGesturePinchBeginEvent
-func (i *PointerGesturePinch) AddBeginHandler(f PointerGesturePinchBeginHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.beginHandlers = append(i.beginHandlers, f)
+// SetBeginHandler : sets handler for PointerGesturePinchBeginEvent
+func (i *PointerGesturePinch) SetBeginHandler(f PointerGesturePinchBeginHandlerFunc) {
+	i.beginHandler = f
 }
 
 // PointerGesturePinchUpdateEvent : multi-finger pinch motion
@@ -427,13 +408,9 @@ type PointerGesturePinchUpdateEvent struct {
 }
 type PointerGesturePinchUpdateHandlerFunc func(PointerGesturePinchUpdateEvent)
 
-// AddUpdateHandler : adds handler for PointerGesturePinchUpdateEvent
-func (i *PointerGesturePinch) AddUpdateHandler(f PointerGesturePinchUpdateHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.updateHandlers = append(i.updateHandlers, f)
+// SetUpdateHandler : sets handler for PointerGesturePinchUpdateEvent
+func (i *PointerGesturePinch) SetUpdateHandler(f PointerGesturePinchUpdateHandlerFunc) {
+	i.updateHandler = f
 }
 
 // PointerGesturePinchEndEvent : multi-finger pinch end
@@ -452,19 +429,15 @@ type PointerGesturePinchEndEvent struct {
 }
 type PointerGesturePinchEndHandlerFunc func(PointerGesturePinchEndEvent)
 
-// AddEndHandler : adds handler for PointerGesturePinchEndEvent
-func (i *PointerGesturePinch) AddEndHandler(f PointerGesturePinchEndHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.endHandlers = append(i.endHandlers, f)
+// SetEndHandler : sets handler for PointerGesturePinchEndEvent
+func (i *PointerGesturePinch) SetEndHandler(f PointerGesturePinchEndHandlerFunc) {
+	i.endHandler = f
 }
 
 func (i *PointerGesturePinch) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.beginHandlers) == 0 {
+		if i.beginHandler == nil {
 			return
 		}
 		var e PointerGesturePinchBeginEvent
@@ -477,11 +450,10 @@ func (i *PointerGesturePinch) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Fingers = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.beginHandlers {
-			f(e)
-		}
+
+		i.beginHandler(e)
 	case 1:
-		if len(i.updateHandlers) == 0 {
+		if i.updateHandler == nil {
 			return
 		}
 		var e PointerGesturePinchUpdateEvent
@@ -496,11 +468,10 @@ func (i *PointerGesturePinch) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Rotation = client.Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.updateHandlers {
-			f(e)
-		}
+
+		i.updateHandler(e)
 	case 2:
-		if len(i.endHandlers) == 0 {
+		if i.endHandler == nil {
 			return
 		}
 		var e PointerGesturePinchEndEvent
@@ -511,9 +482,8 @@ func (i *PointerGesturePinch) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Cancelled = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.endHandlers {
-			f(e)
-		}
+
+		i.endHandler(e)
 	}
 }
 
@@ -538,8 +508,8 @@ func (i *PointerGesturePinch) Dispatch(opcode uint32, fd int, data []byte) {
 // actions until the end of a gesture has been received.
 type PointerGestureHold struct {
 	client.BaseProxy
-	beginHandlers []PointerGestureHoldBeginHandlerFunc
-	endHandlers   []PointerGestureHoldEndHandlerFunc
+	beginHandler PointerGestureHoldBeginHandlerFunc
+	endHandler   PointerGestureHoldEndHandlerFunc
 }
 
 // NewPointerGestureHold : a hold gesture object
@@ -593,13 +563,9 @@ type PointerGestureHoldBeginEvent struct {
 }
 type PointerGestureHoldBeginHandlerFunc func(PointerGestureHoldBeginEvent)
 
-// AddBeginHandler : adds handler for PointerGestureHoldBeginEvent
-func (i *PointerGestureHold) AddBeginHandler(f PointerGestureHoldBeginHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.beginHandlers = append(i.beginHandlers, f)
+// SetBeginHandler : sets handler for PointerGestureHoldBeginEvent
+func (i *PointerGestureHold) SetBeginHandler(f PointerGestureHoldBeginHandlerFunc) {
+	i.beginHandler = f
 }
 
 // PointerGestureHoldEndEvent : multi-finger hold end
@@ -620,19 +586,15 @@ type PointerGestureHoldEndEvent struct {
 }
 type PointerGestureHoldEndHandlerFunc func(PointerGestureHoldEndEvent)
 
-// AddEndHandler : adds handler for PointerGestureHoldEndEvent
-func (i *PointerGestureHold) AddEndHandler(f PointerGestureHoldEndHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.endHandlers = append(i.endHandlers, f)
+// SetEndHandler : sets handler for PointerGestureHoldEndEvent
+func (i *PointerGestureHold) SetEndHandler(f PointerGestureHoldEndHandlerFunc) {
+	i.endHandler = f
 }
 
 func (i *PointerGestureHold) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.beginHandlers) == 0 {
+		if i.beginHandler == nil {
 			return
 		}
 		var e PointerGestureHoldBeginEvent
@@ -645,11 +607,10 @@ func (i *PointerGestureHold) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Fingers = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.beginHandlers {
-			f(e)
-		}
+
+		i.beginHandler(e)
 	case 1:
-		if len(i.endHandlers) == 0 {
+		if i.endHandler == nil {
 			return
 		}
 		var e PointerGestureHoldEndEvent
@@ -660,8 +621,7 @@ func (i *PointerGestureHold) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Cancelled = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.endHandlers {
-			f(e)
-		}
+
+		i.endHandler(e)
 	}
 }

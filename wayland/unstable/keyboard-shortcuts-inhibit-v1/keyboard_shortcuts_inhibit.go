@@ -159,8 +159,8 @@ func (e KeyboardShortcutsInhibitManagerError) String() string {
 // event is emitted in this case.
 type KeyboardShortcutsInhibitor struct {
 	client.BaseProxy
-	activeHandlers   []KeyboardShortcutsInhibitorActiveHandlerFunc
-	inactiveHandlers []KeyboardShortcutsInhibitorInactiveHandlerFunc
+	activeHandler   KeyboardShortcutsInhibitorActiveHandlerFunc
+	inactiveHandler KeyboardShortcutsInhibitorInactiveHandlerFunc
 }
 
 // NewKeyboardShortcutsInhibitor : context object for keyboard shortcuts inhibitor
@@ -237,13 +237,9 @@ func (i *KeyboardShortcutsInhibitor) Destroy() error {
 type KeyboardShortcutsInhibitorActiveEvent struct{}
 type KeyboardShortcutsInhibitorActiveHandlerFunc func(KeyboardShortcutsInhibitorActiveEvent)
 
-// AddActiveHandler : adds handler for KeyboardShortcutsInhibitorActiveEvent
-func (i *KeyboardShortcutsInhibitor) AddActiveHandler(f KeyboardShortcutsInhibitorActiveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.activeHandlers = append(i.activeHandlers, f)
+// SetActiveHandler : sets handler for KeyboardShortcutsInhibitorActiveEvent
+func (i *KeyboardShortcutsInhibitor) SetActiveHandler(f KeyboardShortcutsInhibitorActiveHandlerFunc) {
+	i.activeHandler = f
 }
 
 // KeyboardShortcutsInhibitorInactiveEvent : shortcuts are restored
@@ -253,32 +249,26 @@ func (i *KeyboardShortcutsInhibitor) AddActiveHandler(f KeyboardShortcutsInhibit
 type KeyboardShortcutsInhibitorInactiveEvent struct{}
 type KeyboardShortcutsInhibitorInactiveHandlerFunc func(KeyboardShortcutsInhibitorInactiveEvent)
 
-// AddInactiveHandler : adds handler for KeyboardShortcutsInhibitorInactiveEvent
-func (i *KeyboardShortcutsInhibitor) AddInactiveHandler(f KeyboardShortcutsInhibitorInactiveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.inactiveHandlers = append(i.inactiveHandlers, f)
+// SetInactiveHandler : sets handler for KeyboardShortcutsInhibitorInactiveEvent
+func (i *KeyboardShortcutsInhibitor) SetInactiveHandler(f KeyboardShortcutsInhibitorInactiveHandlerFunc) {
+	i.inactiveHandler = f
 }
 
 func (i *KeyboardShortcutsInhibitor) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.activeHandlers) == 0 {
+		if i.activeHandler == nil {
 			return
 		}
 		var e KeyboardShortcutsInhibitorActiveEvent
-		for _, f := range i.activeHandlers {
-			f(e)
-		}
+
+		i.activeHandler(e)
 	case 1:
-		if len(i.inactiveHandlers) == 0 {
+		if i.inactiveHandler == nil {
 			return
 		}
 		var e KeyboardShortcutsInhibitorInactiveEvent
-		for _, f := range i.inactiveHandlers {
-			f(e)
-		}
+
+		i.inactiveHandler(e)
 	}
 }

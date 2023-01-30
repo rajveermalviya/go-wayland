@@ -46,15 +46,15 @@ func (app *appState) attachPointer() {
 		log.Fatal("unable to register pointer interface")
 	}
 	app.pointer = pointer
-	pointer.AddEnterHandler(app.HandlePointerEnter)
-	pointer.AddLeaveHandler(app.HandlePointerLeave)
-	pointer.AddMotionHandler(app.HandlePointerMotion)
-	pointer.AddButtonHandler(app.HandlePointerButton)
-	pointer.AddAxisHandler(app.HandlePointerAxis)
-	pointer.AddAxisSourceHandler(app.HandlePointerAxisSource)
-	pointer.AddAxisStopHandler(app.HandlePointerAxisStop)
-	pointer.AddAxisDiscreteHandler(app.HandlePointerAxisDiscrete)
-	pointer.AddFrameHandler(app.HandlePointerFrame)
+	pointer.SetEnterHandler(app.HandlePointerEnter)
+	pointer.SetLeaveHandler(app.HandlePointerLeave)
+	pointer.SetMotionHandler(app.HandlePointerMotion)
+	pointer.SetButtonHandler(app.HandlePointerButton)
+	pointer.SetAxisHandler(app.HandlePointerAxis)
+	pointer.SetAxisSourceHandler(app.HandlePointerAxisSource)
+	pointer.SetAxisStopHandler(app.HandlePointerAxisStop)
+	pointer.SetAxisDiscreteHandler(app.HandlePointerAxisDiscrete)
+	pointer.SetFrameHandler(app.HandlePointerFrame)
 
 	logPrintln("pointer interface registered")
 }

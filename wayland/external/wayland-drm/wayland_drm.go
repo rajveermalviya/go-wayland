@@ -38,10 +38,10 @@ import (
 // Drm :
 type Drm struct {
 	client.BaseProxy
-	deviceHandlers        []DrmDeviceHandlerFunc
-	formatHandlers        []DrmFormatHandlerFunc
-	authenticatedHandlers []DrmAuthenticatedHandlerFunc
-	capabilitiesHandlers  []DrmCapabilitiesHandlerFunc
+	deviceHandler        DrmDeviceHandlerFunc
+	formatHandler        DrmFormatHandlerFunc
+	authenticatedHandler DrmAuthenticatedHandlerFunc
+	capabilitiesHandler  DrmCapabilitiesHandlerFunc
 }
 
 // NewDrm :
@@ -578,13 +578,9 @@ type DrmDeviceEvent struct {
 }
 type DrmDeviceHandlerFunc func(DrmDeviceEvent)
 
-// AddDeviceHandler : adds handler for DrmDeviceEvent
-func (i *Drm) AddDeviceHandler(f DrmDeviceHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.deviceHandlers = append(i.deviceHandlers, f)
+// SetDeviceHandler : sets handler for DrmDeviceEvent
+func (i *Drm) SetDeviceHandler(f DrmDeviceHandlerFunc) {
+	i.deviceHandler = f
 }
 
 // DrmFormatEvent :
@@ -593,26 +589,18 @@ type DrmFormatEvent struct {
 }
 type DrmFormatHandlerFunc func(DrmFormatEvent)
 
-// AddFormatHandler : adds handler for DrmFormatEvent
-func (i *Drm) AddFormatHandler(f DrmFormatHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.formatHandlers = append(i.formatHandlers, f)
+// SetFormatHandler : sets handler for DrmFormatEvent
+func (i *Drm) SetFormatHandler(f DrmFormatHandlerFunc) {
+	i.formatHandler = f
 }
 
 // DrmAuthenticatedEvent :
 type DrmAuthenticatedEvent struct{}
 type DrmAuthenticatedHandlerFunc func(DrmAuthenticatedEvent)
 
-// AddAuthenticatedHandler : adds handler for DrmAuthenticatedEvent
-func (i *Drm) AddAuthenticatedHandler(f DrmAuthenticatedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.authenticatedHandlers = append(i.authenticatedHandlers, f)
+// SetAuthenticatedHandler : sets handler for DrmAuthenticatedEvent
+func (i *Drm) SetAuthenticatedHandler(f DrmAuthenticatedHandlerFunc) {
+	i.authenticatedHandler = f
 }
 
 // DrmCapabilitiesEvent :
@@ -621,19 +609,15 @@ type DrmCapabilitiesEvent struct {
 }
 type DrmCapabilitiesHandlerFunc func(DrmCapabilitiesEvent)
 
-// AddCapabilitiesHandler : adds handler for DrmCapabilitiesEvent
-func (i *Drm) AddCapabilitiesHandler(f DrmCapabilitiesHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.capabilitiesHandlers = append(i.capabilitiesHandlers, f)
+// SetCapabilitiesHandler : sets handler for DrmCapabilitiesEvent
+func (i *Drm) SetCapabilitiesHandler(f DrmCapabilitiesHandlerFunc) {
+	i.capabilitiesHandler = f
 }
 
 func (i *Drm) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.deviceHandlers) == 0 {
+		if i.deviceHandler == nil {
 			return
 		}
 		var e DrmDeviceEvent
@@ -642,38 +626,34 @@ func (i *Drm) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Name = client.String(data[l : l+nameLen])
 		l += nameLen
-		for _, f := range i.deviceHandlers {
-			f(e)
-		}
+
+		i.deviceHandler(e)
 	case 1:
-		if len(i.formatHandlers) == 0 {
+		if i.formatHandler == nil {
 			return
 		}
 		var e DrmFormatEvent
 		l := 0
 		e.Format = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.formatHandlers {
-			f(e)
-		}
+
+		i.formatHandler(e)
 	case 2:
-		if len(i.authenticatedHandlers) == 0 {
+		if i.authenticatedHandler == nil {
 			return
 		}
 		var e DrmAuthenticatedEvent
-		for _, f := range i.authenticatedHandlers {
-			f(e)
-		}
+
+		i.authenticatedHandler(e)
 	case 3:
-		if len(i.capabilitiesHandlers) == 0 {
+		if i.capabilitiesHandler == nil {
 			return
 		}
 		var e DrmCapabilitiesEvent
 		l := 0
 		e.Value = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.capabilitiesHandlers {
-			f(e)
-		}
+
+		i.capabilitiesHandler(e)
 	}
 }

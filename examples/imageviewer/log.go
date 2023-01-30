@@ -18,7 +18,3 @@ func logPrintf(format string, v ...interface{}) {
 		log.Printf(format, v...)
 	}
 }
-
-func logFatalf(format string, v ...interface{}) {
-	log.Fatalf(format, v...)
-}

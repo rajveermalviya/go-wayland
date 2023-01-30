@@ -126,7 +126,7 @@ func (e FractionalScaleManagerError) String() string {
 // to inform the client of the preferred scale.
 type FractionalScale struct {
 	client.BaseProxy
-	preferredScaleHandlers []FractionalScalePreferredScaleHandlerFunc
+	preferredScaleHandler FractionalScalePreferredScaleHandlerFunc
 }
 
 // NewFractionalScale : fractional scale interface to a wl_surface
@@ -168,27 +168,22 @@ type FractionalScalePreferredScaleEvent struct {
 }
 type FractionalScalePreferredScaleHandlerFunc func(FractionalScalePreferredScaleEvent)
 
-// AddPreferredScaleHandler : adds handler for FractionalScalePreferredScaleEvent
-func (i *FractionalScale) AddPreferredScaleHandler(f FractionalScalePreferredScaleHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.preferredScaleHandlers = append(i.preferredScaleHandlers, f)
+// SetPreferredScaleHandler : sets handler for FractionalScalePreferredScaleEvent
+func (i *FractionalScale) SetPreferredScaleHandler(f FractionalScalePreferredScaleHandlerFunc) {
+	i.preferredScaleHandler = f
 }
 
 func (i *FractionalScale) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.preferredScaleHandlers) == 0 {
+		if i.preferredScaleHandler == nil {
 			return
 		}
 		var e FractionalScalePreferredScaleEvent
 		l := 0
 		e.Scale = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.preferredScaleHandlers {
-			f(e)
-		}
+
+		i.preferredScaleHandler(e)
 	}
 }

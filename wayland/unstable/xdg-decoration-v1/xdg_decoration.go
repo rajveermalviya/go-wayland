@@ -145,7 +145,7 @@ func (i *DecorationManager) GetToplevelDecoration(toplevel *xdg_shell.Toplevel) 
 // xdg_toplevel.
 type ToplevelDecoration struct {
 	client.BaseProxy
-	configureHandlers []ToplevelDecorationConfigureHandlerFunc
+	configureHandler ToplevelDecorationConfigureHandlerFunc
 }
 
 // NewToplevelDecoration : decoration object for a toplevel surface
@@ -330,27 +330,22 @@ type ToplevelDecorationConfigureEvent struct {
 }
 type ToplevelDecorationConfigureHandlerFunc func(ToplevelDecorationConfigureEvent)
 
-// AddConfigureHandler : adds handler for ToplevelDecorationConfigureEvent
-func (i *ToplevelDecoration) AddConfigureHandler(f ToplevelDecorationConfigureHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.configureHandlers = append(i.configureHandlers, f)
+// SetConfigureHandler : sets handler for ToplevelDecorationConfigureEvent
+func (i *ToplevelDecoration) SetConfigureHandler(f ToplevelDecorationConfigureHandlerFunc) {
+	i.configureHandler = f
 }
 
 func (i *ToplevelDecoration) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.configureHandlers) == 0 {
+		if i.configureHandler == nil {
 			return
 		}
 		var e ToplevelDecorationConfigureEvent
 		l := 0
 		e.Mode = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.configureHandlers {
-			f(e)
-		}
+
+		i.configureHandler(e)
 	}
 }

@@ -226,7 +226,7 @@ func writeInterface(w io.Writer, v Interface) {
 		fmt.Fprintf(w, "BaseProxy\n")
 	}
 	for _, event := range v.Events {
-		fmt.Fprintf(w, "%sHandlers []%s%sHandlerFunc\n", toLowerCamel(event.Name), ifaceName, toCamel(event.Name))
+		fmt.Fprintf(w, "%sHandler %s%sHandlerFunc\n", toLowerCamel(event.Name), ifaceName, toCamel(event.Name))
 	}
 	fmt.Fprintf(w, "}\n")
 
@@ -621,13 +621,10 @@ func writeEvent(w io.Writer, ifaceName string, e Event) {
 	// Event handler interface
 	fmt.Fprintf(w, "type %s%sHandlerFunc func(%s%sEvent)\n", ifaceName, eventName, ifaceName, eventName)
 
-	// Add handler
-	fmt.Fprintf(w, "// Add%sHandler : adds handler for %s%sEvent\n", eventName, ifaceName, eventName)
-	fmt.Fprintf(w, "func (i *%s) Add%sHandler(f %s%sHandlerFunc) {\n", ifaceName, eventName, ifaceName, eventName)
-	fmt.Fprintf(w, "if f == nil {\n")
-	fmt.Fprintf(w, "return\n")
-	fmt.Fprintf(w, "}\n\n")
-	fmt.Fprintf(w, "i.%sHandlers = append(i.%sHandlers, f)\n", eventNameLower, eventNameLower)
+	// Set handler
+	fmt.Fprintf(w, "// Set%sHandler : sets handler for %s%sEvent\n", eventName, ifaceName, eventName)
+	fmt.Fprintf(w, "func (i *%s) Set%sHandler(f %s%sHandlerFunc) {\n", ifaceName, eventName, ifaceName, eventName)
+	fmt.Fprintf(w, "i.%sHandler = f\n", eventNameLower)
 	fmt.Fprintf(w, "}\n")
 }
 
@@ -642,8 +639,21 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 		eventName := toCamel(e.Name)
 		eventNameLower := toLowerCamel(e.Name)
 
+		hasFd := false
+		for _, arg := range e.Args {
+			if arg.Type == "fd" {
+				hasFd = true
+				break
+			}
+		}
+
 		fmt.Fprintf(w, "case %d:\n", i)
-		fmt.Fprintf(w, "if len(i.%sHandlers) == 0 {\n", eventNameLower)
+		fmt.Fprintf(w, "if i.%sHandler == nil {\n", eventNameLower)
+		if hasFd {
+			fmt.Fprintf(w, "if fd != -1 {\n")
+			fmt.Fprintf(w, "unix.Close(fd)\n")
+			fmt.Fprintf(w, "}\n")
+		}
 		fmt.Fprintf(w, "return\n")
 		fmt.Fprintf(w, "}\n")
 
@@ -738,9 +748,7 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 			}
 		}
 
-		fmt.Fprintf(w, "for _, f := range i.%sHandlers {\n", eventNameLower)
-		fmt.Fprintf(w, "f(e)\n\n")
-		fmt.Fprintf(w, "}\n")
+		fmt.Fprintf(w, "\ni.%sHandler(e)\n", eventNameLower)
 	}
 	fmt.Fprintf(w, "}\n")
 	fmt.Fprintf(w, "}\n")

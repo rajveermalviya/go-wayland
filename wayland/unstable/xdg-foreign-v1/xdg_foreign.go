@@ -169,7 +169,7 @@ func (i *Importer) Import(handle string) (*Imported, error) {
 // importer may have established using xdg_imported.
 type Exported struct {
 	client.BaseProxy
-	handleHandlers []ExportedHandleHandlerFunc
+	handleHandler ExportedHandleHandlerFunc
 }
 
 // NewExported : an exported surface handle
@@ -214,19 +214,15 @@ type ExportedHandleEvent struct {
 }
 type ExportedHandleHandlerFunc func(ExportedHandleEvent)
 
-// AddHandleHandler : adds handler for ExportedHandleEvent
-func (i *Exported) AddHandleHandler(f ExportedHandleHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.handleHandlers = append(i.handleHandlers, f)
+// SetHandleHandler : sets handler for ExportedHandleEvent
+func (i *Exported) SetHandleHandler(f ExportedHandleHandlerFunc) {
+	i.handleHandler = f
 }
 
 func (i *Exported) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.handleHandlers) == 0 {
+		if i.handleHandler == nil {
 			return
 		}
 		var e ExportedHandleEvent
@@ -235,9 +231,8 @@ func (i *Exported) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Handle = client.String(data[l : l+handleLen])
 		l += handleLen
-		for _, f := range i.handleHandlers {
-			f(e)
-		}
+
+		i.handleHandler(e)
 	}
 }
 
@@ -248,7 +243,7 @@ func (i *Exported) Dispatch(opcode uint32, fd int, data []byte) {
 // relationships between its own surfaces and the imported surface.
 type Imported struct {
 	client.BaseProxy
-	destroyedHandlers []ImportedDestroyedHandlerFunc
+	destroyedHandler ImportedDestroyedHandlerFunc
 }
 
 // NewImported : an imported surface handle
@@ -313,24 +308,19 @@ func (i *Imported) SetParentOf(surface *client.Surface) error {
 type ImportedDestroyedEvent struct{}
 type ImportedDestroyedHandlerFunc func(ImportedDestroyedEvent)
 
-// AddDestroyedHandler : adds handler for ImportedDestroyedEvent
-func (i *Imported) AddDestroyedHandler(f ImportedDestroyedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.destroyedHandlers = append(i.destroyedHandlers, f)
+// SetDestroyedHandler : sets handler for ImportedDestroyedEvent
+func (i *Imported) SetDestroyedHandler(f ImportedDestroyedHandlerFunc) {
+	i.destroyedHandler = f
 }
 
 func (i *Imported) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.destroyedHandlers) == 0 {
+		if i.destroyedHandler == nil {
 			return
 		}
 		var e ImportedDestroyedEvent
-		for _, f := range i.destroyedHandlers {
-			f(e)
-		}
+
+		i.destroyedHandler(e)
 	}
 }

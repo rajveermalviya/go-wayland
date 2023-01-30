@@ -101,9 +101,9 @@ func (i *TabletManager) Destroy() error {
 // wp_tablet_seat.tablet_added and wp_tablet_seat.tool_added events.
 type TabletSeat struct {
 	client.BaseProxy
-	tabletAddedHandlers []TabletSeatTabletAddedHandlerFunc
-	toolAddedHandlers   []TabletSeatToolAddedHandlerFunc
-	padAddedHandlers    []TabletSeatPadAddedHandlerFunc
+	tabletAddedHandler TabletSeatTabletAddedHandlerFunc
+	toolAddedHandler   TabletSeatToolAddedHandlerFunc
+	padAddedHandler    TabletSeatPadAddedHandlerFunc
 }
 
 // NewTabletSeat : controller object for graphic tablet devices of a seat
@@ -146,13 +146,9 @@ type TabletSeatTabletAddedEvent struct {
 }
 type TabletSeatTabletAddedHandlerFunc func(TabletSeatTabletAddedEvent)
 
-// AddTabletAddedHandler : adds handler for TabletSeatTabletAddedEvent
-func (i *TabletSeat) AddTabletAddedHandler(f TabletSeatTabletAddedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.tabletAddedHandlers = append(i.tabletAddedHandlers, f)
+// SetTabletAddedHandler : sets handler for TabletSeatTabletAddedEvent
+func (i *TabletSeat) SetTabletAddedHandler(f TabletSeatTabletAddedHandlerFunc) {
+	i.tabletAddedHandler = f
 }
 
 // TabletSeatToolAddedEvent : a new tool has been used with a tablet
@@ -166,13 +162,9 @@ type TabletSeatToolAddedEvent struct {
 }
 type TabletSeatToolAddedHandlerFunc func(TabletSeatToolAddedEvent)
 
-// AddToolAddedHandler : adds handler for TabletSeatToolAddedEvent
-func (i *TabletSeat) AddToolAddedHandler(f TabletSeatToolAddedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.toolAddedHandlers = append(i.toolAddedHandlers, f)
+// SetToolAddedHandler : sets handler for TabletSeatToolAddedEvent
+func (i *TabletSeat) SetToolAddedHandler(f TabletSeatToolAddedHandlerFunc) {
+	i.toolAddedHandler = f
 }
 
 // TabletSeatPadAddedEvent : new pad notification
@@ -192,50 +184,43 @@ type TabletSeatPadAddedEvent struct {
 }
 type TabletSeatPadAddedHandlerFunc func(TabletSeatPadAddedEvent)
 
-// AddPadAddedHandler : adds handler for TabletSeatPadAddedEvent
-func (i *TabletSeat) AddPadAddedHandler(f TabletSeatPadAddedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.padAddedHandlers = append(i.padAddedHandlers, f)
+// SetPadAddedHandler : sets handler for TabletSeatPadAddedEvent
+func (i *TabletSeat) SetPadAddedHandler(f TabletSeatPadAddedHandlerFunc) {
+	i.padAddedHandler = f
 }
 
 func (i *TabletSeat) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.tabletAddedHandlers) == 0 {
+		if i.tabletAddedHandler == nil {
 			return
 		}
 		var e TabletSeatTabletAddedEvent
 		l := 0
 		e.Id = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*Tablet)
 		l += 4
-		for _, f := range i.tabletAddedHandlers {
-			f(e)
-		}
+
+		i.tabletAddedHandler(e)
 	case 1:
-		if len(i.toolAddedHandlers) == 0 {
+		if i.toolAddedHandler == nil {
 			return
 		}
 		var e TabletSeatToolAddedEvent
 		l := 0
 		e.Id = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*TabletTool)
 		l += 4
-		for _, f := range i.toolAddedHandlers {
-			f(e)
-		}
+
+		i.toolAddedHandler(e)
 	case 2:
-		if len(i.padAddedHandlers) == 0 {
+		if i.padAddedHandler == nil {
 			return
 		}
 		var e TabletSeatPadAddedEvent
 		l := 0
 		e.Id = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*TabletPad)
 		l += 4
-		for _, f := range i.padAddedHandlers {
-			f(e)
-		}
+
+		i.padAddedHandler(e)
 	}
 }
 
@@ -263,25 +248,25 @@ func (i *TabletSeat) Dispatch(opcode uint32, fd int, data []byte) {
 // considered part of the same hardware state change.
 type TabletTool struct {
 	client.BaseProxy
-	typeHandlers            []TabletToolTypeHandlerFunc
-	hardwareSerialHandlers  []TabletToolHardwareSerialHandlerFunc
-	hardwareIdWacomHandlers []TabletToolHardwareIdWacomHandlerFunc
-	capabilityHandlers      []TabletToolCapabilityHandlerFunc
-	doneHandlers            []TabletToolDoneHandlerFunc
-	removedHandlers         []TabletToolRemovedHandlerFunc
-	proximityInHandlers     []TabletToolProximityInHandlerFunc
-	proximityOutHandlers    []TabletToolProximityOutHandlerFunc
-	downHandlers            []TabletToolDownHandlerFunc
-	upHandlers              []TabletToolUpHandlerFunc
-	motionHandlers          []TabletToolMotionHandlerFunc
-	pressureHandlers        []TabletToolPressureHandlerFunc
-	distanceHandlers        []TabletToolDistanceHandlerFunc
-	tiltHandlers            []TabletToolTiltHandlerFunc
-	rotationHandlers        []TabletToolRotationHandlerFunc
-	sliderHandlers          []TabletToolSliderHandlerFunc
-	wheelHandlers           []TabletToolWheelHandlerFunc
-	buttonHandlers          []TabletToolButtonHandlerFunc
-	frameHandlers           []TabletToolFrameHandlerFunc
+	typeHandler            TabletToolTypeHandlerFunc
+	hardwareSerialHandler  TabletToolHardwareSerialHandlerFunc
+	hardwareIdWacomHandler TabletToolHardwareIdWacomHandlerFunc
+	capabilityHandler      TabletToolCapabilityHandlerFunc
+	doneHandler            TabletToolDoneHandlerFunc
+	removedHandler         TabletToolRemovedHandlerFunc
+	proximityInHandler     TabletToolProximityInHandlerFunc
+	proximityOutHandler    TabletToolProximityOutHandlerFunc
+	downHandler            TabletToolDownHandlerFunc
+	upHandler              TabletToolUpHandlerFunc
+	motionHandler          TabletToolMotionHandlerFunc
+	pressureHandler        TabletToolPressureHandlerFunc
+	distanceHandler        TabletToolDistanceHandlerFunc
+	tiltHandler            TabletToolTiltHandlerFunc
+	rotationHandler        TabletToolRotationHandlerFunc
+	sliderHandler          TabletToolSliderHandlerFunc
+	wheelHandler           TabletToolWheelHandlerFunc
+	buttonHandler          TabletToolButtonHandlerFunc
+	frameHandler           TabletToolFrameHandlerFunc
 }
 
 // NewTabletTool : a physical tablet tool
@@ -618,13 +603,9 @@ type TabletToolTypeEvent struct {
 }
 type TabletToolTypeHandlerFunc func(TabletToolTypeEvent)
 
-// AddTypeHandler : adds handler for TabletToolTypeEvent
-func (i *TabletTool) AddTypeHandler(f TabletToolTypeHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.typeHandlers = append(i.typeHandlers, f)
+// SetTypeHandler : sets handler for TabletToolTypeEvent
+func (i *TabletTool) SetTypeHandler(f TabletToolTypeHandlerFunc) {
+	i.typeHandler = f
 }
 
 // TabletToolHardwareSerialEvent : unique hardware serial number of the tool
@@ -650,13 +631,9 @@ type TabletToolHardwareSerialEvent struct {
 }
 type TabletToolHardwareSerialHandlerFunc func(TabletToolHardwareSerialEvent)
 
-// AddHardwareSerialHandler : adds handler for TabletToolHardwareSerialEvent
-func (i *TabletTool) AddHardwareSerialHandler(f TabletToolHardwareSerialHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.hardwareSerialHandlers = append(i.hardwareSerialHandlers, f)
+// SetHardwareSerialHandler : sets handler for TabletToolHardwareSerialEvent
+func (i *TabletTool) SetHardwareSerialHandler(f TabletToolHardwareSerialHandlerFunc) {
+	i.hardwareSerialHandler = f
 }
 
 // TabletToolHardwareIdWacomEvent : hardware id notification in Wacom's format
@@ -677,13 +654,9 @@ type TabletToolHardwareIdWacomEvent struct {
 }
 type TabletToolHardwareIdWacomHandlerFunc func(TabletToolHardwareIdWacomEvent)
 
-// AddHardwareIdWacomHandler : adds handler for TabletToolHardwareIdWacomEvent
-func (i *TabletTool) AddHardwareIdWacomHandler(f TabletToolHardwareIdWacomHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.hardwareIdWacomHandlers = append(i.hardwareIdWacomHandlers, f)
+// SetHardwareIdWacomHandler : sets handler for TabletToolHardwareIdWacomEvent
+func (i *TabletTool) SetHardwareIdWacomHandler(f TabletToolHardwareIdWacomHandlerFunc) {
+	i.hardwareIdWacomHandler = f
 }
 
 // TabletToolCapabilityEvent : tool capability notification
@@ -700,13 +673,9 @@ type TabletToolCapabilityEvent struct {
 }
 type TabletToolCapabilityHandlerFunc func(TabletToolCapabilityEvent)
 
-// AddCapabilityHandler : adds handler for TabletToolCapabilityEvent
-func (i *TabletTool) AddCapabilityHandler(f TabletToolCapabilityHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.capabilityHandlers = append(i.capabilityHandlers, f)
+// SetCapabilityHandler : sets handler for TabletToolCapabilityEvent
+func (i *TabletTool) SetCapabilityHandler(f TabletToolCapabilityHandlerFunc) {
+	i.capabilityHandler = f
 }
 
 // TabletToolDoneEvent : tool description events sequence complete
@@ -717,13 +686,9 @@ func (i *TabletTool) AddCapabilityHandler(f TabletToolCapabilityHandlerFunc) {
 type TabletToolDoneEvent struct{}
 type TabletToolDoneHandlerFunc func(TabletToolDoneEvent)
 
-// AddDoneHandler : adds handler for TabletToolDoneEvent
-func (i *TabletTool) AddDoneHandler(f TabletToolDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for TabletToolDoneEvent
+func (i *TabletTool) SetDoneHandler(f TabletToolDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 // TabletToolRemovedEvent : tool removed
@@ -745,13 +710,9 @@ func (i *TabletTool) AddDoneHandler(f TabletToolDoneHandlerFunc) {
 type TabletToolRemovedEvent struct{}
 type TabletToolRemovedHandlerFunc func(TabletToolRemovedEvent)
 
-// AddRemovedHandler : adds handler for TabletToolRemovedEvent
-func (i *TabletTool) AddRemovedHandler(f TabletToolRemovedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.removedHandlers = append(i.removedHandlers, f)
+// SetRemovedHandler : sets handler for TabletToolRemovedEvent
+func (i *TabletTool) SetRemovedHandler(f TabletToolRemovedHandlerFunc) {
+	i.removedHandler = f
 }
 
 // TabletToolProximityInEvent : proximity in event
@@ -772,13 +733,9 @@ type TabletToolProximityInEvent struct {
 }
 type TabletToolProximityInHandlerFunc func(TabletToolProximityInEvent)
 
-// AddProximityInHandler : adds handler for TabletToolProximityInEvent
-func (i *TabletTool) AddProximityInHandler(f TabletToolProximityInHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.proximityInHandlers = append(i.proximityInHandlers, f)
+// SetProximityInHandler : sets handler for TabletToolProximityInEvent
+func (i *TabletTool) SetProximityInHandler(f TabletToolProximityInHandlerFunc) {
+	i.proximityInHandler = f
 }
 
 // TabletToolProximityOutEvent : proximity out event
@@ -798,13 +755,9 @@ func (i *TabletTool) AddProximityInHandler(f TabletToolProximityInHandlerFunc) {
 type TabletToolProximityOutEvent struct{}
 type TabletToolProximityOutHandlerFunc func(TabletToolProximityOutEvent)
 
-// AddProximityOutHandler : adds handler for TabletToolProximityOutEvent
-func (i *TabletTool) AddProximityOutHandler(f TabletToolProximityOutHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.proximityOutHandlers = append(i.proximityOutHandlers, f)
+// SetProximityOutHandler : sets handler for TabletToolProximityOutEvent
+func (i *TabletTool) SetProximityOutHandler(f TabletToolProximityOutHandlerFunc) {
+	i.proximityOutHandler = f
 }
 
 // TabletToolDownEvent : tablet tool is making contact
@@ -826,13 +779,9 @@ type TabletToolDownEvent struct {
 }
 type TabletToolDownHandlerFunc func(TabletToolDownEvent)
 
-// AddDownHandler : adds handler for TabletToolDownEvent
-func (i *TabletTool) AddDownHandler(f TabletToolDownHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.downHandlers = append(i.downHandlers, f)
+// SetDownHandler : sets handler for TabletToolDownEvent
+func (i *TabletTool) SetDownHandler(f TabletToolDownHandlerFunc) {
+	i.downHandler = f
 }
 
 // TabletToolUpEvent : tablet tool is no longer making contact
@@ -856,13 +805,9 @@ func (i *TabletTool) AddDownHandler(f TabletToolDownHandlerFunc) {
 type TabletToolUpEvent struct{}
 type TabletToolUpHandlerFunc func(TabletToolUpEvent)
 
-// AddUpHandler : adds handler for TabletToolUpEvent
-func (i *TabletTool) AddUpHandler(f TabletToolUpHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.upHandlers = append(i.upHandlers, f)
+// SetUpHandler : sets handler for TabletToolUpEvent
+func (i *TabletTool) SetUpHandler(f TabletToolUpHandlerFunc) {
+	i.upHandler = f
 }
 
 // TabletToolMotionEvent : motion event
@@ -874,13 +819,9 @@ type TabletToolMotionEvent struct {
 }
 type TabletToolMotionHandlerFunc func(TabletToolMotionEvent)
 
-// AddMotionHandler : adds handler for TabletToolMotionEvent
-func (i *TabletTool) AddMotionHandler(f TabletToolMotionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.motionHandlers = append(i.motionHandlers, f)
+// SetMotionHandler : sets handler for TabletToolMotionEvent
+func (i *TabletTool) SetMotionHandler(f TabletToolMotionHandlerFunc) {
+	i.motionHandler = f
 }
 
 // TabletToolPressureEvent : pressure change event
@@ -895,13 +836,9 @@ type TabletToolPressureEvent struct {
 }
 type TabletToolPressureHandlerFunc func(TabletToolPressureEvent)
 
-// AddPressureHandler : adds handler for TabletToolPressureEvent
-func (i *TabletTool) AddPressureHandler(f TabletToolPressureHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.pressureHandlers = append(i.pressureHandlers, f)
+// SetPressureHandler : sets handler for TabletToolPressureEvent
+func (i *TabletTool) SetPressureHandler(f TabletToolPressureHandlerFunc) {
+	i.pressureHandler = f
 }
 
 // TabletToolDistanceEvent : distance change event
@@ -916,13 +853,9 @@ type TabletToolDistanceEvent struct {
 }
 type TabletToolDistanceHandlerFunc func(TabletToolDistanceEvent)
 
-// AddDistanceHandler : adds handler for TabletToolDistanceEvent
-func (i *TabletTool) AddDistanceHandler(f TabletToolDistanceHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.distanceHandlers = append(i.distanceHandlers, f)
+// SetDistanceHandler : sets handler for TabletToolDistanceEvent
+func (i *TabletTool) SetDistanceHandler(f TabletToolDistanceHandlerFunc) {
+	i.distanceHandler = f
 }
 
 // TabletToolTiltEvent : tilt change event
@@ -937,13 +870,9 @@ type TabletToolTiltEvent struct {
 }
 type TabletToolTiltHandlerFunc func(TabletToolTiltEvent)
 
-// AddTiltHandler : adds handler for TabletToolTiltEvent
-func (i *TabletTool) AddTiltHandler(f TabletToolTiltHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.tiltHandlers = append(i.tiltHandlers, f)
+// SetTiltHandler : sets handler for TabletToolTiltEvent
+func (i *TabletTool) SetTiltHandler(f TabletToolTiltHandlerFunc) {
+	i.tiltHandler = f
 }
 
 // TabletToolRotationEvent : z-rotation change event
@@ -956,13 +885,9 @@ type TabletToolRotationEvent struct {
 }
 type TabletToolRotationHandlerFunc func(TabletToolRotationEvent)
 
-// AddRotationHandler : adds handler for TabletToolRotationEvent
-func (i *TabletTool) AddRotationHandler(f TabletToolRotationHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.rotationHandlers = append(i.rotationHandlers, f)
+// SetRotationHandler : sets handler for TabletToolRotationEvent
+func (i *TabletTool) SetRotationHandler(f TabletToolRotationHandlerFunc) {
+	i.rotationHandler = f
 }
 
 // TabletToolSliderEvent : Slider position change event
@@ -977,13 +902,9 @@ type TabletToolSliderEvent struct {
 }
 type TabletToolSliderHandlerFunc func(TabletToolSliderEvent)
 
-// AddSliderHandler : adds handler for TabletToolSliderEvent
-func (i *TabletTool) AddSliderHandler(f TabletToolSliderHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.sliderHandlers = append(i.sliderHandlers, f)
+// SetSliderHandler : sets handler for TabletToolSliderEvent
+func (i *TabletTool) SetSliderHandler(f TabletToolSliderHandlerFunc) {
+	i.sliderHandler = f
 }
 
 // TabletToolWheelEvent : Wheel delta event
@@ -1006,13 +927,9 @@ type TabletToolWheelEvent struct {
 }
 type TabletToolWheelHandlerFunc func(TabletToolWheelEvent)
 
-// AddWheelHandler : adds handler for TabletToolWheelEvent
-func (i *TabletTool) AddWheelHandler(f TabletToolWheelHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.wheelHandlers = append(i.wheelHandlers, f)
+// SetWheelHandler : sets handler for TabletToolWheelEvent
+func (i *TabletTool) SetWheelHandler(f TabletToolWheelHandlerFunc) {
+	i.wheelHandler = f
 }
 
 // TabletToolButtonEvent : button event
@@ -1030,13 +947,9 @@ type TabletToolButtonEvent struct {
 }
 type TabletToolButtonHandlerFunc func(TabletToolButtonEvent)
 
-// AddButtonHandler : adds handler for TabletToolButtonEvent
-func (i *TabletTool) AddButtonHandler(f TabletToolButtonHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.buttonHandlers = append(i.buttonHandlers, f)
+// SetButtonHandler : sets handler for TabletToolButtonEvent
+func (i *TabletTool) SetButtonHandler(f TabletToolButtonHandlerFunc) {
+	i.buttonHandler = f
 }
 
 // TabletToolFrameEvent : frame event
@@ -1050,30 +963,25 @@ type TabletToolFrameEvent struct {
 }
 type TabletToolFrameHandlerFunc func(TabletToolFrameEvent)
 
-// AddFrameHandler : adds handler for TabletToolFrameEvent
-func (i *TabletTool) AddFrameHandler(f TabletToolFrameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.frameHandlers = append(i.frameHandlers, f)
+// SetFrameHandler : sets handler for TabletToolFrameEvent
+func (i *TabletTool) SetFrameHandler(f TabletToolFrameHandlerFunc) {
+	i.frameHandler = f
 }
 
 func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.typeHandlers) == 0 {
+		if i.typeHandler == nil {
 			return
 		}
 		var e TabletToolTypeEvent
 		l := 0
 		e.ToolType = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.typeHandlers {
-			f(e)
-		}
+
+		i.typeHandler(e)
 	case 1:
-		if len(i.hardwareSerialHandlers) == 0 {
+		if i.hardwareSerialHandler == nil {
 			return
 		}
 		var e TabletToolHardwareSerialEvent
@@ -1082,11 +990,10 @@ func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.HardwareSerialLo = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.hardwareSerialHandlers {
-			f(e)
-		}
+
+		i.hardwareSerialHandler(e)
 	case 2:
-		if len(i.hardwareIdWacomHandlers) == 0 {
+		if i.hardwareIdWacomHandler == nil {
 			return
 		}
 		var e TabletToolHardwareIdWacomEvent
@@ -1095,38 +1002,34 @@ func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.HardwareIdLo = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.hardwareIdWacomHandlers {
-			f(e)
-		}
+
+		i.hardwareIdWacomHandler(e)
 	case 3:
-		if len(i.capabilityHandlers) == 0 {
+		if i.capabilityHandler == nil {
 			return
 		}
 		var e TabletToolCapabilityEvent
 		l := 0
 		e.Capability = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.capabilityHandlers {
-			f(e)
-		}
+
+		i.capabilityHandler(e)
 	case 4:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e TabletToolDoneEvent
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	case 5:
-		if len(i.removedHandlers) == 0 {
+		if i.removedHandler == nil {
 			return
 		}
 		var e TabletToolRemovedEvent
-		for _, f := range i.removedHandlers {
-			f(e)
-		}
+
+		i.removedHandler(e)
 	case 6:
-		if len(i.proximityInHandlers) == 0 {
+		if i.proximityInHandler == nil {
 			return
 		}
 		var e TabletToolProximityInEvent
@@ -1137,38 +1040,34 @@ func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
 		l += 4
-		for _, f := range i.proximityInHandlers {
-			f(e)
-		}
+
+		i.proximityInHandler(e)
 	case 7:
-		if len(i.proximityOutHandlers) == 0 {
+		if i.proximityOutHandler == nil {
 			return
 		}
 		var e TabletToolProximityOutEvent
-		for _, f := range i.proximityOutHandlers {
-			f(e)
-		}
+
+		i.proximityOutHandler(e)
 	case 8:
-		if len(i.downHandlers) == 0 {
+		if i.downHandler == nil {
 			return
 		}
 		var e TabletToolDownEvent
 		l := 0
 		e.Serial = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.downHandlers {
-			f(e)
-		}
+
+		i.downHandler(e)
 	case 9:
-		if len(i.upHandlers) == 0 {
+		if i.upHandler == nil {
 			return
 		}
 		var e TabletToolUpEvent
-		for _, f := range i.upHandlers {
-			f(e)
-		}
+
+		i.upHandler(e)
 	case 10:
-		if len(i.motionHandlers) == 0 {
+		if i.motionHandler == nil {
 			return
 		}
 		var e TabletToolMotionEvent
@@ -1177,33 +1076,30 @@ func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Y = client.Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.motionHandlers {
-			f(e)
-		}
+
+		i.motionHandler(e)
 	case 11:
-		if len(i.pressureHandlers) == 0 {
+		if i.pressureHandler == nil {
 			return
 		}
 		var e TabletToolPressureEvent
 		l := 0
 		e.Pressure = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.pressureHandlers {
-			f(e)
-		}
+
+		i.pressureHandler(e)
 	case 12:
-		if len(i.distanceHandlers) == 0 {
+		if i.distanceHandler == nil {
 			return
 		}
 		var e TabletToolDistanceEvent
 		l := 0
 		e.Distance = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.distanceHandlers {
-			f(e)
-		}
+
+		i.distanceHandler(e)
 	case 13:
-		if len(i.tiltHandlers) == 0 {
+		if i.tiltHandler == nil {
 			return
 		}
 		var e TabletToolTiltEvent
@@ -1212,33 +1108,30 @@ func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.TiltY = client.Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.tiltHandlers {
-			f(e)
-		}
+
+		i.tiltHandler(e)
 	case 14:
-		if len(i.rotationHandlers) == 0 {
+		if i.rotationHandler == nil {
 			return
 		}
 		var e TabletToolRotationEvent
 		l := 0
 		e.Degrees = client.Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.rotationHandlers {
-			f(e)
-		}
+
+		i.rotationHandler(e)
 	case 15:
-		if len(i.sliderHandlers) == 0 {
+		if i.sliderHandler == nil {
 			return
 		}
 		var e TabletToolSliderEvent
 		l := 0
 		e.Position = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.sliderHandlers {
-			f(e)
-		}
+
+		i.sliderHandler(e)
 	case 16:
-		if len(i.wheelHandlers) == 0 {
+		if i.wheelHandler == nil {
 			return
 		}
 		var e TabletToolWheelEvent
@@ -1247,11 +1140,10 @@ func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Clicks = int32(client.Uint32(data[l : l+4]))
 		l += 4
-		for _, f := range i.wheelHandlers {
-			f(e)
-		}
+
+		i.wheelHandler(e)
 	case 17:
-		if len(i.buttonHandlers) == 0 {
+		if i.buttonHandler == nil {
 			return
 		}
 		var e TabletToolButtonEvent
@@ -1262,20 +1154,18 @@ func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.State = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.buttonHandlers {
-			f(e)
-		}
+
+		i.buttonHandler(e)
 	case 18:
-		if len(i.frameHandlers) == 0 {
+		if i.frameHandler == nil {
 			return
 		}
 		var e TabletToolFrameEvent
 		l := 0
 		e.Time = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.frameHandlers {
-			f(e)
-		}
+
+		i.frameHandler(e)
 	}
 }
 
@@ -1291,11 +1181,11 @@ func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 // terminated by a wp_tablet.done event.
 type Tablet struct {
 	client.BaseProxy
-	nameHandlers    []TabletNameHandlerFunc
-	idHandlers      []TabletIdHandlerFunc
-	pathHandlers    []TabletPathHandlerFunc
-	doneHandlers    []TabletDoneHandlerFunc
-	removedHandlers []TabletRemovedHandlerFunc
+	nameHandler    TabletNameHandlerFunc
+	idHandler      TabletIdHandlerFunc
+	pathHandler    TabletPathHandlerFunc
+	doneHandler    TabletDoneHandlerFunc
+	removedHandler TabletRemovedHandlerFunc
 }
 
 // NewTablet : graphics tablet device
@@ -1340,13 +1230,9 @@ type TabletNameEvent struct {
 }
 type TabletNameHandlerFunc func(TabletNameEvent)
 
-// AddNameHandler : adds handler for TabletNameEvent
-func (i *Tablet) AddNameHandler(f TabletNameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.nameHandlers = append(i.nameHandlers, f)
+// SetNameHandler : sets handler for TabletNameEvent
+func (i *Tablet) SetNameHandler(f TabletNameHandlerFunc) {
+	i.nameHandler = f
 }
 
 // TabletIdEvent : tablet device USB vendor/product id
@@ -1359,13 +1245,9 @@ type TabletIdEvent struct {
 }
 type TabletIdHandlerFunc func(TabletIdEvent)
 
-// AddIdHandler : adds handler for TabletIdEvent
-func (i *Tablet) AddIdHandler(f TabletIdHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.idHandlers = append(i.idHandlers, f)
+// SetIdHandler : sets handler for TabletIdEvent
+func (i *Tablet) SetIdHandler(f TabletIdHandlerFunc) {
+	i.idHandler = f
 }
 
 // TabletPathEvent : path to the device
@@ -1389,13 +1271,9 @@ type TabletPathEvent struct {
 }
 type TabletPathHandlerFunc func(TabletPathEvent)
 
-// AddPathHandler : adds handler for TabletPathEvent
-func (i *Tablet) AddPathHandler(f TabletPathHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.pathHandlers = append(i.pathHandlers, f)
+// SetPathHandler : sets handler for TabletPathEvent
+func (i *Tablet) SetPathHandler(f TabletPathHandlerFunc) {
+	i.pathHandler = f
 }
 
 // TabletDoneEvent : tablet description events sequence complete
@@ -1407,13 +1285,9 @@ func (i *Tablet) AddPathHandler(f TabletPathHandlerFunc) {
 type TabletDoneEvent struct{}
 type TabletDoneHandlerFunc func(TabletDoneEvent)
 
-// AddDoneHandler : adds handler for TabletDoneEvent
-func (i *Tablet) AddDoneHandler(f TabletDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for TabletDoneEvent
+func (i *Tablet) SetDoneHandler(f TabletDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 // TabletRemovedEvent : tablet removed event
@@ -1426,19 +1300,15 @@ func (i *Tablet) AddDoneHandler(f TabletDoneHandlerFunc) {
 type TabletRemovedEvent struct{}
 type TabletRemovedHandlerFunc func(TabletRemovedEvent)
 
-// AddRemovedHandler : adds handler for TabletRemovedEvent
-func (i *Tablet) AddRemovedHandler(f TabletRemovedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.removedHandlers = append(i.removedHandlers, f)
+// SetRemovedHandler : sets handler for TabletRemovedEvent
+func (i *Tablet) SetRemovedHandler(f TabletRemovedHandlerFunc) {
+	i.removedHandler = f
 }
 
 func (i *Tablet) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.nameHandlers) == 0 {
+		if i.nameHandler == nil {
 			return
 		}
 		var e TabletNameEvent
@@ -1447,11 +1317,10 @@ func (i *Tablet) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Name = client.String(data[l : l+nameLen])
 		l += nameLen
-		for _, f := range i.nameHandlers {
-			f(e)
-		}
+
+		i.nameHandler(e)
 	case 1:
-		if len(i.idHandlers) == 0 {
+		if i.idHandler == nil {
 			return
 		}
 		var e TabletIdEvent
@@ -1460,11 +1329,10 @@ func (i *Tablet) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Pid = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.idHandlers {
-			f(e)
-		}
+
+		i.idHandler(e)
 	case 2:
-		if len(i.pathHandlers) == 0 {
+		if i.pathHandler == nil {
 			return
 		}
 		var e TabletPathEvent
@@ -1473,25 +1341,22 @@ func (i *Tablet) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Path = client.String(data[l : l+pathLen])
 		l += pathLen
-		for _, f := range i.pathHandlers {
-			f(e)
-		}
+
+		i.pathHandler(e)
 	case 3:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e TabletDoneEvent
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	case 4:
-		if len(i.removedHandlers) == 0 {
+		if i.removedHandler == nil {
 			return
 		}
 		var e TabletRemovedEvent
-		for _, f := range i.removedHandlers {
-			f(e)
-		}
+
+		i.removedHandler(e)
 	}
 }
 
@@ -1504,10 +1369,10 @@ func (i *Tablet) Dispatch(opcode uint32, fd int, data []byte) {
 // event.
 type TabletPadRing struct {
 	client.BaseProxy
-	sourceHandlers []TabletPadRingSourceHandlerFunc
-	angleHandlers  []TabletPadRingAngleHandlerFunc
-	stopHandlers   []TabletPadRingStopHandlerFunc
-	frameHandlers  []TabletPadRingFrameHandlerFunc
+	sourceHandler TabletPadRingSourceHandlerFunc
+	angleHandler  TabletPadRingAngleHandlerFunc
+	stopHandler   TabletPadRingStopHandlerFunc
+	frameHandler  TabletPadRingFrameHandlerFunc
 }
 
 // NewTabletPadRing : pad ring
@@ -1636,13 +1501,9 @@ type TabletPadRingSourceEvent struct {
 }
 type TabletPadRingSourceHandlerFunc func(TabletPadRingSourceEvent)
 
-// AddSourceHandler : adds handler for TabletPadRingSourceEvent
-func (i *TabletPadRing) AddSourceHandler(f TabletPadRingSourceHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.sourceHandlers = append(i.sourceHandlers, f)
+// SetSourceHandler : sets handler for TabletPadRingSourceEvent
+func (i *TabletPadRing) SetSourceHandler(f TabletPadRingSourceHandlerFunc) {
+	i.sourceHandler = f
 }
 
 // TabletPadRingAngleEvent : angle changed
@@ -1656,13 +1517,9 @@ type TabletPadRingAngleEvent struct {
 }
 type TabletPadRingAngleHandlerFunc func(TabletPadRingAngleEvent)
 
-// AddAngleHandler : adds handler for TabletPadRingAngleEvent
-func (i *TabletPadRing) AddAngleHandler(f TabletPadRingAngleHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.angleHandlers = append(i.angleHandlers, f)
+// SetAngleHandler : sets handler for TabletPadRingAngleEvent
+func (i *TabletPadRing) SetAngleHandler(f TabletPadRingAngleHandlerFunc) {
+	i.angleHandler = f
 }
 
 // TabletPadRingStopEvent : interaction stopped
@@ -1680,13 +1537,9 @@ func (i *TabletPadRing) AddAngleHandler(f TabletPadRingAngleHandlerFunc) {
 type TabletPadRingStopEvent struct{}
 type TabletPadRingStopHandlerFunc func(TabletPadRingStopEvent)
 
-// AddStopHandler : adds handler for TabletPadRingStopEvent
-func (i *TabletPadRing) AddStopHandler(f TabletPadRingStopHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.stopHandlers = append(i.stopHandlers, f)
+// SetStopHandler : sets handler for TabletPadRingStopEvent
+func (i *TabletPadRing) SetStopHandler(f TabletPadRingStopHandlerFunc) {
+	i.stopHandler = f
 }
 
 // TabletPadRingFrameEvent : end of a ring event sequence
@@ -1709,58 +1562,50 @@ type TabletPadRingFrameEvent struct {
 }
 type TabletPadRingFrameHandlerFunc func(TabletPadRingFrameEvent)
 
-// AddFrameHandler : adds handler for TabletPadRingFrameEvent
-func (i *TabletPadRing) AddFrameHandler(f TabletPadRingFrameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.frameHandlers = append(i.frameHandlers, f)
+// SetFrameHandler : sets handler for TabletPadRingFrameEvent
+func (i *TabletPadRing) SetFrameHandler(f TabletPadRingFrameHandlerFunc) {
+	i.frameHandler = f
 }
 
 func (i *TabletPadRing) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.sourceHandlers) == 0 {
+		if i.sourceHandler == nil {
 			return
 		}
 		var e TabletPadRingSourceEvent
 		l := 0
 		e.Source = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.sourceHandlers {
-			f(e)
-		}
+
+		i.sourceHandler(e)
 	case 1:
-		if len(i.angleHandlers) == 0 {
+		if i.angleHandler == nil {
 			return
 		}
 		var e TabletPadRingAngleEvent
 		l := 0
 		e.Degrees = client.Fixed(data[l : l+4])
 		l += 4
-		for _, f := range i.angleHandlers {
-			f(e)
-		}
+
+		i.angleHandler(e)
 	case 2:
-		if len(i.stopHandlers) == 0 {
+		if i.stopHandler == nil {
 			return
 		}
 		var e TabletPadRingStopEvent
-		for _, f := range i.stopHandlers {
-			f(e)
-		}
+
+		i.stopHandler(e)
 	case 3:
-		if len(i.frameHandlers) == 0 {
+		if i.frameHandler == nil {
 			return
 		}
 		var e TabletPadRingFrameEvent
 		l := 0
 		e.Time = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.frameHandlers {
-			f(e)
-		}
+
+		i.frameHandler(e)
 	}
 }
 
@@ -1773,10 +1618,10 @@ func (i *TabletPadRing) Dispatch(opcode uint32, fd int, data []byte) {
 // event.
 type TabletPadStrip struct {
 	client.BaseProxy
-	sourceHandlers   []TabletPadStripSourceHandlerFunc
-	positionHandlers []TabletPadStripPositionHandlerFunc
-	stopHandlers     []TabletPadStripStopHandlerFunc
-	frameHandlers    []TabletPadStripFrameHandlerFunc
+	sourceHandler   TabletPadStripSourceHandlerFunc
+	positionHandler TabletPadStripPositionHandlerFunc
+	stopHandler     TabletPadStripStopHandlerFunc
+	frameHandler    TabletPadStripFrameHandlerFunc
 }
 
 // NewTabletPadStrip : pad strip
@@ -1905,13 +1750,9 @@ type TabletPadStripSourceEvent struct {
 }
 type TabletPadStripSourceHandlerFunc func(TabletPadStripSourceEvent)
 
-// AddSourceHandler : adds handler for TabletPadStripSourceEvent
-func (i *TabletPadStrip) AddSourceHandler(f TabletPadStripSourceHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.sourceHandlers = append(i.sourceHandlers, f)
+// SetSourceHandler : sets handler for TabletPadStripSourceEvent
+func (i *TabletPadStrip) SetSourceHandler(f TabletPadStripSourceHandlerFunc) {
+	i.sourceHandler = f
 }
 
 // TabletPadStripPositionEvent : position changed
@@ -1926,13 +1767,9 @@ type TabletPadStripPositionEvent struct {
 }
 type TabletPadStripPositionHandlerFunc func(TabletPadStripPositionEvent)
 
-// AddPositionHandler : adds handler for TabletPadStripPositionEvent
-func (i *TabletPadStrip) AddPositionHandler(f TabletPadStripPositionHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.positionHandlers = append(i.positionHandlers, f)
+// SetPositionHandler : sets handler for TabletPadStripPositionEvent
+func (i *TabletPadStrip) SetPositionHandler(f TabletPadStripPositionHandlerFunc) {
+	i.positionHandler = f
 }
 
 // TabletPadStripStopEvent : interaction stopped
@@ -1950,13 +1787,9 @@ func (i *TabletPadStrip) AddPositionHandler(f TabletPadStripPositionHandlerFunc)
 type TabletPadStripStopEvent struct{}
 type TabletPadStripStopHandlerFunc func(TabletPadStripStopEvent)
 
-// AddStopHandler : adds handler for TabletPadStripStopEvent
-func (i *TabletPadStrip) AddStopHandler(f TabletPadStripStopHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.stopHandlers = append(i.stopHandlers, f)
+// SetStopHandler : sets handler for TabletPadStripStopEvent
+func (i *TabletPadStrip) SetStopHandler(f TabletPadStripStopHandlerFunc) {
+	i.stopHandler = f
 }
 
 // TabletPadStripFrameEvent : end of a strip event sequence
@@ -1980,58 +1813,50 @@ type TabletPadStripFrameEvent struct {
 }
 type TabletPadStripFrameHandlerFunc func(TabletPadStripFrameEvent)
 
-// AddFrameHandler : adds handler for TabletPadStripFrameEvent
-func (i *TabletPadStrip) AddFrameHandler(f TabletPadStripFrameHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.frameHandlers = append(i.frameHandlers, f)
+// SetFrameHandler : sets handler for TabletPadStripFrameEvent
+func (i *TabletPadStrip) SetFrameHandler(f TabletPadStripFrameHandlerFunc) {
+	i.frameHandler = f
 }
 
 func (i *TabletPadStrip) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.sourceHandlers) == 0 {
+		if i.sourceHandler == nil {
 			return
 		}
 		var e TabletPadStripSourceEvent
 		l := 0
 		e.Source = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.sourceHandlers {
-			f(e)
-		}
+
+		i.sourceHandler(e)
 	case 1:
-		if len(i.positionHandlers) == 0 {
+		if i.positionHandler == nil {
 			return
 		}
 		var e TabletPadStripPositionEvent
 		l := 0
 		e.Position = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.positionHandlers {
-			f(e)
-		}
+
+		i.positionHandler(e)
 	case 2:
-		if len(i.stopHandlers) == 0 {
+		if i.stopHandler == nil {
 			return
 		}
 		var e TabletPadStripStopEvent
-		for _, f := range i.stopHandlers {
-			f(e)
-		}
+
+		i.stopHandler(e)
 	case 3:
-		if len(i.frameHandlers) == 0 {
+		if i.frameHandler == nil {
 			return
 		}
 		var e TabletPadStripFrameEvent
 		l := 0
 		e.Time = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.frameHandlers {
-			f(e)
-		}
+
+		i.frameHandler(e)
 	}
 }
 
@@ -2060,12 +1885,12 @@ func (i *TabletPadStrip) Dispatch(opcode uint32, fd int, data []byte) {
 // compositor. See the wp_tablet_pad_group.mode_switch event for more details.
 type TabletPadGroup struct {
 	client.BaseProxy
-	buttonsHandlers    []TabletPadGroupButtonsHandlerFunc
-	ringHandlers       []TabletPadGroupRingHandlerFunc
-	stripHandlers      []TabletPadGroupStripHandlerFunc
-	modesHandlers      []TabletPadGroupModesHandlerFunc
-	doneHandlers       []TabletPadGroupDoneHandlerFunc
-	modeSwitchHandlers []TabletPadGroupModeSwitchHandlerFunc
+	buttonsHandler    TabletPadGroupButtonsHandlerFunc
+	ringHandler       TabletPadGroupRingHandlerFunc
+	stripHandler      TabletPadGroupStripHandlerFunc
+	modesHandler      TabletPadGroupModesHandlerFunc
+	doneHandler       TabletPadGroupDoneHandlerFunc
+	modeSwitchHandler TabletPadGroupModeSwitchHandlerFunc
 }
 
 // NewTabletPadGroup : a set of buttons, rings and strips
@@ -2134,13 +1959,9 @@ type TabletPadGroupButtonsEvent struct {
 }
 type TabletPadGroupButtonsHandlerFunc func(TabletPadGroupButtonsEvent)
 
-// AddButtonsHandler : adds handler for TabletPadGroupButtonsEvent
-func (i *TabletPadGroup) AddButtonsHandler(f TabletPadGroupButtonsHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.buttonsHandlers = append(i.buttonsHandlers, f)
+// SetButtonsHandler : sets handler for TabletPadGroupButtonsEvent
+func (i *TabletPadGroup) SetButtonsHandler(f TabletPadGroupButtonsHandlerFunc) {
+	i.buttonsHandler = f
 }
 
 // TabletPadGroupRingEvent : ring announced
@@ -2155,13 +1976,9 @@ type TabletPadGroupRingEvent struct {
 }
 type TabletPadGroupRingHandlerFunc func(TabletPadGroupRingEvent)
 
-// AddRingHandler : adds handler for TabletPadGroupRingEvent
-func (i *TabletPadGroup) AddRingHandler(f TabletPadGroupRingHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.ringHandlers = append(i.ringHandlers, f)
+// SetRingHandler : sets handler for TabletPadGroupRingEvent
+func (i *TabletPadGroup) SetRingHandler(f TabletPadGroupRingHandlerFunc) {
+	i.ringHandler = f
 }
 
 // TabletPadGroupStripEvent : strip announced
@@ -2176,13 +1993,9 @@ type TabletPadGroupStripEvent struct {
 }
 type TabletPadGroupStripHandlerFunc func(TabletPadGroupStripEvent)
 
-// AddStripHandler : adds handler for TabletPadGroupStripEvent
-func (i *TabletPadGroup) AddStripHandler(f TabletPadGroupStripHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.stripHandlers = append(i.stripHandlers, f)
+// SetStripHandler : sets handler for TabletPadGroupStripEvent
+func (i *TabletPadGroup) SetStripHandler(f TabletPadGroupStripHandlerFunc) {
+	i.stripHandler = f
 }
 
 // TabletPadGroupModesEvent : mode-switch ability announced
@@ -2204,13 +2017,9 @@ type TabletPadGroupModesEvent struct {
 }
 type TabletPadGroupModesHandlerFunc func(TabletPadGroupModesEvent)
 
-// AddModesHandler : adds handler for TabletPadGroupModesEvent
-func (i *TabletPadGroup) AddModesHandler(f TabletPadGroupModesHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.modesHandlers = append(i.modesHandlers, f)
+// SetModesHandler : sets handler for TabletPadGroupModesEvent
+func (i *TabletPadGroup) SetModesHandler(f TabletPadGroupModesHandlerFunc) {
+	i.modesHandler = f
 }
 
 // TabletPadGroupDoneEvent : tablet group description events sequence complete
@@ -2222,13 +2031,9 @@ func (i *TabletPadGroup) AddModesHandler(f TabletPadGroupModesHandlerFunc) {
 type TabletPadGroupDoneEvent struct{}
 type TabletPadGroupDoneHandlerFunc func(TabletPadGroupDoneEvent)
 
-// AddDoneHandler : adds handler for TabletPadGroupDoneEvent
-func (i *TabletPadGroup) AddDoneHandler(f TabletPadGroupDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for TabletPadGroupDoneEvent
+func (i *TabletPadGroup) SetDoneHandler(f TabletPadGroupDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 // TabletPadGroupModeSwitchEvent : mode switch event
@@ -2267,19 +2072,15 @@ type TabletPadGroupModeSwitchEvent struct {
 }
 type TabletPadGroupModeSwitchHandlerFunc func(TabletPadGroupModeSwitchEvent)
 
-// AddModeSwitchHandler : adds handler for TabletPadGroupModeSwitchEvent
-func (i *TabletPadGroup) AddModeSwitchHandler(f TabletPadGroupModeSwitchHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.modeSwitchHandlers = append(i.modeSwitchHandlers, f)
+// SetModeSwitchHandler : sets handler for TabletPadGroupModeSwitchEvent
+func (i *TabletPadGroup) SetModeSwitchHandler(f TabletPadGroupModeSwitchHandlerFunc) {
+	i.modeSwitchHandler = f
 }
 
 func (i *TabletPadGroup) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.buttonsHandlers) == 0 {
+		if i.buttonsHandler == nil {
 			return
 		}
 		var e TabletPadGroupButtonsEvent
@@ -2289,52 +2090,47 @@ func (i *TabletPadGroup) Dispatch(opcode uint32, fd int, data []byte) {
 		e.Buttons = make([]byte, buttonsLen)
 		copy(e.Buttons, data[l:l+buttonsLen])
 		l += buttonsLen
-		for _, f := range i.buttonsHandlers {
-			f(e)
-		}
+
+		i.buttonsHandler(e)
 	case 1:
-		if len(i.ringHandlers) == 0 {
+		if i.ringHandler == nil {
 			return
 		}
 		var e TabletPadGroupRingEvent
 		l := 0
 		e.Ring = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*TabletPadRing)
 		l += 4
-		for _, f := range i.ringHandlers {
-			f(e)
-		}
+
+		i.ringHandler(e)
 	case 2:
-		if len(i.stripHandlers) == 0 {
+		if i.stripHandler == nil {
 			return
 		}
 		var e TabletPadGroupStripEvent
 		l := 0
 		e.Strip = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*TabletPadStrip)
 		l += 4
-		for _, f := range i.stripHandlers {
-			f(e)
-		}
+
+		i.stripHandler(e)
 	case 3:
-		if len(i.modesHandlers) == 0 {
+		if i.modesHandler == nil {
 			return
 		}
 		var e TabletPadGroupModesEvent
 		l := 0
 		e.Modes = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.modesHandlers {
-			f(e)
-		}
+
+		i.modesHandler(e)
 	case 4:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e TabletPadGroupDoneEvent
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	case 5:
-		if len(i.modeSwitchHandlers) == 0 {
+		if i.modeSwitchHandler == nil {
 			return
 		}
 		var e TabletPadGroupModeSwitchEvent
@@ -2345,9 +2141,8 @@ func (i *TabletPadGroup) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Mode = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.modeSwitchHandlers {
-			f(e)
-		}
+
+		i.modeSwitchHandler(e)
 	}
 }
 
@@ -2377,14 +2172,14 @@ func (i *TabletPadGroup) Dispatch(opcode uint32, fd int, data []byte) {
 // although different groups may have different active modes.
 type TabletPad struct {
 	client.BaseProxy
-	groupHandlers   []TabletPadGroupHandlerFunc
-	pathHandlers    []TabletPadPathHandlerFunc
-	buttonsHandlers []TabletPadButtonsHandlerFunc
-	doneHandlers    []TabletPadDoneHandlerFunc
-	buttonHandlers  []TabletPadButtonHandlerFunc
-	enterHandlers   []TabletPadEnterHandlerFunc
-	leaveHandlers   []TabletPadLeaveHandlerFunc
-	removedHandlers []TabletPadRemovedHandlerFunc
+	groupHandler   TabletPadGroupHandlerFunc
+	pathHandler    TabletPadPathHandlerFunc
+	buttonsHandler TabletPadButtonsHandlerFunc
+	doneHandler    TabletPadDoneHandlerFunc
+	buttonHandler  TabletPadButtonHandlerFunc
+	enterHandler   TabletPadEnterHandlerFunc
+	leaveHandler   TabletPadLeaveHandlerFunc
+	removedHandler TabletPadRemovedHandlerFunc
 }
 
 // NewTabletPad : a set of buttons, rings and strips
@@ -2536,13 +2331,9 @@ type TabletPadGroupEvent struct {
 }
 type TabletPadGroupHandlerFunc func(TabletPadGroupEvent)
 
-// AddGroupHandler : adds handler for TabletPadGroupEvent
-func (i *TabletPad) AddGroupHandler(f TabletPadGroupHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.groupHandlers = append(i.groupHandlers, f)
+// SetGroupHandler : sets handler for TabletPadGroupEvent
+func (i *TabletPad) SetGroupHandler(f TabletPadGroupHandlerFunc) {
+	i.groupHandler = f
 }
 
 // TabletPadPathEvent : path to the device
@@ -2562,13 +2353,9 @@ type TabletPadPathEvent struct {
 }
 type TabletPadPathHandlerFunc func(TabletPadPathEvent)
 
-// AddPathHandler : adds handler for TabletPadPathEvent
-func (i *TabletPad) AddPathHandler(f TabletPadPathHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.pathHandlers = append(i.pathHandlers, f)
+// SetPathHandler : sets handler for TabletPadPathEvent
+func (i *TabletPad) SetPathHandler(f TabletPadPathHandlerFunc) {
+	i.pathHandler = f
 }
 
 // TabletPadButtonsEvent : buttons announced
@@ -2584,13 +2371,9 @@ type TabletPadButtonsEvent struct {
 }
 type TabletPadButtonsHandlerFunc func(TabletPadButtonsEvent)
 
-// AddButtonsHandler : adds handler for TabletPadButtonsEvent
-func (i *TabletPad) AddButtonsHandler(f TabletPadButtonsHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.buttonsHandlers = append(i.buttonsHandlers, f)
+// SetButtonsHandler : sets handler for TabletPadButtonsEvent
+func (i *TabletPad) SetButtonsHandler(f TabletPadButtonsHandlerFunc) {
+	i.buttonsHandler = f
 }
 
 // TabletPadDoneEvent : pad description event sequence complete
@@ -2601,13 +2384,9 @@ func (i *TabletPad) AddButtonsHandler(f TabletPadButtonsHandlerFunc) {
 type TabletPadDoneEvent struct{}
 type TabletPadDoneHandlerFunc func(TabletPadDoneEvent)
 
-// AddDoneHandler : adds handler for TabletPadDoneEvent
-func (i *TabletPad) AddDoneHandler(f TabletPadDoneHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.doneHandlers = append(i.doneHandlers, f)
+// SetDoneHandler : sets handler for TabletPadDoneEvent
+func (i *TabletPad) SetDoneHandler(f TabletPadDoneHandlerFunc) {
+	i.doneHandler = f
 }
 
 // TabletPadButtonEvent : physical button state
@@ -2620,13 +2399,9 @@ type TabletPadButtonEvent struct {
 }
 type TabletPadButtonHandlerFunc func(TabletPadButtonEvent)
 
-// AddButtonHandler : adds handler for TabletPadButtonEvent
-func (i *TabletPad) AddButtonHandler(f TabletPadButtonHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.buttonHandlers = append(i.buttonHandlers, f)
+// SetButtonHandler : sets handler for TabletPadButtonEvent
+func (i *TabletPad) SetButtonHandler(f TabletPadButtonHandlerFunc) {
+	i.buttonHandler = f
 }
 
 // TabletPadEnterEvent : enter event
@@ -2639,13 +2414,9 @@ type TabletPadEnterEvent struct {
 }
 type TabletPadEnterHandlerFunc func(TabletPadEnterEvent)
 
-// AddEnterHandler : adds handler for TabletPadEnterEvent
-func (i *TabletPad) AddEnterHandler(f TabletPadEnterHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.enterHandlers = append(i.enterHandlers, f)
+// SetEnterHandler : sets handler for TabletPadEnterEvent
+func (i *TabletPad) SetEnterHandler(f TabletPadEnterHandlerFunc) {
+	i.enterHandler = f
 }
 
 // TabletPadLeaveEvent : leave event
@@ -2658,13 +2429,9 @@ type TabletPadLeaveEvent struct {
 }
 type TabletPadLeaveHandlerFunc func(TabletPadLeaveEvent)
 
-// AddLeaveHandler : adds handler for TabletPadLeaveEvent
-func (i *TabletPad) AddLeaveHandler(f TabletPadLeaveHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.leaveHandlers = append(i.leaveHandlers, f)
+// SetLeaveHandler : sets handler for TabletPadLeaveEvent
+func (i *TabletPad) SetLeaveHandler(f TabletPadLeaveHandlerFunc) {
+	i.leaveHandler = f
 }
 
 // TabletPadRemovedEvent : pad removed event
@@ -2678,30 +2445,25 @@ func (i *TabletPad) AddLeaveHandler(f TabletPadLeaveHandlerFunc) {
 type TabletPadRemovedEvent struct{}
 type TabletPadRemovedHandlerFunc func(TabletPadRemovedEvent)
 
-// AddRemovedHandler : adds handler for TabletPadRemovedEvent
-func (i *TabletPad) AddRemovedHandler(f TabletPadRemovedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.removedHandlers = append(i.removedHandlers, f)
+// SetRemovedHandler : sets handler for TabletPadRemovedEvent
+func (i *TabletPad) SetRemovedHandler(f TabletPadRemovedHandlerFunc) {
+	i.removedHandler = f
 }
 
 func (i *TabletPad) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.groupHandlers) == 0 {
+		if i.groupHandler == nil {
 			return
 		}
 		var e TabletPadGroupEvent
 		l := 0
 		e.PadGroup = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*TabletPadGroup)
 		l += 4
-		for _, f := range i.groupHandlers {
-			f(e)
-		}
+
+		i.groupHandler(e)
 	case 1:
-		if len(i.pathHandlers) == 0 {
+		if i.pathHandler == nil {
 			return
 		}
 		var e TabletPadPathEvent
@@ -2710,30 +2472,27 @@ func (i *TabletPad) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Path = client.String(data[l : l+pathLen])
 		l += pathLen
-		for _, f := range i.pathHandlers {
-			f(e)
-		}
+
+		i.pathHandler(e)
 	case 2:
-		if len(i.buttonsHandlers) == 0 {
+		if i.buttonsHandler == nil {
 			return
 		}
 		var e TabletPadButtonsEvent
 		l := 0
 		e.Buttons = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.buttonsHandlers {
-			f(e)
-		}
+
+		i.buttonsHandler(e)
 	case 3:
-		if len(i.doneHandlers) == 0 {
+		if i.doneHandler == nil {
 			return
 		}
 		var e TabletPadDoneEvent
-		for _, f := range i.doneHandlers {
-			f(e)
-		}
+
+		i.doneHandler(e)
 	case 4:
-		if len(i.buttonHandlers) == 0 {
+		if i.buttonHandler == nil {
 			return
 		}
 		var e TabletPadButtonEvent
@@ -2744,11 +2503,10 @@ func (i *TabletPad) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.State = client.Uint32(data[l : l+4])
 		l += 4
-		for _, f := range i.buttonHandlers {
-			f(e)
-		}
+
+		i.buttonHandler(e)
 	case 5:
-		if len(i.enterHandlers) == 0 {
+		if i.enterHandler == nil {
 			return
 		}
 		var e TabletPadEnterEvent
@@ -2759,11 +2517,10 @@ func (i *TabletPad) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
 		l += 4
-		for _, f := range i.enterHandlers {
-			f(e)
-		}
+
+		i.enterHandler(e)
 	case 6:
-		if len(i.leaveHandlers) == 0 {
+		if i.leaveHandler == nil {
 			return
 		}
 		var e TabletPadLeaveEvent
@@ -2772,16 +2529,14 @@ func (i *TabletPad) Dispatch(opcode uint32, fd int, data []byte) {
 		l += 4
 		e.Surface = i.Context().GetProxy(client.Uint32(data[l : l+4])).(*client.Surface)
 		l += 4
-		for _, f := range i.leaveHandlers {
-			f(e)
-		}
+
+		i.leaveHandler(e)
 	case 7:
-		if len(i.removedHandlers) == 0 {
+		if i.removedHandler == nil {
 			return
 		}
 		var e TabletPadRemovedEvent
-		for _, f := range i.removedHandlers {
-			f(e)
-		}
+
+		i.removedHandler(e)
 	}
 }

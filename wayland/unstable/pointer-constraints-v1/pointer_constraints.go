@@ -309,8 +309,8 @@ func (e PointerConstraintsLifetime) String() string {
 // destroyed.
 type LockedPointer struct {
 	client.BaseProxy
-	lockedHandlers   []LockedPointerLockedHandlerFunc
-	unlockedHandlers []LockedPointerUnlockedHandlerFunc
+	lockedHandler   LockedPointerLockedHandlerFunc
+	unlockedHandler LockedPointerUnlockedHandlerFunc
 }
 
 // NewLockedPointer : receive relative pointer motion events
@@ -432,13 +432,9 @@ func (i *LockedPointer) SetRegion(region *client.Region) error {
 type LockedPointerLockedEvent struct{}
 type LockedPointerLockedHandlerFunc func(LockedPointerLockedEvent)
 
-// AddLockedHandler : adds handler for LockedPointerLockedEvent
-func (i *LockedPointer) AddLockedHandler(f LockedPointerLockedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.lockedHandlers = append(i.lockedHandlers, f)
+// SetLockedHandler : sets handler for LockedPointerLockedEvent
+func (i *LockedPointer) SetLockedHandler(f LockedPointerLockedHandlerFunc) {
+	i.lockedHandler = f
 }
 
 // LockedPointerUnlockedEvent : lock deactivation event
@@ -452,33 +448,27 @@ func (i *LockedPointer) AddLockedHandler(f LockedPointerLockedHandlerFunc) {
 type LockedPointerUnlockedEvent struct{}
 type LockedPointerUnlockedHandlerFunc func(LockedPointerUnlockedEvent)
 
-// AddUnlockedHandler : adds handler for LockedPointerUnlockedEvent
-func (i *LockedPointer) AddUnlockedHandler(f LockedPointerUnlockedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.unlockedHandlers = append(i.unlockedHandlers, f)
+// SetUnlockedHandler : sets handler for LockedPointerUnlockedEvent
+func (i *LockedPointer) SetUnlockedHandler(f LockedPointerUnlockedHandlerFunc) {
+	i.unlockedHandler = f
 }
 
 func (i *LockedPointer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.lockedHandlers) == 0 {
+		if i.lockedHandler == nil {
 			return
 		}
 		var e LockedPointerLockedEvent
-		for _, f := range i.lockedHandlers {
-			f(e)
-		}
+
+		i.lockedHandler(e)
 	case 1:
-		if len(i.unlockedHandlers) == 0 {
+		if i.unlockedHandler == nil {
 			return
 		}
 		var e LockedPointerUnlockedEvent
-		for _, f := range i.unlockedHandlers {
-			f(e)
-		}
+
+		i.unlockedHandler(e)
 	}
 }
 
@@ -502,8 +492,8 @@ func (i *LockedPointer) Dispatch(opcode uint32, fd int, data []byte) {
 // be destroyed.
 type ConfinedPointer struct {
 	client.BaseProxy
-	confinedHandlers   []ConfinedPointerConfinedHandlerFunc
-	unconfinedHandlers []ConfinedPointerUnconfinedHandlerFunc
+	confinedHandler   ConfinedPointerConfinedHandlerFunc
+	unconfinedHandler ConfinedPointerUnconfinedHandlerFunc
 }
 
 // NewConfinedPointer : confined pointer object
@@ -595,13 +585,9 @@ func (i *ConfinedPointer) SetRegion(region *client.Region) error {
 type ConfinedPointerConfinedEvent struct{}
 type ConfinedPointerConfinedHandlerFunc func(ConfinedPointerConfinedEvent)
 
-// AddConfinedHandler : adds handler for ConfinedPointerConfinedEvent
-func (i *ConfinedPointer) AddConfinedHandler(f ConfinedPointerConfinedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.confinedHandlers = append(i.confinedHandlers, f)
+// SetConfinedHandler : sets handler for ConfinedPointerConfinedEvent
+func (i *ConfinedPointer) SetConfinedHandler(f ConfinedPointerConfinedHandlerFunc) {
+	i.confinedHandler = f
 }
 
 // ConfinedPointerUnconfinedEvent : pointer unconfined
@@ -615,32 +601,26 @@ func (i *ConfinedPointer) AddConfinedHandler(f ConfinedPointerConfinedHandlerFun
 type ConfinedPointerUnconfinedEvent struct{}
 type ConfinedPointerUnconfinedHandlerFunc func(ConfinedPointerUnconfinedEvent)
 
-// AddUnconfinedHandler : adds handler for ConfinedPointerUnconfinedEvent
-func (i *ConfinedPointer) AddUnconfinedHandler(f ConfinedPointerUnconfinedHandlerFunc) {
-	if f == nil {
-		return
-	}
-
-	i.unconfinedHandlers = append(i.unconfinedHandlers, f)
+// SetUnconfinedHandler : sets handler for ConfinedPointerUnconfinedEvent
+func (i *ConfinedPointer) SetUnconfinedHandler(f ConfinedPointerUnconfinedHandlerFunc) {
+	i.unconfinedHandler = f
 }
 
 func (i *ConfinedPointer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
-		if len(i.confinedHandlers) == 0 {
+		if i.confinedHandler == nil {
 			return
 		}
 		var e ConfinedPointerConfinedEvent
-		for _, f := range i.confinedHandlers {
-			f(e)
-		}
+
+		i.confinedHandler(e)
 	case 1:
-		if len(i.unconfinedHandlers) == 0 {
+		if i.unconfinedHandler == nil {
 			return
 		}
 		var e ConfinedPointerUnconfinedEvent
-		for _, f := range i.unconfinedHandlers {
-			f(e)
-		}
+
+		i.unconfinedHandler(e)
 	}
 }
