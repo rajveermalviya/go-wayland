@@ -2,8 +2,7 @@ package client
 
 import (
 	"fmt"
-
-	"github.com/rajveermalviya/go-wayland/wayland/internal/byteorder"
+	"unsafe"
 )
 
 func (ctx *Context) WriteMsg(b []byte, oob []byte) error {
@@ -19,23 +18,22 @@ func (ctx *Context) WriteMsg(b []byte, oob []byte) error {
 }
 
 func PutUint32(dst []byte, v uint32) {
-	byteorder.NativeEndian.PutUint32(dst, v)
+	_ = dst[3]
+	*(*uint32)(unsafe.Pointer(&dst[0])) = v
 }
 
 func PutFixed(dst []byte, f float64) {
 	fx := fixedFromfloat64(f)
-	byteorder.NativeEndian.PutUint32(dst, uint32(fx))
+	_ = dst[3]
+	*(*int32)(unsafe.Pointer(&dst[0])) = fx
 }
 
 func PutString(dst []byte, v string, l int) {
-	byteorder.NativeEndian.PutUint32(dst[:4], uint32(l))
-
-	v += "\x00"
-	copy(dst[4:4+len(v)], []byte(v))
+	PutUint32(dst[:4], uint32(l))
+	copy(dst[4:], []byte(v))
 }
 
 func PutArray(dst []byte, a []byte) {
-	byteorder.NativeEndian.PutUint32(dst[:4], uint32(len(a)))
-
-	copy(dst[4:4+len(a)], []byte(a))
+	PutUint32(dst[:4], uint32(len(a)))
+	copy(dst[4:], a)
 }

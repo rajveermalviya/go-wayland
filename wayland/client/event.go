@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/rajveermalviya/go-wayland/wayland/internal/byteorder"
 	"golang.org/x/sys/unix"
 
 	_ "unsafe"
@@ -104,7 +103,8 @@ func getFdsFromOob(oob []byte, oobn int, source string) ([]int, error) {
 }
 
 func Uint32(src []byte) uint32 {
-	return byteorder.NativeEndian.Uint32(src)
+	_ = src[3]
+	return *(*uint32)(unsafe.Pointer(&src[0]))
 }
 
 func String(src []byte) string {
@@ -114,6 +114,7 @@ func String(src []byte) string {
 }
 
 func Fixed(src []byte) float64 {
-	i := int32(byteorder.NativeEndian.Uint32(src))
-	return fixedToFloat64(i)
+	_ = src[3]
+	fx := *(*int32)(unsafe.Pointer(&src[0]))
+	return fixedToFloat64(fx)
 }
