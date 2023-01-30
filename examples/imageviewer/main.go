@@ -23,12 +23,13 @@ type appState struct {
 	frame         *image.RGBA
 	exit          bool
 
-	display    *client.Display
-	registry   *client.Registry
-	shm        *client.Shm
-	compositor *client.Compositor
-	xdgWmBase  *xdg_shell.WmBase
-	seat       *client.Seat
+	display     *client.Display
+	registry    *client.Registry
+	shm         *client.Shm
+	compositor  *client.Compositor
+	xdgWmBase   *xdg_shell.WmBase
+	seat        *client.Seat
+	seatVersion uint32
 
 	surface     *client.Surface
 	xdgSurface  *xdg_shell.Surface
@@ -206,6 +207,7 @@ func (app *appState) HandleRegistryGlobal(e client.RegistryGlobalEvent) {
 			log.Fatalf("unable to bind wl_seat interface: %v", err)
 		}
 		app.seat = seat
+		app.seatVersion = e.Version
 		// Add Keyboard & Pointer handlers
 		seat.AddCapabilitiesHandler(app.HandleSeatCapabilities)
 		seat.AddNameHandler(app.HandleSeatName)
@@ -286,7 +288,7 @@ func (app *appState) drawFrame() *client.Buffer {
 		}
 	}()
 
-	pool, err := app.shm.CreatePool(file.Fd(), size)
+	pool, err := app.shm.CreatePool(int(file.Fd()), size)
 	if err != nil {
 		log.Fatalf("unable to create shm pool: %v", err)
 	}

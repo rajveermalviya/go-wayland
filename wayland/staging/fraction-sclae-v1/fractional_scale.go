@@ -177,7 +177,7 @@ func (i *FractionalScale) AddPreferredScaleHandler(f FractionalScalePreferredSca
 	i.preferredScaleHandlers = append(i.preferredScaleHandlers, f)
 }
 
-func (i *FractionalScale) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *FractionalScale) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.preferredScaleHandlers) == 0 {

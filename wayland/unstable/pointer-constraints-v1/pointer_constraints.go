@@ -461,7 +461,7 @@ func (i *LockedPointer) AddUnlockedHandler(f LockedPointerUnlockedHandlerFunc) {
 	i.unlockedHandlers = append(i.unlockedHandlers, f)
 }
 
-func (i *LockedPointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *LockedPointer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.lockedHandlers) == 0 {
@@ -624,7 +624,7 @@ func (i *ConfinedPointer) AddUnconfinedHandler(f ConfinedPointerUnconfinedHandle
 	i.unconfinedHandlers = append(i.unconfinedHandlers, f)
 }
 
-func (i *ConfinedPointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *ConfinedPointer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.confinedHandlers) == 0 {

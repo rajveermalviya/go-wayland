@@ -209,7 +209,7 @@ var typeToGoTypeMap map[string]string = map[string]string{
 	"string": "string",
 	"object": "Proxy",
 	"array":  "[]byte",
-	"fd":     "uintptr",
+	"fd":     "int",
 }
 
 func writeInterface(w io.Writer, v Interface) {
@@ -636,7 +636,7 @@ func writeEventDispatcher(w io.Writer, ifaceName string, v Interface) {
 		return
 	}
 
-	fmt.Fprintf(w, "func (i *%s) Dispatch(opcode uint16, fd uintptr, data []byte) {\n", ifaceName)
+	fmt.Fprintf(w, "func (i *%s) Dispatch(opcode uint32, fd int, data []byte) {\n", ifaceName)
 	fmt.Fprintf(w, "switch opcode {\n")
 	for i, e := range v.Events {
 		eventName := toCamel(e.Name)

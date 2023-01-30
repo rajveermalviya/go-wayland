@@ -287,7 +287,7 @@ func (i *LinuxSurfaceSynchronization) Destroy() error {
 // error is raised.
 //
 //	fd: acquire fence fd
-func (i *LinuxSurfaceSynchronization) SetAcquireFence(fd uintptr) error {
+func (i *LinuxSurfaceSynchronization) SetAcquireFence(fd int) error {
 	const opcode = 1
 	const _reqBufLen = 8
 	var _reqBuf [_reqBufLen]byte
@@ -465,7 +465,7 @@ func (i *LinuxBufferRelease) Destroy() error {
 //
 // This event destroys the zwp_linux_buffer_release_v1 object.
 type LinuxBufferReleaseFencedReleaseEvent struct {
-	Fence uintptr
+	Fence int
 }
 type LinuxBufferReleaseFencedReleaseHandlerFunc func(LinuxBufferReleaseFencedReleaseEvent)
 
@@ -503,7 +503,7 @@ func (i *LinuxBufferRelease) AddImmediateReleaseHandler(f LinuxBufferReleaseImme
 	i.immediateReleaseHandlers = append(i.immediateReleaseHandlers, f)
 }
 
-func (i *LinuxBufferRelease) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *LinuxBufferRelease) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.fencedReleaseHandlers) == 0 {

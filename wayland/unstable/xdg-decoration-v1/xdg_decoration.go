@@ -339,7 +339,7 @@ func (i *ToplevelDecoration) AddConfigureHandler(f ToplevelDecorationConfigureHa
 	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *ToplevelDecoration) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *ToplevelDecoration) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {

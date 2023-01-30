@@ -132,7 +132,7 @@ func (i *Drm) CreatePlanarBuffer(name uint32, width, height int32, format uint32
 }
 
 // CreatePrimeBuffer :
-func (i *Drm) CreatePrimeBuffer(name uintptr, width, height int32, format uint32, offset0, stride0, offset1, stride1, offset2, stride2 int32) (*client.Buffer, error) {
+func (i *Drm) CreatePrimeBuffer(name int, width, height int32, format uint32, offset0, stride0, offset1, stride1, offset2, stride2 int32) (*client.Buffer, error) {
 	id := client.NewBuffer(i.Context())
 	const opcode = 3
 	const _reqBufLen = 8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4
@@ -630,7 +630,7 @@ func (i *Drm) AddCapabilitiesHandler(f DrmCapabilitiesHandlerFunc) {
 	i.capabilitiesHandlers = append(i.capabilitiesHandlers, f)
 }
 
-func (i *Drm) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Drm) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.deviceHandlers) == 0 {

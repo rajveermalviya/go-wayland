@@ -428,7 +428,7 @@ func (i *FullscreenShell) AddCapabilityHandler(f FullscreenShellCapabilityHandle
 	i.capabilityHandlers = append(i.capabilityHandlers, f)
 }
 
-func (i *FullscreenShell) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *FullscreenShell) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.capabilityHandlers) == 0 {
@@ -524,7 +524,7 @@ func (i *FullscreenShellModeFeedback) AddPresentCancelledHandler(f FullscreenShe
 	i.presentCancelledHandlers = append(i.presentCancelledHandlers, f)
 }
 
-func (i *FullscreenShellModeFeedback) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *FullscreenShellModeFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.modeSuccessfulHandlers) == 0 {

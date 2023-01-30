@@ -251,7 +251,7 @@ func (i *WmBase) AddPingHandler(f WmBasePingHandlerFunc) {
 	i.pingHandlers = append(i.pingHandlers, f)
 }
 
-func (i *WmBase) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *WmBase) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.pingHandlers) == 0 {
@@ -1206,7 +1206,7 @@ func (i *Surface) AddConfigureHandler(f SurfaceConfigureHandlerFunc) {
 	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Surface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {
@@ -2175,7 +2175,7 @@ func (i *Toplevel) AddWmCapabilitiesHandler(f ToplevelWmCapabilitiesHandlerFunc)
 	i.wmCapabilitiesHandlers = append(i.wmCapabilitiesHandlers, f)
 }
 
-func (i *Toplevel) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Toplevel) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {
@@ -2531,7 +2531,7 @@ func (i *Popup) AddRepositionedHandler(f PopupRepositionedHandlerFunc) {
 	i.repositionedHandlers = append(i.repositionedHandlers, f)
 }
 
-func (i *Popup) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Popup) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {

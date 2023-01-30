@@ -953,7 +953,7 @@ func (i *TextInput) AddTextDirectionHandler(f TextInputTextDirectionHandlerFunc)
 	i.textDirectionHandlers = append(i.textDirectionHandlers, f)
 }
 
-func (i *TextInput) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.enterHandlers) == 0 {

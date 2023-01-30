@@ -211,7 +211,7 @@ func (i *Display) AddDeleteIdHandler(f DisplayDeleteIdHandlerFunc) {
 	i.deleteIdHandlers = append(i.deleteIdHandlers, f)
 }
 
-func (i *Display) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Display) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.errorHandlers) == 0 {
@@ -382,7 +382,7 @@ func (i *Registry) AddGlobalRemoveHandler(f RegistryGlobalRemoveHandlerFunc) {
 	i.globalRemoveHandlers = append(i.globalRemoveHandlers, f)
 }
 
-func (i *Registry) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Registry) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.globalHandlers) == 0 {
@@ -456,7 +456,7 @@ func (i *Callback) AddDoneHandler(f CallbackDoneHandlerFunc) {
 	i.doneHandlers = append(i.doneHandlers, f)
 }
 
-func (i *Callback) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Callback) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.doneHandlers) == 0 {
@@ -701,7 +701,7 @@ func NewShm(ctx *Context) *Shm {
 //
 //	fd: file descriptor for the pool
 //	size: pool size, in bytes
-func (i *Shm) CreatePool(fd uintptr, size int32) (*ShmPool, error) {
+func (i *Shm) CreatePool(fd int, size int32) (*ShmPool, error) {
 	id := NewShmPool(i.Context())
 	const opcode = 0
 	const _reqBufLen = 8 + 4 + 4
@@ -1461,7 +1461,7 @@ func (i *Shm) AddFormatHandler(f ShmFormatHandlerFunc) {
 	i.formatHandlers = append(i.formatHandlers, f)
 }
 
-func (i *Shm) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Shm) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.formatHandlers) == 0 {
@@ -1558,7 +1558,7 @@ func (i *Buffer) AddReleaseHandler(f BufferReleaseHandlerFunc) {
 	i.releaseHandlers = append(i.releaseHandlers, f)
 }
 
-func (i *Buffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Buffer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.releaseHandlers) == 0 {
@@ -1657,7 +1657,7 @@ func (i *DataOffer) Accept(serial uint32, mimeType string) error {
 //
 //	mimeType: mime type desired by receiver
 //	fd: file descriptor for data transfer
-func (i *DataOffer) Receive(mimeType string, fd uintptr) error {
+func (i *DataOffer) Receive(mimeType string, fd int) error {
 	const opcode = 1
 	mimeTypeLen := PaddedLen(len(mimeType) + 1)
 	_reqBufLen := 8 + (4 + mimeTypeLen)
@@ -1909,7 +1909,7 @@ func (i *DataOffer) AddActionHandler(f DataOfferActionHandlerFunc) {
 	i.actionHandlers = append(i.actionHandlers, f)
 }
 
-func (i *DataOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *DataOffer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.offerHandlers) == 0 {
@@ -2112,7 +2112,7 @@ func (i *DataSource) AddTargetHandler(f DataSourceTargetHandlerFunc) {
 // close it.
 type DataSourceSendEvent struct {
 	MimeType string
-	Fd       uintptr
+	Fd       int
 }
 type DataSourceSendHandlerFunc func(DataSourceSendEvent)
 
@@ -2243,7 +2243,7 @@ func (i *DataSource) AddActionHandler(f DataSourceActionHandlerFunc) {
 	i.actionHandlers = append(i.actionHandlers, f)
 }
 
-func (i *DataSource) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *DataSource) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.targetHandlers) == 0 {
@@ -2625,7 +2625,7 @@ func (i *DataDevice) AddSelectionHandler(f DataDeviceSelectionHandlerFunc) {
 	i.selectionHandlers = append(i.selectionHandlers, f)
 }
 
-func (i *DataDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *DataDevice) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.dataOfferHandlers) == 0 {
@@ -3573,7 +3573,7 @@ func (i *ShellSurface) AddPopupDoneHandler(f ShellSurfacePopupDoneHandlerFunc) {
 	i.popupDoneHandlers = append(i.popupDoneHandlers, f)
 }
 
-func (i *ShellSurface) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *ShellSurface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.pingHandlers) == 0 {
@@ -4318,7 +4318,7 @@ func (i *Surface) AddLeaveHandler(f SurfaceLeaveHandlerFunc) {
 	i.leaveHandlers = append(i.leaveHandlers, f)
 }
 
-func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Surface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.enterHandlers) == 0 {
@@ -4614,7 +4614,7 @@ func (i *Seat) AddNameHandler(f SeatNameHandlerFunc) {
 	i.nameHandlers = append(i.nameHandlers, f)
 }
 
-func (i *Seat) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Seat) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.capabilitiesHandlers) == 0 {
@@ -5284,7 +5284,7 @@ func (i *Pointer) AddAxisValue120Handler(f PointerAxisValue120HandlerFunc) {
 	i.axisValue120Handlers = append(i.axisValue120Handlers, f)
 }
 
-func (i *Pointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Pointer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.enterHandlers) == 0 {
@@ -5550,7 +5550,7 @@ func (e KeyboardKeyState) String() string {
 // the recipient, as MAP_SHARED may fail.
 type KeyboardKeymapEvent struct {
 	Format uint32
-	Fd     uintptr
+	Fd     int
 	Size   uint32
 }
 type KeyboardKeymapHandlerFunc func(KeyboardKeymapEvent)
@@ -5691,7 +5691,7 @@ func (i *Keyboard) AddRepeatInfoHandler(f KeyboardRepeatInfoHandlerFunc) {
 	i.repeatInfoHandlers = append(i.repeatInfoHandlers, f)
 }
 
-func (i *Keyboard) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Keyboard) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.keymapHandlers) == 0 {
@@ -6033,7 +6033,7 @@ func (i *Touch) AddOrientationHandler(f TouchOrientationHandlerFunc) {
 	i.orientationHandlers = append(i.orientationHandlers, f)
 }
 
-func (i *Touch) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Touch) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.downHandlers) == 0 {
@@ -6591,7 +6591,7 @@ func (i *Output) AddDescriptionHandler(f OutputDescriptionHandlerFunc) {
 	i.descriptionHandlers = append(i.descriptionHandlers, f)
 }
 
-func (i *Output) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Output) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.geometryHandlers) == 0 {

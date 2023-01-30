@@ -167,7 +167,7 @@ func (i *DrmLeaseDevice) Destroy() error {
 // query DRM and discover information which may help them pick the
 // appropriate DRM device or select the appropriate connectors therein.
 type DrmLeaseDeviceDrmFdEvent struct {
-	Fd uintptr
+	Fd int
 }
 type DrmLeaseDeviceDrmFdHandlerFunc func(DrmLeaseDeviceDrmFdEvent)
 
@@ -245,7 +245,7 @@ func (i *DrmLeaseDevice) AddReleasedHandler(f DrmLeaseDeviceReleasedHandlerFunc)
 	i.releasedHandlers = append(i.releasedHandlers, f)
 }
 
-func (i *DrmLeaseDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *DrmLeaseDevice) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.drmFdHandlers) == 0 {
@@ -438,7 +438,7 @@ func (i *DrmLeaseConnector) AddWithdrawnHandler(f DrmLeaseConnectorWithdrawnHand
 	i.withdrawnHandlers = append(i.withdrawnHandlers, f)
 }
 
-func (i *DrmLeaseConnector) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *DrmLeaseConnector) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.nameHandlers) == 0 {
@@ -677,7 +677,7 @@ func (i *DrmLease) Destroy() error {
 // The compositor will send this event at most once during this objects
 // lifetime.
 type DrmLeaseLeaseFdEvent struct {
-	LeasedFd uintptr
+	LeasedFd int
 }
 type DrmLeaseLeaseFdHandlerFunc func(DrmLeaseLeaseFdEvent)
 
@@ -712,7 +712,7 @@ func (i *DrmLease) AddFinishedHandler(f DrmLeaseFinishedHandlerFunc) {
 	i.finishedHandlers = append(i.finishedHandlers, f)
 }
 
-func (i *DrmLease) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *DrmLease) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.leaseFdHandlers) == 0 {

@@ -553,7 +553,7 @@ func (i *InputMethodContext) AddPreferredLanguageHandler(f InputMethodContextPre
 	i.preferredLanguageHandlers = append(i.preferredLanguageHandlers, f)
 }
 
-func (i *InputMethodContext) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *InputMethodContext) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.surroundingTextHandlers) == 0 {
@@ -699,7 +699,7 @@ func (i *InputMethod) AddDeactivateHandler(f InputMethodDeactivateHandlerFunc) {
 	i.deactivateHandlers = append(i.deactivateHandlers, f)
 }
 
-func (i *InputMethod) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *InputMethod) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.activateHandlers) == 0 {

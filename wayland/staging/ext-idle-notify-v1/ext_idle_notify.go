@@ -200,7 +200,7 @@ func (i *IdleNotification) AddResumedHandler(f IdleNotificationResumedHandlerFun
 	i.resumedHandlers = append(i.resumedHandlers, f)
 }
 
-func (i *IdleNotification) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *IdleNotification) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.idledHandlers) == 0 {

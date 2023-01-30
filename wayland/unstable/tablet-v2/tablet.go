@@ -201,7 +201,7 @@ func (i *TabletSeat) AddPadAddedHandler(f TabletSeatPadAddedHandlerFunc) {
 	i.padAddedHandlers = append(i.padAddedHandlers, f)
 }
 
-func (i *TabletSeat) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TabletSeat) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.tabletAddedHandlers) == 0 {
@@ -1059,7 +1059,7 @@ func (i *TabletTool) AddFrameHandler(f TabletToolFrameHandlerFunc) {
 	i.frameHandlers = append(i.frameHandlers, f)
 }
 
-func (i *TabletTool) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.typeHandlers) == 0 {
@@ -1435,7 +1435,7 @@ func (i *Tablet) AddRemovedHandler(f TabletRemovedHandlerFunc) {
 	i.removedHandlers = append(i.removedHandlers, f)
 }
 
-func (i *Tablet) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Tablet) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.nameHandlers) == 0 {
@@ -1718,7 +1718,7 @@ func (i *TabletPadRing) AddFrameHandler(f TabletPadRingFrameHandlerFunc) {
 	i.frameHandlers = append(i.frameHandlers, f)
 }
 
-func (i *TabletPadRing) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TabletPadRing) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.sourceHandlers) == 0 {
@@ -1989,7 +1989,7 @@ func (i *TabletPadStrip) AddFrameHandler(f TabletPadStripFrameHandlerFunc) {
 	i.frameHandlers = append(i.frameHandlers, f)
 }
 
-func (i *TabletPadStrip) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TabletPadStrip) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.sourceHandlers) == 0 {
@@ -2276,7 +2276,7 @@ func (i *TabletPadGroup) AddModeSwitchHandler(f TabletPadGroupModeSwitchHandlerF
 	i.modeSwitchHandlers = append(i.modeSwitchHandlers, f)
 }
 
-func (i *TabletPadGroup) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TabletPadGroup) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.buttonsHandlers) == 0 {
@@ -2687,7 +2687,7 @@ func (i *TabletPad) AddRemovedHandler(f TabletPadRemovedHandlerFunc) {
 	i.removedHandlers = append(i.removedHandlers, f)
 }
 
-func (i *TabletPad) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TabletPad) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.groupHandlers) == 0 {

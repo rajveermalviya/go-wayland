@@ -323,7 +323,7 @@ func (i *ActivationToken) AddDoneHandler(f ActivationTokenDoneHandlerFunc) {
 	i.doneHandlers = append(i.doneHandlers, f)
 }
 
-func (i *ActivationToken) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *ActivationToken) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.doneHandlers) == 0 {

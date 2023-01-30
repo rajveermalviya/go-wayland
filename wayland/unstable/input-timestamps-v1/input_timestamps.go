@@ -228,7 +228,7 @@ func (i *InputTimestamps) AddTimestampHandler(f InputTimestampsTimestampHandlerF
 	i.timestampHandlers = append(i.timestampHandlers, f)
 }
 
-func (i *InputTimestamps) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *InputTimestamps) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.timestampHandlers) == 0 {

@@ -48,7 +48,7 @@ func createShmPool(shm *client.Shm, size int) (*shmPool, error) {
 		return nil, err
 	}
 
-	pool, err := shm.CreatePool(f.Fd(), int32(size))
+	pool, err := shm.CreatePool(int(f.Fd()), int32(size))
 	if err != nil {
 		return nil, err
 	}
@@ -216,9 +216,9 @@ func createCursorFromXcursorImages(name string, xcimages []xcursor.Image, theme 
 // FrameAndDuration finds the frame for a given elapsed time in a
 // cursor animation as well as the time left until next cursor change.
 //
-//  cursor: The cursor
-//  time: Elapsed time in ms since the beginning of the animation
-//  duration: Time left for this image or zero if the cursor won't change.
+//	cursor: The cursor
+//	time: Elapsed time in ms since the beginning of the animation
+//	duration: Time left for this image or zero if the cursor won't change.
 //
 // Returns the index of the image that should be displayed for the
 // given time in the cursor animation and updated duration.
@@ -260,8 +260,8 @@ func (cursor *Cursor) FrameAndDuration(time uint32, d uint32) (int, uint32) {
 
 // Frame finds the frame for a given elapsed time in a cursor animation
 //
-//  cursor: The cursor
-//  time: Elapsed time in ms since the beginning of the animation
+//	cursor: The cursor
+//	time: Elapsed time in ms since the beginning of the animation
 //
 // Returns the index of the image that should be displayed for the
 // given time in the cursor animation.

@@ -340,7 +340,7 @@ func (i *LinuxDmabuf) AddModifierHandler(f LinuxDmabufModifierHandlerFunc) {
 	i.modifierHandlers = append(i.modifierHandlers, f)
 }
 
-func (i *LinuxDmabuf) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *LinuxDmabuf) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.formatHandlers) == 0 {
@@ -458,7 +458,7 @@ func (i *LinuxBufferParams) Destroy() error {
 //	stride: stride in bytes
 //	modifierHi: high 32 bits of layout modifier
 //	modifierLo: low 32 bits of layout modifier
-func (i *LinuxBufferParams) Add(fd uintptr, planeIdx, offset, stride, modifierHi, modifierLo uint32) error {
+func (i *LinuxBufferParams) Add(fd int, planeIdx, offset, stride, modifierHi, modifierLo uint32) error {
 	const opcode = 1
 	const _reqBufLen = 8 + 4 + 4 + 4 + 4 + 4
 	var _reqBuf [_reqBufLen]byte
@@ -778,7 +778,7 @@ func (i *LinuxBufferParams) AddFailedHandler(f LinuxBufferParamsFailedHandlerFun
 	i.failedHandlers = append(i.failedHandlers, f)
 }
 
-func (i *LinuxBufferParams) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *LinuxBufferParams) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.createdHandlers) == 0 {
@@ -957,7 +957,7 @@ func (i *LinuxDmabufFeedback) AddDoneHandler(f LinuxDmabufFeedbackDoneHandlerFun
 // table file and re-send feedback parameters. Compositors are allowed to
 // store duplicate format + modifier pairs in the table.
 type LinuxDmabufFeedbackFormatTableEvent struct {
-	Fd   uintptr
+	Fd   int
 	Size uint32
 }
 type LinuxDmabufFeedbackFormatTableHandlerFunc func(LinuxDmabufFeedbackFormatTableEvent)
@@ -1134,7 +1134,7 @@ func (i *LinuxDmabufFeedback) AddTrancheFlagsHandler(f LinuxDmabufFeedbackTranch
 	i.trancheFlagsHandlers = append(i.trancheFlagsHandlers, f)
 }
 
-func (i *LinuxDmabufFeedback) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *LinuxDmabufFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.doneHandlers) == 0 {

@@ -223,7 +223,7 @@ func (i *Exported) AddHandleHandler(f ExportedHandleHandlerFunc) {
 	i.handleHandlers = append(i.handleHandlers, f)
 }
 
-func (i *Exported) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Exported) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.handleHandlers) == 0 {
@@ -322,7 +322,7 @@ func (i *Imported) AddDestroyedHandler(f ImportedDestroyedHandlerFunc) {
 	i.destroyedHandlers = append(i.destroyedHandlers, f)
 }
 
-func (i *Imported) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Imported) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.destroyedHandlers) == 0 {

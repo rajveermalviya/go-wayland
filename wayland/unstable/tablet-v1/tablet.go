@@ -174,7 +174,7 @@ func (i *TabletSeat) AddToolAddedHandler(f TabletSeatToolAddedHandlerFunc) {
 	i.toolAddedHandlers = append(i.toolAddedHandlers, f)
 }
 
-func (i *TabletSeat) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TabletSeat) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.tabletAddedHandlers) == 0 {
@@ -1023,7 +1023,7 @@ func (i *TabletTool) AddFrameHandler(f TabletToolFrameHandlerFunc) {
 	i.frameHandlers = append(i.frameHandlers, f)
 }
 
-func (i *TabletTool) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TabletTool) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.typeHandlers) == 0 {
@@ -1399,7 +1399,7 @@ func (i *Tablet) AddRemovedHandler(f TabletRemovedHandlerFunc) {
 	i.removedHandlers = append(i.removedHandlers, f)
 }
 
-func (i *Tablet) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Tablet) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.nameHandlers) == 0 {

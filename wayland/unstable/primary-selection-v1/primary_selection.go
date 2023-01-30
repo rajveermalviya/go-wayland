@@ -218,7 +218,7 @@ func (i *PrimarySelectionDevice) AddSelectionHandler(f PrimarySelectionDeviceSel
 	i.selectionHandlers = append(i.selectionHandlers, f)
 }
 
-func (i *PrimarySelectionDevice) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *PrimarySelectionDevice) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.dataOfferHandlers) == 0 {
@@ -281,7 +281,7 @@ func NewPrimarySelectionOffer(ctx *client.Context) *PrimarySelectionOffer {
 //
 // The receiving client reads from the read end of the pipe until EOF and
 // closes its end, at which point the transfer is complete.
-func (i *PrimarySelectionOffer) Receive(mimeType string, fd uintptr) error {
+func (i *PrimarySelectionOffer) Receive(mimeType string, fd int) error {
 	const opcode = 0
 	mimeTypeLen := client.PaddedLen(len(mimeType) + 1)
 	_reqBufLen := 8 + (4 + mimeTypeLen)
@@ -335,7 +335,7 @@ func (i *PrimarySelectionOffer) AddOfferHandler(f PrimarySelectionOfferOfferHand
 	i.offerHandlers = append(i.offerHandlers, f)
 }
 
-func (i *PrimarySelectionOffer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *PrimarySelectionOffer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.offerHandlers) == 0 {
@@ -419,7 +419,7 @@ func (i *PrimarySelectionSource) Destroy() error {
 // close it.
 type PrimarySelectionSourceSendEvent struct {
 	MimeType string
-	Fd       uintptr
+	Fd       int
 }
 type PrimarySelectionSourceSendHandlerFunc func(PrimarySelectionSourceSendEvent)
 
@@ -448,7 +448,7 @@ func (i *PrimarySelectionSource) AddCancelledHandler(f PrimarySelectionSourceCan
 	i.cancelledHandlers = append(i.cancelledHandlers, f)
 }
 
-func (i *PrimarySelectionSource) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *PrimarySelectionSource) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.sendHandlers) == 0 {

@@ -269,7 +269,7 @@ func (i *PointerGestureSwipe) AddEndHandler(f PointerGestureSwipeEndHandlerFunc)
 	i.endHandlers = append(i.endHandlers, f)
 }
 
-func (i *PointerGestureSwipe) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *PointerGestureSwipe) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.beginHandlers) == 0 {
@@ -461,7 +461,7 @@ func (i *PointerGesturePinch) AddEndHandler(f PointerGesturePinchEndHandlerFunc)
 	i.endHandlers = append(i.endHandlers, f)
 }
 
-func (i *PointerGesturePinch) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *PointerGesturePinch) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.beginHandlers) == 0 {
@@ -629,7 +629,7 @@ func (i *PointerGestureHold) AddEndHandler(f PointerGestureHoldEndHandlerFunc) {
 	i.endHandlers = append(i.endHandlers, f)
 }
 
-func (i *PointerGestureHold) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *PointerGestureHold) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.beginHandlers) == 0 {

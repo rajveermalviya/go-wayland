@@ -236,7 +236,7 @@ func (i *Shell) AddPingHandler(f ShellPingHandlerFunc) {
 	i.pingHandlers = append(i.pingHandlers, f)
 }
 
-func (i *Shell) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Shell) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.pingHandlers) == 0 {
@@ -1016,7 +1016,7 @@ func (i *Surface) AddConfigureHandler(f SurfaceConfigureHandlerFunc) {
 	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *Surface) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Surface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {
@@ -1725,7 +1725,7 @@ func (i *Toplevel) AddCloseHandler(f ToplevelCloseHandlerFunc) {
 	i.closeHandlers = append(i.closeHandlers, f)
 }
 
-func (i *Toplevel) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Toplevel) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {
@@ -1995,7 +1995,7 @@ func (i *Popup) AddPopupDoneHandler(f PopupPopupDoneHandlerFunc) {
 	i.popupDoneHandlers = append(i.popupDoneHandlers, f)
 }
 
-func (i *Popup) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Popup) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {

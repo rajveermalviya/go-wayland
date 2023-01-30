@@ -1,7 +1,7 @@
 package client
 
 type Dispatcher interface {
-	Dispatch(opcode uint16, fd uintptr, data []byte)
+	Dispatch(opcode uint32, fd int, data []byte)
 }
 
 type Proxy interface {

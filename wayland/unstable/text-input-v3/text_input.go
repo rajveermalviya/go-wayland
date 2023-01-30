@@ -810,7 +810,7 @@ func (i *TextInput) AddDoneHandler(f TextInputDoneHandlerFunc) {
 	i.doneHandlers = append(i.doneHandlers, f)
 }
 
-func (i *TextInput) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *TextInput) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.enterHandlers) == 0 {

@@ -177,7 +177,7 @@ func (i *RelativePointer) AddRelativeMotionHandler(f RelativePointerRelativeMoti
 	i.relativeMotionHandlers = append(i.relativeMotionHandlers, f)
 }
 
-func (i *RelativePointer) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *RelativePointer) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.relativeMotionHandlers) == 0 {

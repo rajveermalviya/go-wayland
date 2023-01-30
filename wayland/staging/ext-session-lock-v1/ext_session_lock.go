@@ -349,7 +349,7 @@ func (i *ExtSessionLock) AddFinishedHandler(f ExtSessionLockFinishedHandlerFunc)
 	i.finishedHandlers = append(i.finishedHandlers, f)
 }
 
-func (i *ExtSessionLock) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *ExtSessionLock) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.lockedHandlers) == 0 {
@@ -555,7 +555,7 @@ func (i *ExtSessionLockSurface) AddConfigureHandler(f ExtSessionLockSurfaceConfi
 	i.configureHandlers = append(i.configureHandlers, f)
 }
 
-func (i *ExtSessionLockSurface) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *ExtSessionLockSurface) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.configureHandlers) == 0 {

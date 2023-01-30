@@ -1,0 +1,9 @@
+# See
+# https://github.com/github/linguist/blob/249bbd1c2ffc631ca2ec628da26be5800eec3d48/docs/overrides.md#generated-code
+
+wayland/client/client.go linguist-generated
+
+wayland/external/** linguist-generated
+wayland/stable/** linguist-generated
+wayland/staging/** linguist-generated
+wayland/unstable/** linguist-generated

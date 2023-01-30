@@ -211,7 +211,7 @@ func (i *Presentation) AddClockIdHandler(f PresentationClockIdHandlerFunc) {
 	i.clockIdHandlers = append(i.clockIdHandlers, f)
 }
 
-func (i *Presentation) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *Presentation) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.clockIdHandlers) == 0 {
@@ -422,7 +422,7 @@ func (i *PresentationFeedback) AddDiscardedHandler(f PresentationFeedbackDiscard
 	i.discardedHandlers = append(i.discardedHandlers, f)
 }
 
-func (i *PresentationFeedback) Dispatch(opcode uint16, fd uintptr, data []byte) {
+func (i *PresentationFeedback) Dispatch(opcode uint32, fd int, data []byte) {
 	switch opcode {
 	case 0:
 		if len(i.syncOutputHandlers) == 0 {
